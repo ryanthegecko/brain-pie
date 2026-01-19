@@ -1,12 +1,21 @@
 const Controls = {
+  HIDE_LABELS_KEY: 'hideSubitemLabels',
+
   init() {
     const checkbox = document.getElementById('hide-labels');
     const container = document.getElementById('chart-container');
 
+    // Restore state from localStorage
+    const stored = localStorage.getItem(this.HIDE_LABELS_KEY);
+    const hide = stored === 'true';
+    checkbox.checked = hide;
+    container.classList.toggle('hide-subitem-labels', hide);
+
+    // Toggle class + save state
     checkbox.addEventListener('change', (e) => {
-      // true  -> add 'hide-subitem-labels'
-      // false -> remove it
-      container.classList.toggle('hide-subitem-labels', e.target.checked);
+      const shouldHide = e.target.checked;
+      container.classList.toggle('hide-subitem-labels', shouldHide);
+      localStorage.setItem(this.HIDE_LABELS_KEY, String(shouldHide));
     });
   }
 };
