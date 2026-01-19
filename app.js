@@ -92,9 +92,9 @@ const App = {
             return;
         }
 
-        // Default to 10% if no percentage is provided
+        // Default to 20% if no percentage is provided
         if (!percentage || percentage <= 0) {
-            percentage = 10;
+            percentage = 20;
         }
 
         const subItems = subItemsText
