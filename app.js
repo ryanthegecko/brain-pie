@@ -128,6 +128,11 @@ const App = {
         this.render();
     },
 
+    reorderItems(categoryId, fromIndex, toIndex) {
+        DataModel.reorderItemsInCategory(categoryId, fromIndex, toIndex);
+        this.render();
+    },
+
     removeItem(categoryId, itemId) {
         DataModel.removeItem(categoryId, itemId);
         this.render();

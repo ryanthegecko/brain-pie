@@ -95,7 +95,10 @@ const UI = {
                              data-category-id="${category.id}"
                              data-item-id="${item.id}"
                              ondragstart="UI.handleItemDragStart(event)"
-                             ondragend="UI.handleDragEnd(event)">
+                             ondragend="UI.handleDragEnd(event)"
+                             ondragover="UI.handleItemDragOver(event)"
+                            ondrop="UI.handleItemDrop(event)"
+                             >
                             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; gap: 10px;">
                                 <h3 contenteditable="true" 
                                     onblur="App.updateItemName('${category.id}', '${item.id}', this.textContent)"
@@ -237,14 +240,70 @@ const UI = {
     
     handleItemDragStart(event) {
         const itemCard = event.currentTarget;
+        const categoryCard = itemCard.closest('.category-card');
+        const itemIndex = Array.from(categoryCard.querySelectorAll('.item-card')).indexOf(itemCard);
+        
         this.draggedElement = itemCard;
         this.draggedData = {
             type: 'item',
             categoryId: itemCard.dataset.categoryId,
-            itemId: itemCard.dataset.itemId
+            itemId: itemCard.dataset.itemId,
+            itemIndex: itemIndex
         };
         itemCard.style.opacity = '0.5';
-        event.stopPropagation(); // Prevent category drag
+        event.stopPropagation();
+    },
+
+    handleItemDragOver(event) {
+        if (this.draggedData && this.draggedData.type === 'item') {
+            event.preventDefault();
+            const card = event.currentTarget;
+            const rect = card.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            if (event.clientY < midpoint) {
+                card.style.borderTop = '3px solid #2196F3';
+                card.style.borderBottom = '';
+            } else {
+                card.style.borderBottom = '3px solid #2196F3';
+                card.style.borderTop = '';
+            }
+        }
+    },
+    
+    handleItemDrop(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (this.draggedData && this.draggedData.type === 'item') {
+            const targetCard = event.currentTarget;
+            const targetCategoryId = targetCard.dataset.categoryId;
+            const sourceCategoryId = this.draggedData.categoryId;
+            const sourceItemId = this.draggedData.itemId;
+            
+            const categoryCard = targetCard.closest('.category-card');
+            const allItemCards = Array.from(categoryCard.querySelectorAll('.item-card'));
+            const targetIndex = allItemCards.indexOf(targetCard);
+            
+            if (sourceCategoryId === targetCategoryId) {
+                // Reordering within same category
+                const sourceIndex = this.draggedData.itemIndex;
+                if (sourceIndex !== targetIndex) {
+                    const rect = targetCard.getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
+                    const insertAfter = event.clientY >= midpoint;
+                    const finalIndex = insertAfter ? targetIndex : targetIndex;
+                    
+                    App.reorderItems(sourceCategoryId, sourceIndex, finalIndex);
+                }
+            } else {
+                // Moving between categories
+                App.moveItem(sourceCategoryId, sourceItemId, targetCategoryId);
+            }
+            
+            targetCard.style.borderTop = '';
+            targetCard.style.borderBottom = '';
+        }
     },
     
     handleSubItemDragStart(event) {
@@ -298,6 +357,10 @@ const UI = {
         // Clean up any visual indicators
         document.querySelectorAll('.category-card').forEach(card => {
             card.style.background = '';
+            card.style.borderTop = '';
+            card.style.borderBottom = '';
+        });
+        document.querySelectorAll('.item-card').forEach(card => {
             card.style.borderTop = '';
             card.style.borderBottom = '';
         });
