@@ -29,14 +29,14 @@
             <h1>Brain Pie 🥧</h1>
             <div class="top-buttons">
                 <div>
-                <button onclick="UI.showMenu()">➕ Add Items</button>
+                <button onclick="UI.showMenu()">➕ Add Slices</button>
                 <button class="tertiary" onclick="App.exportData()">📥 Export</button>
                 <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
                 </div>
                 <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">
                 <hr>
                             <div>
-                <p>Hide subitems <input id="hide-labels" type="checkbox" name="hide-labels"></p>
+                <p>Hide spokes <input id="hide-labels" type="checkbox" name="hide-labels"></p>
                 </div>
             </div>
         </div>
@@ -45,7 +45,7 @@
         <div id="chart-container"></div>
 
         <div class="categories-section">
-            <h2>Categories & Items</h2>
+            <h2>Categories & Slices</h2>
             <div class="categories-grid" id="categories-list"></div>
         </div>
     </div>
@@ -56,7 +56,7 @@
             <button class="menu-close" onclick="UI.closeMenu()">✕</button>
             
             <div class="menu-section">
-                <h2>Add New Item</h2>
+                <h2>Add New Slice</h2>
                 <div class="controls">
                     <div class="input-group">
                         <label for="item-category">Category</label>
@@ -66,12 +66,12 @@
                     </div>
 
                     <div class="input-group">
-                        <label for="item-name">Item Name</label>
+                        <label for="item-name">Slice Name</label>
                         <input type="text" id="item-name" placeholder="e.g., Passport">
                     </div>
                     
                     <div class="input-group">
-                        <label for="item-percentage">Percentage (optional)</label>
+                        <label for="item-percentage">Weight (%, optional)</label>
                         <input type="number" id="item-percentage" min="1" max="100" placeholder="20">
                     </div>
                     
@@ -81,14 +81,14 @@
                     </div>
                     
                     <div class="input-group">
-                        <label for="sub-items">Sub-items (one per line)</label>
+                        <label for="sub-items">Spokes (one per line)</label>
                         <textarea id="sub-items" placeholder="open gov site&#10;get method&#10;do pictures"></textarea>
-                        <span class="helper-text">Enter each sub-item on a new line</span>
+                        <span class="helper-text">Enter each spoke on a new line</span>
                     </div>
                     
                     <div class="input-group" style="justify-content: flex-end;">
                         <label>&nbsp;</label>
-                        <button onclick="App.addItem()">Add Item</button>
+                        <button onclick="App.addItem()">Add Slice</button>
                     </div>
                 </div>
             </div>
