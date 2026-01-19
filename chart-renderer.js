@@ -1,9 +1,9 @@
 const ChartRenderer = {
     svg: null,
-    width: 1800,
-    height: 1300,
-    outerRadius: 550,
-    innerRadius: 490,
+    width: 1900,
+    height: 1400,
+    outerRadius: 530,
+    innerRadius: 470,
     highlightGroup: null,
     currentExpanded: null,
     
