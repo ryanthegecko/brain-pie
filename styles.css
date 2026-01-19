@@ -20,6 +20,12 @@ body {
     width: 100%;
 }
 
+#chart-container.hide-subitem-labels {
+    .sub-item-label, .sub-item-line {
+        display: none;
+    }
+}
+
 .container {
     max-width: 100%;
     margin: 0 auto;
@@ -293,6 +299,7 @@ textarea {
     font-size: 14px;
     /* fill: #666; */
     pointer-events: none;
+    display: none;
 }
 
 .item-label {

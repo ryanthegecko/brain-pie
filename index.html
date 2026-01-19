@@ -33,6 +33,11 @@
                 <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
                 <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">
             </div>
+            <div>
+                <p>Hide:</p>
+                    <br>
+                    <label>Labels </label><input id="hide-labels" type="checkbox" name="hide-labels">
+                </div>
         </div>
         <div class="storage-status" id="storage-status"></div>
 
