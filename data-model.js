@@ -236,6 +236,16 @@ const DataModel = {
         
         this.saveToStorage();
     },
+
+    reorderItemsInCategory(categoryId, fromIndex, toIndex) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+        
+        const [movedItem] = category.items.splice(fromIndex, 1);
+        category.items.splice(toIndex, 0, movedItem);
+        
+        this.saveToStorage();
+    },
     
     removeItem(categoryId, itemId) {
         const category = this.categories.find(cat => cat.id === categoryId);
