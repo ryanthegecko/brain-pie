@@ -1,3 +1,16 @@
+const Controls = {
+  init() {
+    const checkbox = document.getElementById('hide-labels');
+    const container = document.getElementById('chart-container');
+
+    checkbox.addEventListener('change', (e) => {
+      // true  -> add 'hide-subitem-labels'
+      // false -> remove it
+      container.classList.toggle('hide-subitem-labels', e.target.checked);
+    });
+  }
+};
+
 const App = {
     init() {
         DataModel.loadFromStorageOrExample();
@@ -5,6 +18,7 @@ const App = {
         UI.clearInputs();
         UI.clearCategoryInputs();
         this.render();
+        Controls.init();
 
         // Add resize listener
         let resizeTimeout;
@@ -176,7 +190,7 @@ const ExampleData = {
                             "name": "Kitchen",
                             "percentage": 33.33,
                             "color": "#2196F3",
-                            "subItems": ["Clean counters", "Empty dishwasher", "Organize pantry", "Wipe down appliances"]
+                            "subItems": ["Empty dishwasher", "Organize cupboards", "Wipe down surfaces"]
                         },
                         {
                             "id": "2",
@@ -211,7 +225,7 @@ const ExampleData = {
                             "name": "Meal Prep",
                             "percentage": 25,
                             "color": "#E91E63",
-                            "subItems": ["Plan weekly menu", "Grocery shopping", "Prep vegetables", "Cook batch meals"]
+                            "subItems": ["Plan weekly menu", "Food shopping", "Prep vegetables", "Cook batch meals"]
                         },
                         {
                             "id": "6",
@@ -225,7 +239,7 @@ const ExampleData = {
                             "name": "Sleep",
                             "percentage": 25,
                             "color": "#673AB7",
-                            "subItems": ["Set bedtime alarm", "Prepare bedroom", "Wind down routine"]
+                            "subItems": ["Set bedtime alarm", "Wind down routine"]
                         }
                     ]
                 },
@@ -267,21 +281,21 @@ const ExampleData = {
                             "name": "Friends",
                             "percentage": 33.33,
                             "color": "#7E57C2",
-                            "subItems": ["Text Sarah", "Plan coffee with Mike", "Reply to group chat"]
+                            "subItems": ["Text Sarah", "Plan coffee with Mike", "Reply to group chat about Zoo trip"]
                         },
                         {
                             "id": "12",
                             "name": "Family",
                             "percentage": 33.33,
                             "color": "#5E35B1",
-                            "subItems": ["Call Mom", "Video chat with siblings", "Plan weekend visit", "Send photos"]
+                            "subItems": ["Call Mum", "Video chat with Steve", "Plan weekend visit", "Send photos"]
                         },
                         {
                             "id": "13",
                             "name": "Community",
                             "percentage": 33.33,
                             "color": "#512DA8",
-                            "subItems": ["Volunteer event", "Attend neighborhood meeting", "Help with school fundraiser"]
+                            "subItems": ["Volunteer event on 18th", "Help with school fundraiser"]
                         }
                     ]
                 }
