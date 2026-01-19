@@ -137,11 +137,11 @@ const UI = {
                                         <button class="small" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})">✕</button>
                                     </li>
                                 `).join('')}</ul>`
-                                : '<p style="color: #999; font-size: 12px; margin: 8px 0;">No Spikes</p>'}
+                                : '<p style="color: #999; font-size: 12px; margin: 8px 0;">No Spokes</p>'}
                             <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
                                 <input type="text" 
                                        id="new-subitem-${item.id}" 
-                                       placeholder="New Spike" 
+                                       placeholder="New Spoke" 
                                        style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
                                 <button class="small secondary" onclick="App.addSubItem('${category.id}', '${item.id}')">+ Add</button>
                                 <button onclick="App.removeItem('${category.id}', '${item.id}')">Remove Slice</button>
@@ -385,5 +385,13 @@ const UI = {
     getRandomColor() {
         const colors = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0', '#00BCD4', '#FFEB3B', '#FF5722', '#795548', '#607D8B'];
         return colors[Math.floor(Math.random() * colors.length)];
+    },
+
+    showDisclaimer() {
+        document.getElementById('disclaimer-overlay').classList.add('active');
+    },
+    
+    closeDisclaimer() {
+        document.getElementById('disclaimer-overlay').classList.remove('active');
     }
 };

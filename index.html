@@ -26,7 +26,7 @@
 <body>
     <div class="container">
         <div class="top-bar">
-            <h1>Brain Pie 🥧</h1>
+            <h1>Brain Pie 🥧 <span class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></h1>
             <div class="top-buttons">
                 <div>
                 <button onclick="UI.showMenu()">➕ Add Slices</button>
@@ -112,6 +112,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Disclaimer Overlay -->
+    <div class="disclaimer-overlay" id="disclaimer-overlay" onclick="UI.closeDisclaimer()">
+        <div class="disclaimer-content" onclick="event.stopPropagation()">
+            <h2>About Brain Pie Chart</h2>
+            <p><strong>This app is completely free and private.</strong></p>
+            <p>✓ No data is collected or stored by us<br>
+            ✓ Everything stays in your browser's local storage<br>
+            ✓ No account required, no tracking, no servers</p>
+            
+            <p style="margin-top: 20px;"><strong>Your Responsibility:</strong></p>
+            <p>You are solely responsible for any data you enter into this application. Do not enter sensitive, confidential, or personal information that you would not want stored locally on your device. We are not liable for any loss, misuse, or exposure of data.</p>
+            
+            <p style="margin-top: 20px; font-size: 12px; color: #666;">This tool is provided "as is" without warranties of any kind. Use at your own risk.</p>
+            
+            <button onclick="UI.closeDisclaimer()" style="margin-top: 20px; width: 100%;">Got it!</button>
+        </div>
+    </div>
+
 
     <script src="storage.js"></script>
     <script src="data-model.js"></script>
