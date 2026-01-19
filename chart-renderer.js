@@ -5,17 +5,30 @@ const ChartRenderer = {
     outerRadius: 550,
     innerRadius: 490,
     highlightGroup: null,
-
+    currentExpanded: null,
+    
     init(containerId) {
         const container = d3.select(`#${containerId}`);
         container.selectAll('*').remove();
-
+        
+        // Get container dimensions
+        const containerNode = document.getElementById(containerId);
+        const containerWidth = containerNode.clientWidth;
+        const containerHeight = Math.max(containerNode.clientHeight, 600);
+        
+        // Calculate responsive dimensions
+        const minDimension = Math.min(containerWidth, containerHeight);
+        this.width = containerWidth;
+        this.height = containerHeight;
+        this.outerRadius = Math.min(550, minDimension * 0.4);
+        this.innerRadius = this.outerRadius - 60;
+        
         this.svg = container.append('svg')
             .attr('width', this.width)
             .attr('height', this.height)
             .append('g')
             .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
-
+        
         // Create a group for highlighted/expanded slices (drawn on top)
         this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
     },

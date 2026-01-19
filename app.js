@@ -5,6 +5,16 @@ const App = {
         UI.clearInputs();
         UI.clearCategoryInputs();
         this.render();
+        
+        // Add resize listener
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                ChartRenderer.init('chart-container');
+                this.render();
+            }, 250);
+        });
     },
     
     addCategory() {
