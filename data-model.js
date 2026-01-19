@@ -1,22 +1,39 @@
 const DataModel = {
-    categories: [
-        { id: 'car', name: 'Car', color: '#FF6B6B', items: [] },
-        { id: 'house', name: 'House', color: '#4ECDC4', items: [] },
-        { id: 'admin', name: 'Admin', color: '#45B7D1', items: [] },
-        { id: 'people', name: 'People', color: '#FFA07A', items: [] }
-    ],
+    categories: [],
     
     // Manual category percentages (when user overrides)
     categoryPercentageOverrides: {},
     
-    loadFromStorage() {
+    // loadFromStorage() {
+    //     const data = Storage.load();
+    //     if (data && data.categories) {
+    //         this.categories = data.categories;
+    //     }
+    //     if (data && data.categoryPercentageOverrides) {
+    //         this.categoryPercentageOverrides = data.categoryPercentageOverrides;
+    //     }
+    // },
+
+    loadFromStorageOrExample() {
         const data = Storage.load();
+
         if (data && data.categories) {
-            this.categories = data.categories;
+        // Returning user: use stored data
+        this.categories = data.categories;
+        this.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+        return;
         }
-        if (data && data.categoryPercentageOverrides) {
-            this.categoryPercentageOverrides = data.categoryPercentageOverrides;
-        }
+
+        // First time: load example data
+        const example = ExampleData.get();   // your own example object
+        this.categories = example.categories;
+        this.categoryPercentageOverrides = example.categoryPercentageOverrides || {};
+
+        // Persist it so next visit is treated as “returning”
+        Storage.save({
+        categories: this.categories,
+        categoryPercentageOverrides: this.categoryPercentageOverrides
+        });
     },
     
     saveToStorage() {
