@@ -13,6 +13,43 @@ const Storage = {
             return false;
         }
     },
+
+    async loadInitialFileIfAny(dataModel) {
+        // 1. Get previously saved handle (if any)
+        const handle = await FileHandleStore.getHandle();
+        if (!handle) return; // nothing to do
+
+        // 2. Check permission
+        const perm = await handle.queryPermission({ mode: 'read' });
+        if (perm === 'denied') {
+        // User revoked access; forget the handle
+        await FileHandleStore.clearHandle();
+        return;
+        }
+        if (perm === 'prompt') {
+        const newPerm = await handle.requestPermission({ mode: 'read' });
+        if (newPerm !== 'granted') return;
+        }
+
+        // 3. Read and parse the file
+        try {
+        const file = await handle.getFile();
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (data.categories) {
+            dataModel.setCategories(data.categories);
+        }
+        if (data.categoryPercentageOverrides) {
+            dataModel.categoryPercentageOverrides = data.categoryPercentageOverrides;
+        }
+
+        Storage.showStatus('Data loaded from backup file', 'success');
+        } catch (err) {
+        console.error('Initial file load error:', err);
+        Storage.showStatus('Failed to read backup file', 'error');
+        }
+    },
     
     load() {
         try {
