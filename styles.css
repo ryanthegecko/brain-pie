@@ -421,3 +421,61 @@ textarea {
 .storage-status.error {
     color: #f44336;
 }
+
+.info-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background: #2196F3;
+    color: white;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    cursor: pointer;
+    margin-left: 10px;
+    font-weight: normal;
+    transition: background 0.2s;
+}
+
+.info-icon:hover {
+    background: #1976D2;
+}
+
+.disclaimer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.disclaimer-overlay.active {
+    display: flex;
+}
+
+.disclaimer-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.disclaimer-content h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 22px;
+}
+
+.disclaimer-content p {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
