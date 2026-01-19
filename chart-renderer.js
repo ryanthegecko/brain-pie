@@ -308,7 +308,7 @@ const ChartRenderer = {
             if (anglePercentage < 30) {
                 targetPercentage = 30;
             } else {
-                targetPercentage = 75;
+                targetPercentage = 60;
             }
 
             // Calculate scale factor
@@ -439,8 +439,10 @@ const ChartRenderer = {
             let targetPercentage;
             if (anglePercentage < 30) {
                 targetPercentage = 30;
+            } else if (anglePercentage < 60) {
+                targetPercentage = 60;
             } else {
-                targetPercentage = 75;
+                targetPercentage = 100
             }
 
             // Calculate scale factor
