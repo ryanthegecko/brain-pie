@@ -101,7 +101,9 @@ h1 {
 
 .top-buttons {
     display: flex;
+    flex-direction: column;
     gap: 10px;
+    text-align: right;
 }
 
 button {
