@@ -3,7 +3,7 @@ const ChartRenderer = {
     width: 2200,
     height: 1200,
     outerRadius: 600,
-    innerRadius: 480,
+    innerRadius: 550,
     highlightGroup: null,
     currentExpanded: null,
     
@@ -20,8 +20,8 @@ const ChartRenderer = {
         const minDimension = Math.min(containerWidth, containerHeight);
         this.width = containerWidth;
         this.height = containerHeight;
-        this.outerRadius = Math.min(480, minDimension * 0.35);
-        this.innerRadius = this.outerRadius - 50;
+        this.outerRadius = Math.min(550, minDimension * 0.33);
+        this.innerRadius = this.outerRadius - 43;
         
         this.svg = container.append('svg')
             .attr('width', this.width)

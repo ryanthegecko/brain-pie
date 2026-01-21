@@ -10,18 +10,25 @@ body {
     padding: 20px;
 }
 
+.top-bar {
+    position: relative;
+    z-index: 50;
+}
+
 #chart-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 800px;
-    height: 80vh;
-    margin: -40px 0 40px 0;
+    height: 110vh;
+    margin: -14vh 0 40px 0;
     width: 100%;
 }
 
 #chart-container.hide-subitem-labels {
-    .sub-item-label, .sub-item-line {
+
+    .sub-item-label,
+    .sub-item-line {
         display: none;
     }
 }
@@ -31,7 +38,7 @@ body {
     margin: 0 auto;
     background: white;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
 }
 
@@ -39,35 +46,35 @@ body {
     .container {
         padding: 15px;
     }
-    
+
     #chart-container {
         min-height: 400px;
         height: 60vh;
     }
-    
+
     .categories-grid {
         grid-template-columns: 1fr !important;
     }
-    
+
     .controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .input-group {
         width: 100%;
     }
-    
+
     textarea {
         min-width: 100%;
     }
-    
+
     .top-bar {
         flex-direction: column;
         gap: 15px;
         align-items: stretch;
     }
-    
+
     .top-buttons {
         flex-direction: column;
     }
@@ -77,11 +84,11 @@ body {
     h1 {
         font-size: 24px;
     }
-    
+
     .category-card {
         padding: 15px;
     }
-    
+
     .menu-content {
         padding: 20px;
         max-width: 95%;
@@ -219,7 +226,10 @@ input[type="file"] {
     font-weight: 500;
 }
 
-input[type="text"], input[type="number"], textarea, select {
+input[type="text"],
+input[type="number"],
+textarea,
+select {
     padding: 10px 12px;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
@@ -232,7 +242,9 @@ select {
     min-width: 150px;
 }
 
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
     outline: none;
     border-color: #4CAF50;
 }
