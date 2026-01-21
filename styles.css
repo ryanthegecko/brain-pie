@@ -14,9 +14,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 600px;
-    height: 70vh;
-    margin: 20px 0;
+    min-height: 800px;
+    height: 80vh;
+    margin: -40px 0 40px 0;
     width: 100%;
 }
 
@@ -291,7 +291,7 @@ textarea {
 }
 
 .category-label {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     /* fill: #333; */
     pointer-events: none;

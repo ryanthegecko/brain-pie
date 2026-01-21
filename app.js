@@ -295,7 +295,7 @@ const ExampleData = {
                             "name": "Friends",
                             "percentage": 33.33,
                             "color": "#7E57C2",
-                            "subItems": ["Text Sarah", "Plan coffee with Mike", "Reply to group chat about Zoo trip"]
+                            "subItems": ["Text Sarah", "Plan coffee with Mike", "Group chat about zoo trip"]
                         },
                         {
                             "id": "12",
@@ -309,7 +309,7 @@ const ExampleData = {
                             "name": "Community",
                             "percentage": 33.33,
                             "color": "#512DA8",
-                            "subItems": ["Volunteer event on 18th", "Help with school fundraiser"]
+                            "subItems": ["Help with school fundraiser","Volunteer event on 18th"]
                         }
                     ]
                 }

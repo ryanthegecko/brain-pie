@@ -1,9 +1,9 @@
 const ChartRenderer = {
     svg: null,
-    width: 1900,
-    height: 1400,
-    outerRadius: 530,
-    innerRadius: 470,
+    width: 2200,
+    height: 1200,
+    outerRadius: 600,
+    innerRadius: 480,
     highlightGroup: null,
     currentExpanded: null,
     
@@ -20,14 +20,14 @@ const ChartRenderer = {
         const minDimension = Math.min(containerWidth, containerHeight);
         this.width = containerWidth;
         this.height = containerHeight;
-        this.outerRadius = Math.min(550, minDimension * 0.4);
-        this.innerRadius = this.outerRadius - 60;
+        this.outerRadius = Math.min(480, minDimension * 0.35);
+        this.innerRadius = this.outerRadius - 50;
         
         this.svg = container.append('svg')
             .attr('width', this.width)
             .attr('height', this.height)
             .append('g')
-            .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
+            .attr('transform', `translate(${this.width / 2}, ${(this.height / 2)})`);
         
         // Create a group for highlighted/expanded slices (drawn on top)
         this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
@@ -133,8 +133,8 @@ const ChartRenderer = {
                 .style('fill', textColor)
                 .append('textPath')
                 .attr('xlink:href', `#category-text-arc-${i}`)
-                .attr('startOffset', '25%')
-                .attr('text-anchor', 'middle')
+                .attr('startOffset', '20%')
+                // .attr('text-anchor', 'bottom')
                 .text(d.data.name);
 
             // Percentage path (offset)
@@ -217,7 +217,7 @@ const ChartRenderer = {
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
                 const midAngle = (d.startAngle + d.endAngle) / 2;
-                const labelRadius = this.innerRadius / 2;
+                const labelRadius = this.innerRadius / 1.3;
 
                 // Show labels for items with enough space
                 if ((d.endAngle - d.startAngle) > 0.06) {
@@ -243,49 +243,74 @@ const ChartRenderer = {
                 }
             });
 
-            // Draw sub-items - EXTENDING PAST OUTER RING
+            // Draw sub-items - EXTENDING PAST OUTER RING with EXPONENTIAL SCALING
+// Draw sub-items - EXTENDING PAST OUTER RING with EXPONENTIAL SCALING
+           // Draw sub-items - EXTENDING PAST OUTER RING with EXPONENTIAL SCALING
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
                 const subItems = d.data.subItems;
-
+                
                 if (subItems.length === 0) return;
-
+                
                 const startAngle = d.startAngle;
                 const endAngle = d.endAngle;
                 const angleStep = (endAngle - startAngle) / subItems.length;
-
+                
                 subItems.forEach((subItem, idx) => {
                     const angle = startAngle + (angleStep * (idx + 0.5));
                     const innerX = 0;
                     const innerY = 0;
-
-                    // Extend line through inner ring, through outer ring, and beyond
-                    const extendX = Math.cos(angle - Math.PI / 2) * (this.outerRadius + 30);
-                    const extendY = Math.sin(angle - Math.PI / 2) * (this.outerRadius + 30);
-
-                    // Draw line from center through both rings
+                    
+                    // Calculate the actual rendering angle
+                    const renderAngle = angle - Math.PI / 2;
+                    
+                    // Calculate x,y to determine if we're near vertical axis
+                    const testX = Math.cos(renderAngle);
+                    const testY = Math.sin(renderAngle);
+                    
+                    // Distance from vertical axis (top/bottom): abs(x) should be small
+                    const horizontalness = Math.abs(testX);
+                    
+                    // Exponential scaling: more vertical = longer extension
+                    const scaleFactor = Math.pow(1 - horizontalness, 2);
+                    const baseExtension = 15;
+                    const maxExtension = 46;
+                    const additionalExtension = scaleFactor * (maxExtension - baseExtension);
+                    const totalExtension = baseExtension + additionalExtension;
+                    
+                    const extendX = Math.cos(renderAngle) * (this.outerRadius + totalExtension);
+                    const extendY = Math.sin(renderAngle) * (this.outerRadius + totalExtension);
+                    
+                    // Draw single line from center to label position
                     group.append('line')
                         .attr('class', 'sub-item-line')
                         .attr('x1', innerX)
                         .attr('y1', innerY)
                         .attr('x2', extendX)
                         .attr('y2', extendY);
-
-                    // Draw horizontal line to label
-                    const horizontalLength = 35;
-                    const direction = extendX > 0 ? 1 : -1;
-                    group.append('line')
-                        .attr('class', 'sub-item-line')
-                        .attr('x1', extendX)
-                        .attr('y1', extendY)
-                        .attr('x2', extendX + (horizontalLength * direction))
-                        .attr('y2', extendY);
-
-                    // Add label
+                    
+                    // Calculate text rotation based on vertical position
+                    const verticalness = Math.abs(testY);
+                    const maxRotation = 30;
+                    const rotationAmount = verticalness * maxRotation;
+                    
+                    // Rotate based on quadrant
+                    let textRotation;
+                    if (testX > 0) {
+                        textRotation = testY < 0 ? -rotationAmount : rotationAmount;
+                    } else {
+                        textRotation = testY < 0 ? rotationAmount : -rotationAmount;
+                    }
+                    
+                    // Position label slightly beyond line end
+                    const labelOffset = 10;
+                    const labelX = extendX + (Math.cos(renderAngle) * labelOffset);
+                    const labelY = extendY + (Math.sin(renderAngle) * labelOffset);
+                    
+                    // Add label with rotation
                     group.append('text')
                         .attr('class', 'sub-item-label')
-                        .attr('x', extendX + ((horizontalLength + 5) * direction))
-                        .attr('y', extendY + 4)
+                        .attr('transform', `translate(${labelX}, ${labelY}) rotate(${textRotation})`)
                         .attr('text-anchor', extendX > 0 ? 'start' : 'end')
                         .text(subItem);
                 });
