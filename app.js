@@ -75,33 +75,32 @@ const App = {
         this.render();
     },
 
-    addItem() {
+addItem() {
         const categoryId = document.getElementById('item-category').value;
         const name = document.getElementById('item-name').value.trim();
         let percentage = parseFloat(document.getElementById('item-percentage').value);
         const color = document.getElementById('item-color').value;
-        const subItemsText = document.getElementById('sub-items').value.trim();
-
+        // const subItemsText = document.getElementById('sub-items').value.trim();
+        // const actionsText = document.getElementById('actions').value.trim();
+        
         if (!categoryId) {
             alert('Please select a category');
             return;
         }
-
+        
         if (!name) {
             alert('Please enter an item name');
             return;
         }
-
+        
         // Default to 20% if no percentage is provided
         if (!percentage || percentage <= 0) {
             percentage = 20;
         }
 
-        const subItems = subItemsText
-            .split('\n')
-            .map(item => item.trim())
-            .filter(item => item.length > 0);
-
+        // Get spokes with actions from the builder
+        const subItems = UI.getSpokesData();
+        
         DataModel.addItem(categoryId, name, percentage, color, subItems);
         UI.clearInputs();
         this.render();
@@ -161,6 +160,23 @@ const App = {
     removeSubItem(categoryId, itemId, subItemIndex) {
         DataModel.removeSubItem(categoryId, itemId, subItemIndex);
         this.render();
+    },
+
+    addSpokeChild(categoryId, itemId, spokeIndex) {
+        const text = prompt('Enter child item:');
+        if (text && text.trim()) {
+            DataModel.addSpokeChild(categoryId, itemId, spokeIndex, text.trim());
+            this.render();
+        }
+    },
+    
+    removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
+        DataModel.removeSpokeChild(categoryId, itemId, spokeIndex, childIndex);
+        this.render();
+    },
+    
+    toggleSpokeChildren(categoryId, itemId, spokeIndex) {
+        this.addSpokeChild(categoryId, itemId, spokeIndex);
     },
 
     exportData() {

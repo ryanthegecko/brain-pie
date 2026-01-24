@@ -21,7 +21,7 @@ const ChartRenderer = {
         this.width = containerWidth;
         this.height = containerHeight;
         this.outerRadius = Math.min(550, minDimension * 0.33);
-        this.innerRadius = this.outerRadius - 43;
+        this.innerRadius = this.outerRadius - 60;
         
         this.svg = container.append('svg')
             .attr('width', this.width)
@@ -243,8 +243,6 @@ const ChartRenderer = {
                 }
             });
 
-            // Draw sub-items - EXTENDING PAST OUTER RING with EXPONENTIAL SCALING
-// Draw sub-items - EXTENDING PAST OUTER RING with EXPONENTIAL SCALING
            // Draw sub-items - EXTENDING PAST OUTER RING with EXPONENTIAL SCALING
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
@@ -257,6 +255,11 @@ const ChartRenderer = {
                 const angleStep = (endAngle - startAngle) / subItems.length;
                 
                 subItems.forEach((subItem, idx) => {
+                    
+                    // if (typeof subItem == 'object'){
+                    //     alert(subItem);
+                    //     return
+                    // }
                     const angle = startAngle + (angleStep * (idx + 0.5));
                     const innerX = 0;
                     const innerY = 0;
@@ -306,13 +309,26 @@ const ChartRenderer = {
                     const labelOffset = 10;
                     const labelX = extendX + (Math.cos(renderAngle) * labelOffset);
                     const labelY = extendY + (Math.sin(renderAngle) * labelOffset);
-                    
-                    // Add label with rotation
-                    group.append('text')
+
+                    // Add label with click handler for branches
+                    const spokeLabel = group.append('text')
                         .attr('class', 'sub-item-label')
                         .attr('transform', `translate(${labelX}, ${labelY}) rotate(${textRotation})`)
                         .attr('text-anchor', extendX > 0 ? 'start' : 'end')
-                        .text(subItem);
+                        .style('cursor', 'pointer')
+                        .text(typeof subItem === 'string' ? subItem : subItem.text)
+                        .on('click', function(event) {
+                            event.stopPropagation();
+                            ChartRenderer.expandBranch(subItem, catData, d, angle);
+                        });
+                    
+                    // Visual indicator if spoke has children
+                    if (typeof subItem === 'object' && subItem.children && subItem.children.length > 0) {
+                        spokeLabel.text(spokeLabel.text() + '•')
+                        spokeLabel.style('font-weight', 'bold')
+                            .style('fill', '#333333');
+                    }
+
                 });
             });
         });
@@ -392,7 +408,6 @@ const ChartRenderer = {
             }
 
             const textColor = that.isColorDark(sliceData.data.color) ? '#ffffff' : '#333333';
-
             expandedGroup.append('text')
                 .attr('class', 'item-label')
                 .style('fill', textColor)
@@ -411,7 +426,8 @@ const ChartRenderer = {
                     const angle = newStartAngle + (angleStep * (idx + 0.5));
                     const extendX = Math.cos(angle - Math.PI / 2) * (that.innerRadius + 80);
                     const extendY = Math.sin(angle - Math.PI / 2) * (that.innerRadius + 80);
-
+                    const text = (typeof subItem == 'string') ? subItem : subItem.text;
+                    
                     // Draw line
                     expandedGroup.append('line')
                         .attr('class', 'sub-item-line')
@@ -442,11 +458,19 @@ const ChartRenderer = {
                         .attr('x', extendX + ((horizontalLength + 5) * direction))
                         .attr('y', extendY + 4)
                         .attr('text-anchor', extendX > 0 ? 'start' : 'end')
-                        .text(subItem);
+                        .text(text);
                 });
             }
         }, 100)
 
+    },
+
+    collapseSlice() {
+        this.currentExpanded = null;
+        this.highlightGroup.selectAll('*').remove();
+        this.svg.selectAll('.sub-item-label, .sub-item-line, .inner-slice, .outer-slice, .category-label, .category-percentage, .item-label')
+            .transition().duration(100)
+            .style('opacity', 1)
     },
 
     expandCategory(categoryData, allCategories) {
@@ -542,7 +566,6 @@ const ChartRenderer = {
                         }
 
                         const textColor = that.isColorDark(itemDatum.data.color) ? '#ffffff' : '#333333';
-
                         expandedGroup.append('text')
                             .attr('class', 'item-label')
                             .style('fill', textColor)
@@ -562,7 +585,8 @@ const ChartRenderer = {
                             const angle = itemDatum.startAngle + (subAngleStep * (idx + 0.5));
                             const extendX = Math.cos(angle - Math.PI / 2) * (that.outerRadius + 110);
                             const extendY = Math.sin(angle - Math.PI / 2) * (that.outerRadius + 110);
-
+                            const name = (typeof subItem == 'string' ? subItem :subItem.text)
+                            
                             // Draw line from center
                             expandedGroup.append('line')
                                 .attr('class', 'sub-item-line')
@@ -593,7 +617,7 @@ const ChartRenderer = {
                                 .attr('x', extendX + ((horizontalLength + 5) * direction))
                                 .attr('y', extendY + 4)
                                 .attr('text-anchor', extendX > 0 ? 'start' : 'end')
-                                .text(subItem);
+                                .text(name);
                         });
                     }
                 });
@@ -650,12 +674,173 @@ const ChartRenderer = {
 
         }, 100);
     },
+    expandBranch(spokeData, categoryData, itemData, spokeAngle) {
 
-    collapseSlice() {
+        this.currentExpanded = spokeData;
+        const that = this;
+        
+        setTimeout(() => {
+            // Calculate opposite corner for pie shrinkage
+            const renderAngle = spokeAngle - Math.PI / 2;
+            const branchX = Math.cos(renderAngle);
+            const branchY = Math.sin(renderAngle);
+            
+            // Move pie to opposite corner (scale down and translate)
+            const shrinkScale = 0.7;
+            const translateDistance = 300;
+            const pieTranslateX = -branchX * translateDistance;
+            const pieTranslateY = -branchY * translateDistance;
+            
+            // Shrink and move main pie
+            that.svg.transition().duration(300)
+                .attr('transform', `translate(${that.width / 2 + pieTranslateX}, ${that.height / 2 + pieTranslateY}) scale(${shrinkScale})`);
+            
+            // Create branch visualization
+            const branchGroup = that.highlightGroup.append('g')
+                .attr('class', 'branch-view');
+            
+            // Starting point for branch (from spoke position)
+            const startX = Math.cos(renderAngle) * (that.outerRadius + 70);
+            const startY = Math.sin(renderAngle) * (that.outerRadius + 80);
+            
+            // Draw main branch line
+            const branchLength = 100;
+            const branchEndX = startX + (Math.cos(renderAngle) * branchLength);
+            const branchEndY = startY + (Math.sin(renderAngle) * branchLength);
+            
+            branchGroup.append('line')
+                .attr('x1', startX)
+                .attr('y1', startY)
+                .attr('x2', branchEndX)
+                .attr('y2', branchEndY)
+                .attr('stroke', '#333')
+                .attr('stroke-width', 4);
+            
+            // Draw spoke name at branch start
+            // branchGroup.append('text')
+            //     .attr('x', startX)
+            //     .attr('y', startY - 10)
+            //     .attr('text-anchor', 'middle')
+            //     .style('font-size', '18px')
+            //     .style('font-weight', 'bold')
+            //     .style('fill', '#333')
+            //     .text(spokeData.text || spokeData);
+            
+            // Draw children as sub-branches
+            const children = spokeData.children || [];
+            const childAngleSpread = Math.PI / 3; // 60 degrees spread
+            const childAngleStart = renderAngle - (childAngleSpread / 2);
+            
+            children.forEach((child, idx) => {
+                const childAngle = childAngleStart + (childAngleSpread * idx / Math.max(1, children.length - 1));
+                const childLength = 150;
+                const childStartX = branchEndX;
+                const childStartY = branchEndY;
+                const childEndX = childStartX + (Math.cos(childAngle) * childLength);
+                const childEndY = childStartY + (Math.sin(childAngle) * childLength);
+                
+                // Child branch line
+                branchGroup.append('line')
+                    .attr('x1', childStartX)
+                    .attr('y1', childStartY)
+                    .attr('x2', childEndX)
+                    .attr('y2', childEndY)
+                    .attr('stroke', '#666')
+                    .attr('stroke-width', 2);
+
+                // Add calendar icon/button
+                const iconSize = 20;
+                const iconGroup = branchGroup.append('g')
+                    .attr('transform', `translate(${childEndX}, ${childEndY - 25})`)
+                    .style('cursor', 'pointer')
+                    .on('click', function(event) {
+                        event.stopPropagation();
+                        that.openCalendarForAction(child, spokeData, itemData.data.name);
+                    });
+                
+                // Calendar icon background
+                iconGroup.append('circle')
+                    .attr('r', iconSize / 2)
+                    .attr('fill', '#4285F4')
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 2);
+                
+                // Calendar icon (simplified)
+                iconGroup.append('text')
+                    .attr('text-anchor', 'middle')
+                    .attr('dy', '0.35em')
+                    .style('font-size', '12px')
+                    .style('fill', 'white')
+                    .style('font-weight', 'bold')
+                    .text('📅');    
+                
+                // Child label
+                branchGroup.append('text')
+                    .attr('x', childEndX)
+                    .attr('y', childEndY - 5)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '14px')
+                    .style('fill', '#333')
+                    .text(child.text || child)
+                    .on('click', function(event) {
+                        console.log(that.itemData)
+                        event.stopPropagation();
+                        that.openCalendarForAction(child, spokeData, itemData.data.name);
+                    });
+            });
+            
+            that.highlightGroup.raise();
+            
+            // Click to collapse
+            that.highlightGroup.on('click', () => {
+                that.collapseBranch();
+            });
+            
+        }, 100);
+    },
+    
+    collapseBranch() {
         this.currentExpanded = null;
         this.highlightGroup.selectAll('*').remove();
-        this.svg.selectAll('.sub-item-label, .sub-item-line, .inner-slice, .outer-slice, .category-label, .category-percentage, .item-label')
-            .transition().duration(100)
-            .style('opacity', 1)
+        
+        // Restore main pie position and scale
+        this.svg.transition().duration(300)
+            .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
+    },
+    openCalendarForAction(action, spokeData, sliceName) {
+        // Get context for the calendar event
+        const actionText = action.text || action;
+        const spokeText = spokeData.text || spokeData;
+        
+        // Build calendar URL with pre-filled data
+        const params = new URLSearchParams({
+            action: 'TEMPLATE',
+            text: `${actionText} (${sliceName} - ${spokeText})`,
+            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName} \nCreated from Brain Pie`,
+            // Optional: Set default time (tomorrow at 9am)
+            dates: this.getDefaultEventDates(),
+        });
+        
+        const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
+        
+        // Open in new tab
+        window.open(calendarUrl, '_blank');
+    },
+    
+    getDefaultEventDates() {
+        // Set event for tomorrow at 9 AM, duration 1 hour
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0);
+        
+        const endTime = new Date(tomorrow);
+        endTime.setHours(10, 0, 0, 0);
+        
+        // Format: YYYYMMDDTHHmmssZ/YYYYMMDDTHHmmssZ
+        const formatDate = (date) => {
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        };
+        
+        return `${formatDate(tomorrow)}/${formatDate(endTime)}`;
     }
 };
