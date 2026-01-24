@@ -20,8 +20,8 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 800px;
-    height: 110vh;
-    margin: -14vh 0 40px 0;
+    height: 100vh;
+    margin: -10vh 0 40px 0;
     width: 100%;
 }
 
@@ -40,6 +40,82 @@ body {
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
+}
+
+.spoke-entry {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+
+.spoke-entry input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.spoke-entry .add-actions-btn {
+    padding: 6px 12px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.spoke-entry .add-actions-btn:hover {
+    background: #0b7dda;
+}
+
+.spoke-entry .remove-btn {
+    padding: 6px 10px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.spoke-entry .remove-btn:hover {
+    background: #da190b;
+}
+
+.actions-list {
+    margin-left: 40px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.action-entry {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 5px;
+    align-items: center;
+}
+
+.action-entry input {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    background: white;
+}
+
+.action-entry .remove-action-btn {
+    padding: 4px 8px;
+    background: #ff5722;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
 }
 
 @media (max-width: 768px) {
@@ -326,7 +402,6 @@ textarea {
 .sub-item-label {
     font-size: 12px;
     fill: #333;
-    pointer-events: none;
 }
 
 .categories-section {

@@ -123,7 +123,11 @@ const UI = {
                                 <span>% of category</span>
                             </div>
                             ${item.subItems.length > 0 
-                                ? `<ul style="position: relative;">${item.subItems.map((sub, idx) => `
+                                ? `<ul style="position: relative;">${item.subItems.map((sub, idx) => {
+                                    const subText = typeof sub === 'string' ? sub : sub.text;
+                                    const children = typeof sub === 'object' ? sub.children || [] : [];
+                                    
+                                    return `
                                     <li draggable="true"
                                         data-category-id="${category.id}"
                                         data-item-id="${item.id}"
@@ -133,10 +137,27 @@ const UI = {
                                         ondragover="UI.handleSubItemDragOver(event)"
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
-                                        <span class="sub-item-text">${sub}</span>
+                                        <span class="sub-item-text">${subText}</span>
+                                        ${children.length > 0 ? ` <span style="color: #2196F3; font-weight: bold;">(${children.length})</span>` : ''}
+                                        <button class="small" onclick="App.toggleSpokeChildren('${category.id}', '${item.id}', ${idx})">+</button>
                                         <button class="small" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})">✕</button>
+                                        ${children.length > 0 ? `
+                                            <ul style="margin-left: 20px; font-size: 11px;">
+                                                ${children.map((child, childIdx) => `
+                                                    <li style="cursor: default; display: flex; justify-content: space-between; align-items: center;">
+                                                        <span>${typeof child === 'string' ? child : child.text}</span>
+                                                        <div style="display: flex; gap: 4px;">
+                                                            <button class="small" 
+                                                                    style="background: #4285F4; padding: 3px 8px;" 
+                                                                    onclick="UI.openCalendarForAction('${encodeURIComponent(typeof child === 'string' ? child : child.text)}', '${encodeURIComponent(typeof sub === 'string' ? sub : sub.text)}', '${item.name}')">📅</button>
+                                                            <button class="small" onclick="App.removeSpikeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})">✕</button>
+                                                        </div>
+                                                    </li>
+                                                `).join('')}
+                                            </ul>
+                                        ` : ''}         
                                     </li>
-                                `).join('')}</ul>`
+                                `}).join('')}</ul>`
                                 : '<p style="color: #999; font-size: 12px; margin: 8px 0;">No Spokes</p>'}
                             <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
                                 <input type="text" 
@@ -368,13 +389,172 @@ const UI = {
             li.style.borderTop = '';
         });
     },
+
+    // Initialize spoke builder with one empty entry
+    initSpokesBuilder() {
+        const builder = document.getElementById('spokes-builder');
+        builder.innerHTML = '';
+        this.addSpokeEntry();
+    },
+    
+    addSpokeEntry() {
+        const builder = document.getElementById('spokes-builder');
+        const entryId = `spoke-${Date.now()}`;
+        
+        const entry = document.createElement('div');
+        entry.className = 'spoke-entry';
+        entry.id = entryId;
+        entry.innerHTML = `
+            <input type="text" 
+                   placeholder="Spoke name (press Enter for next)" 
+                   onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addSpokeEntry(); this.nextElementSibling?.focus();}"
+                   data-spoke-input>
+            <button class="add-actions-btn" onclick="UI.toggleActions('${entryId}')">+ Actions</button>
+            <button class="remove-btn" onclick="UI.removeSpokeEntry('${entryId}')">×</button>
+        `;
+        
+        builder.appendChild(entry);
+        
+        // Focus the new input
+        const input = entry.querySelector('input');
+        input.focus();
+    },
+    
+    removeSpokeEntry(entryId) {
+        const entry = document.getElementById(entryId);
+        if (entry) entry.remove();
+    },
+    
+    toggleActions(entryId) {
+        const entry = document.getElementById(entryId);
+        let actionsContainer = entry.querySelector('.actions-list');
+        
+        if (actionsContainer) {
+            // Toggle visibility
+            actionsContainer.style.display = actionsContainer.style.display === 'none' ? 'block' : 'none';
+        } else {
+            // Create actions container
+            actionsContainer = document.createElement('div');
+            actionsContainer.className = 'actions-list';
+            
+            const actionsWrapper = document.createElement('div');
+            actionsWrapper.innerHTML = `
+                <div style="margin-bottom: 8px; font-size: 12px; color: #666; font-weight: 600;">Actions for this spoke:</div>
+                <div class="actions-entries" data-actions-container></div>
+                <button class="small secondary" onclick="UI.addActionEntry('${entryId}')" style="margin-top: 5px;">+ Add Action</button>
+            `;
+            actionsContainer.appendChild(actionsWrapper);
+            
+            entry.appendChild(actionsContainer);
+            
+            // Add first action entry
+            this.addActionEntry(entryId);
+        }
+    },
+    
+    addActionEntry(spokeEntryId) {
+        const entry = document.getElementById(spokeEntryId);
+        const actionsContainer = entry.querySelector('[data-actions-container]');
+        
+        const actionId = `action-${Date.now()}`;
+        const actionEntry = document.createElement('div');
+        actionEntry.className = 'action-entry';
+        actionEntry.id = actionId;
+        actionEntry.innerHTML = `
+            <input type="text" 
+                   placeholder="Action name (press Enter for next)" 
+                   onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addActionEntry('${spokeEntryId}');}"
+                   data-action-input>
+            <button class="remove-action-btn" onclick="UI.removeActionEntry('${actionId}')">×</button>
+        `;
+        
+        actionsContainer.appendChild(actionEntry);
+        
+        // Focus the new action input
+        actionEntry.querySelector('input').focus();
+    },
+    
+    removeActionEntry(actionId) {
+        const entry = document.getElementById(actionId);
+        if (entry) entry.remove();
+    },
+    
+    getSpokesData() {
+        const builder = document.getElementById('spokes-builder');
+        const spokeEntries = builder.querySelectorAll('.spoke-entry');
+        const spokes = [];
+        
+        spokeEntries.forEach(entry => {
+            const spokeInput = entry.querySelector('[data-spoke-input]');
+            const spokeName = spokeInput.value.trim();
+            
+            if (!spokeName) return; // Skip empty spokes
+            
+            const actionsContainer = entry.querySelector('[data-actions-container]');
+            const actions = [];
+            
+            if (actionsContainer) {
+                const actionInputs = actionsContainer.querySelectorAll('[data-action-input]');
+                actionInputs.forEach(actionInput => {
+                    const actionName = actionInput.value.trim();
+                    if (actionName) {
+                        actions.push({
+                            text: actionName,
+                            children: []
+                        });
+                    }
+                });
+            }
+            
+            if (actions.length > 0) {
+                spokes.push({
+                    text: spokeName,
+                    children: actions
+                });
+            } else {
+                spokes.push(spokeName); // Just a string if no actions
+            }
+        });
+        
+        return spokes;
+    },
+
+    openCalendarForAction(actionText, spokeText, sliceName) {
+        actionText = decodeURIComponent(actionText);
+        spokeText = decodeURIComponent(spokeText);
+        
+        // Get default dates (tomorrow at 9am, 1 hour duration)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(9, 0, 0, 0);
+        
+        const endTime = new Date(tomorrow);
+        endTime.setHours(10, 0, 0, 0);
+        
+        const formatDate = (date) => {
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        };
+        
+        const dates = `${formatDate(tomorrow)}/${formatDate(endTime)}`;
+        
+        // Build calendar URL
+        const params = new URLSearchParams({
+            action: 'TEMPLATE',
+            text: actionText,
+            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\n\nCreated from Brain Pie Chart`,
+            dates: dates
+        });
+        
+        const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
+        window.open(calendarUrl, '_blank');
+    },
     
     clearInputs() {
         document.getElementById('item-name').value = '';
         document.getElementById('item-percentage').value = '';
-        document.getElementById('sub-items').value = '';
         document.getElementById('item-category').value = '';
         document.getElementById('item-color').value = this.getRandomColor();
+        this.initSpokesBuilder(); // Reset the builder
     },
     
     clearCategoryInputs() {

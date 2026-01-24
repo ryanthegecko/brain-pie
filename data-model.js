@@ -297,6 +297,50 @@ const DataModel = {
         item.subItems.splice(subItemIndex, 1);
         this.saveToStorage();
     },
+
+    addSpokeChild(categoryId, itemId, spokeIndex, childText) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+        
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return;
+        
+        // Ensure spoke exists and has children array
+        if (!item.subItems[spokeIndex]) return;
+        
+        // Convert spoke to object if it's still a string
+        if (typeof item.subItems[spokeIndex] === 'string') {
+            item.subItems[spokeIndex] = {
+                text: item.subItems[spokeIndex],
+                children: []
+            };
+        }
+        
+        // Ensure children array exists
+        if (!item.subItems[spokeIndex].children) {
+            item.subItems[spokeIndex].children = [];
+        }
+        
+        item.subItems[spokeIndex].children.push({
+            text: childText,
+            children: []
+        });
+        
+        this.saveToStorage();
+    },
+    
+    removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+        
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return;
+        
+        if (typeof item.subItems[spokeIndex] === 'object' && item.subItems[spokeIndex].children) {
+            item.subItems[spokeIndex].children.splice(childIndex, 1);
+            this.saveToStorage();
+        }
+    },
     
     normalizeItemsInCategory(categoryId) {
         const category = this.categories.find(cat => cat.id === categoryId);
