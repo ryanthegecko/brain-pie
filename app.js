@@ -163,7 +163,7 @@ addItem() {
     },
 
     addSpokeChild(categoryId, itemId, spokeIndex) {
-        const text = prompt('Enter child item:');
+        const text = prompt('Add an action:');
         if (text && text.trim()) {
             DataModel.addSpokeChild(categoryId, itemId, spokeIndex, text.trim());
             this.render();
