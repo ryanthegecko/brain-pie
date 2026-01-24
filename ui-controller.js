@@ -540,8 +540,8 @@ const UI = {
         // Build calendar URL
         const params = new URLSearchParams({
             action: 'TEMPLATE',
-            text: actionText,
-            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\n\nCreated from Brain Pie Chart`,
+            text: `${actionText} (${sliceName} - ${spokeText})`,
+            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName} \nCreated from Brain Pie`,
             dates: dates
         });
         
