@@ -755,7 +755,7 @@ const ChartRenderer = {
                     .style('cursor', 'pointer')
                     .on('click', function(event) {
                         event.stopPropagation();
-                        that.openCalendarForAction(child, spokeData, itemData.data.name);
+                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name);
                     });
                 
                 // Calendar icon background
@@ -783,9 +783,8 @@ const ChartRenderer = {
                     .style('fill', '#333')
                     .text(child.text || child)
                     .on('click', function(event) {
-                        console.log(that.itemData)
                         event.stopPropagation();
-                        that.openCalendarForAction(child, spokeData, itemData.data.name);
+                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name);
                     });
             });
             
@@ -807,7 +806,7 @@ const ChartRenderer = {
         this.svg.transition().duration(300)
             .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
     },
-    openCalendarForAction(action, spokeData, sliceName) {
+    openCalendarForAction(action, spokeData, sliceName, categoryName) {
         // Get context for the calendar event
         const actionText = action.text || action;
         const spokeText = spokeData.text || spokeData;
@@ -815,8 +814,8 @@ const ChartRenderer = {
         // Build calendar URL with pre-filled data
         const params = new URLSearchParams({
             action: 'TEMPLATE',
-            text: `${actionText} (${sliceName} - ${spokeText})`,
-            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName} \nCreated from Brain Pie`,
+            text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
             // Optional: Set default time (tomorrow at 9am)
             dates: this.getDefaultEventDates(),
         });

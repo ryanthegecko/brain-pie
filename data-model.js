@@ -133,7 +133,6 @@ const DataModel = {
     },
     
     reorderCategories(fromIndex, toIndex, insertBefore) {
-        console.log(fromIndex, toIndex, insertBefore )
         const [movedCategory] = this.categories.splice(fromIndex, 1);
         
         // Adjust target index if moving down
