@@ -162,22 +162,22 @@ addItem() {
         this.render();
     },
 
-    addSpokeChild(categoryId, itemId, spokeIndex) {
-        const text = prompt('Add an action:');
+    addSpokeChild(categoryId, itemId, spokeIndex, text) {
         if (text && text.trim()) {
             DataModel.addSpokeChild(categoryId, itemId, spokeIndex, text.trim());
             this.render();
         }
     },
+
     
     removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
         DataModel.removeSpokeChild(categoryId, itemId, spokeIndex, childIndex);
         this.render();
     },
     
-    toggleSpokeChildren(categoryId, itemId, spokeIndex) {
-        this.addSpokeChild(categoryId, itemId, spokeIndex);
-    },
+    // toggleSpokeChildren(categoryId, itemId, spokeIndex) {
+    //     this.addSpokeChild(categoryId, itemId, spokeIndex);
+    // },
 
     exportData() {
         const data = { categories: DataModel.getCategories() };

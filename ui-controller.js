@@ -137,25 +137,41 @@ const UI = {
                                         ondragover="UI.handleSubItemDragOver(event)"
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
-                                        <span class="sub-item-text">${subText}</span>
-                                        ${children.length > 0 ? ` <span style="color: #2196F3; font-weight: bold;">(${children.length})</span>` : ''}
-                                        <button class="small" onclick="App.toggleSpokeChildren('${category.id}', '${item.id}', ${idx})">+</button>
-                                        <button class="small" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})">✕</button>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                            <span class="sub-item-text" style="flex: 1;">${subText}</span>
+                                            <div style="display: flex; gap: 4px;">
+                                                ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 10px;">(${children.length})</span>` : ''}
+                                                <button class="small secondary" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
+                                                <button class="small" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">✕</button>
+                                            </div>
+                                        </div>
                                         ${children.length > 0 ? `
-                                            <ul style="margin-left: 20px; font-size: 11px;">
+                                            <ul style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
                                                 ${children.map((child, childIdx) => `
-                                                    <li style="cursor: default; display: flex; justify-content: space-between; align-items: center;">
-                                                        <span>${typeof child === 'string' ? child : child.text}</span>
+                                                    <li style="cursor: default; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
+                                                        <span style="flex: 1;">${typeof child === 'string' ? child : child.text}</span>
                                                         <div style="display: flex; gap: 4px;">
                                                             <button class="small" 
                                                                     style="background: #4285F4; padding: 3px 8px;" 
-                                                                    onclick="UI.openCalendarForAction('${encodeURIComponent(typeof child === 'string' ? child : child.text)}', '${encodeURIComponent(typeof sub === 'string' ? sub : sub.text)}', '${item.name}')">📅</button>
-                                                            <button class="small" onclick="App.removeSpikeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})">✕</button>
+                                                                    onclick="UI.openCalendarForAction('${encodeURIComponent(typeof child === 'string' ? child : child.text)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}')"
+                                                                    title="Add to calendar">📅</button>
+                                                            <button class="small" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">✕</button>
                                                         </div>
                                                     </li>
                                                 `).join('')}
                                             </ul>
-                                        ` : ''}         
+                                        ` : ''}
+                                        <div id="add-action-${category.id}-${item.id}-${idx}" style="display: none; margin-top: 6px; margin-left: 20px;">
+                                            <div style="display: flex; gap: 6px; align-items: center;">
+                                                <input type="text" 
+                                                       id="action-input-${category.id}-${item.id}-${idx}"
+                                                       placeholder="Action name..." 
+                                                       style="flex: 1; padding: 6px; border: 1px solid #2196F3; border-radius: 4px; font-size: 12px;"
+                                                       onkeydown="if(event.key==='Enter') UI.submitAddAction('${category.id}', '${item.id}', ${idx})">
+                                                <button class="small secondary" onclick="UI.submitAddAction('${category.id}', '${item.id}', ${idx})">Add</button>
+                                                <button class="small" onclick="UI.hideAddActionInput('${category.id}', '${item.id}', ${idx})">Cancel</button>
+                                            </div>
+                                        </div>
                                     </li>
                                 `}).join('')}</ul>`
                                 : '<p style="color: #999; font-size: 12px; margin: 8px 0;">No Spokes</p>'}
@@ -519,7 +535,37 @@ const UI = {
         return spokes;
     },
 
-    openCalendarForAction(actionText, spokeText, sliceName) {
+    showAddActionInput(categoryId, itemId, spokeIndex) {
+        const inputDiv = document.getElementById(`add-action-${categoryId}-${itemId}-${spokeIndex}`);
+        const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
+        
+        if (inputDiv && input) {
+            inputDiv.style.display = 'block';
+            input.focus();
+        }
+    },
+    
+    hideAddActionInput(categoryId, itemId, spokeIndex) {
+        const inputDiv = document.getElementById(`add-action-${categoryId}-${itemId}-${spokeIndex}`);
+        const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
+        
+        if (inputDiv && input) {
+            inputDiv.style.display = 'none';
+            input.value = '';
+        }
+    },
+    
+    submitAddAction(categoryId, itemId, spokeIndex) {
+        const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
+        const text = input.value.trim();
+        
+        if (text) {
+            App.addSpokeChild(categoryId, itemId, spokeIndex, text);
+            this.hideAddActionInput(categoryId, itemId, spokeIndex);
+        }
+    },
+
+    openCalendarForAction(actionText, spokeText, sliceName, categoryName) {
         actionText = decodeURIComponent(actionText);
         spokeText = decodeURIComponent(spokeText);
         
@@ -540,8 +586,8 @@ const UI = {
         // Build calendar URL
         const params = new URLSearchParams({
             action: 'TEMPLATE',
-            text: `${actionText} (${sliceName} - ${spokeText})`,
-            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName} \nCreated from Brain Pie`,
+            text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
             dates: dates
         });
         
