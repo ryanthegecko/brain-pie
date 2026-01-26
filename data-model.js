@@ -131,7 +131,13 @@ const DataModel = {
         category.color = newColor;
         this.saveToStorage();
     },
-    
+    updateCategoryName(categoryId, newName) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+        
+        category.name = newName.trim();
+        this.saveToStorage();
+    },
     reorderCategories(fromIndex, toIndex, insertBefore) {
         const [movedCategory] = this.categories.splice(fromIndex, 1);
         

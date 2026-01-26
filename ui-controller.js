@@ -193,7 +193,12 @@ const UI = {
                     <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
                         <span style="font-size: 20px; color: #999;">⋮⋮</span>
                         <div style="flex: 1;">
-                            <h2>${category.name}</h2>
+                            <h2 contenteditable="true"
+                                onblur="App.updateCategoryName('${category.id}', this.textContent)"
+                                style="outline: none; padding: 2px; border-radius: 3px; cursor: text;"
+                                onfocus="this.style.background='#f0f0f0'"
+                                onblur="this.style.background='transparent'; App.updateCategoryName('${category.id}', this.textContent)"
+                            >${category.name}</h2>
                             <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
                                 <input type="number" 
                                        value="${displayPercentage}" 

@@ -70,12 +70,17 @@ const App = {
         this.render();
     },
 
+    updateCategoryName(categoryId, newName) {
+        DataModel.updateCategoryName(categoryId, newName);
+        this.render();
+    },
+
     reorderCategories(fromIndex, toIndex, insertBefore) {
         DataModel.reorderCategories(fromIndex, toIndex, insertBefore);
         this.render();
     },
 
-addItem() {
+    addItem() {
         const categoryId = document.getElementById('item-category').value;
         const name = document.getElementById('item-name').value.trim();
         let percentage = parseFloat(document.getElementById('item-percentage').value);
