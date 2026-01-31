@@ -134,16 +134,20 @@ const UI = {
                                 <input type="color" 
                                        value="${item.color}" 
                                        title="Change color"
-                                       style="width: 40px; height: 30px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                       style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;"
                                        onchange="App.updateItemColor('${category.id}', '${item.id}', this.value)">
+                                <button class="warn" style="margin-left: 5px;" onclick="App.removeItem('${category.id}', '${item.id}')">
+                                    <img width="15" height="15" src="./assets/trash.svg" />
+                                </button>
                             </div>
-                            <div class="percentage" style="display: flex; align-items: center; gap: 8px;">
+                            <div class="item-percentage" style="display: flex; align-items: center; gap: 8px;">
                                 <input type="number" 
+                                    name="categoryPercentage"
                                        value="${item.percentage.toFixed(1)}" 
                                        min="0" 
                                        max="100" 
                                        step="0.1"
-                                       style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"
+                                       style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"
                                        onchange="App.updateItemPercentage('${category.id}', '${item.id}', parseFloat(this.value))">
                                 <span>% of category</span>
                             </div>
@@ -162,12 +166,14 @@ const UI = {
                                         ondragover="UI.handleSubItemDragOver(event)"
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;min-width: 60%;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;width: 100%; min-width: 50%;">
                                             <span class="sub-item-text" style="flex: 1;padding-right:1em">${subText}</span>
                                             <div style="display: flex; gap: 4px;">
-                                                ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 10px;">(${children.length})</span>` : ''}
-                                                <button class="small secondary" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
-                                                <button class="small" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">✕</button>
+                                                ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
+                                                <button class="" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
+                                                <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">
+                                                    <img width="15" height="15" src="./assets/trash.svg" />
+                                                </button>
                                             </div>
                                         </div>
                                         ${children.length > 0 ? `
@@ -180,7 +186,9 @@ const UI = {
                                                                     style="background: #4285F4; padding: 3px 8px;" 
                                                                     onclick="UI.openCalendarForAction('${encodeURIComponent(typeof child === 'string' ? child : child.text)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}')"
                                                                     title="Add to calendar">📅</button>
-                                                            <button class="small" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">✕</button>
+                                                            <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
+                                                                <img width="15" height="20" src="./assets/trash.svg" />
+                                                            </button>
                                                         </div>
                                                     </li>
                                                 `).join('')}
@@ -191,22 +199,25 @@ const UI = {
                                                 <input type="text" 
                                                        id="action-input-${category.id}-${item.id}-${idx}"
                                                        placeholder="Action name..." 
-                                                       style="flex: 1; padding: 6px; border: 1px solid #2196F3; border-radius: 4px; font-size: 12px;"
+                                                       style="flex: 1; padding: 6px; border: 1px solid #2196F3; border-radius: 4px;"
                                                        onkeydown="if(event.key==='Enter') UI.submitAddAction('${category.id}', '${item.id}', ${idx})">
                                                 <button class="small secondary" onclick="UI.submitAddAction('${category.id}', '${item.id}', ${idx})">Add</button>
-                                                <button class="small" onclick="UI.hideAddActionInput('${category.id}', '${item.id}', ${idx})">Cancel</button>
+                                                <button class="small warn" onclick="UI.hideAddActionInput('${category.id}', '${item.id}', ${idx})">
+                                                    <img width="15" height="20" src="./assets/trash.svg" />
+                                                </button>
                                             </div>
                                         </div>
                                     </li>
                                 `}).join('')}</ul>`
                                 : '<p style="color: #999; font-size: 12px; margin: 8px 0;">No Spokes</p>'}
-                            <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+                            <div class="add-spoke-input-container" 
+                                style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
                                 <input type="text" 
                                        id="new-subitem-${item.id}" 
                                        placeholder="New Spoke" 
-                                       style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                       style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
                                 <button class="small secondary" onclick="App.addSubItem('${category.id}', '${item.id}')">+ Add</button>
-                                <button onclick="App.removeItem('${category.id}', '${item.id}')">Remove Slice</button>
+                                
                             </div>
                         </div>
                     `).join('')}
@@ -224,13 +235,16 @@ const UI = {
                                 onfocus="this.style.background='#f0f0f0'"
                                 onblur="this.style.background='transparent'; App.updateCategoryName('${category.id}', this.textContent)"
                             >${category.name}</h2>
-                            <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                            <div 
+                                class="category-percentage-input-container"
+                                style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
                                 <input type="number" 
+                                        name="categoryPercentage"
                                        value="${displayPercentage}" 
                                        min="0" 
                                        max="100" 
                                        step="0.1"
-                                       style="width: 70px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                                       style="width: 70px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"
                                        onchange="App.updateCategoryPercentage('${category.id}', parseFloat(this.value))">
                                 <span class="auto-percentage">% (${category.items.length} items)</span>
                             </div>
@@ -241,7 +255,10 @@ const UI = {
                                style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
                     </div>
-                    <button onclick="App.removeCategory('${category.id}')">Remove Category</button>
+                    <button style="margin-left: 5px;" onclick="UI.showMenu()">Add Slice</button>
+                    <button class="warn" style="margin-left: 5px;" onclick="App.removeCategory('${category.id}')">
+                        <img width="15" height="15" src="./assets/trash.svg" />
+                    </button>
                 </div>
                 ${itemsHTML}
             `;
