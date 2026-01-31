@@ -1,9 +1,9 @@
 const ChartRenderer = {
     svg: null,
-    width: 2200,
-    height: 1200,
-    outerRadius: 600,
-    innerRadius: 550,
+    // width: 2200,
+    // height: 1200,
+    // outerRadius: 600,
+    // innerRadius: 550,
     highlightGroup: null,
     currentExpanded: null,
     
@@ -19,9 +19,9 @@ const ChartRenderer = {
         // Calculate responsive dimensions
         const minDimension = Math.min(containerWidth, containerHeight);
         this.width = containerWidth;
-        this.height = containerHeight;
-        this.outerRadius = Math.min(550, minDimension * 0.33);
-        this.innerRadius = this.outerRadius - 60;
+        this.height = containerWidth > 1024 ? containerHeight : containerHeight / 1.3;
+        this.outerRadius = Math.min(containerWidth <= 1024 ? 350 : 550, minDimension * 0.33);
+        this.innerRadius = containerWidth <= 1024 ? this.outerRadius - 40 : this.outerRadius - 60;
         
         this.svg = container.append('svg')
             .attr('width', this.width)
@@ -133,7 +133,7 @@ const ChartRenderer = {
                 .style('fill', textColor)
                 .append('textPath')
                 .attr('xlink:href', `#category-text-arc-${i}`)
-                .attr('startOffset', '20%')
+                .attr('startOffset', this.width > 1024 ? '20%' : '15%')
                 // .attr('text-anchor', 'bottom')
                 .text(d.data.name);
 
