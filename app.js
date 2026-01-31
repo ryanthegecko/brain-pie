@@ -138,6 +138,7 @@ const App = {
     },
 
     removeItem(categoryId, itemId) {
+        if (!confirm('Remove this Slice?')) return;
         DataModel.removeItem(categoryId, itemId);
         this.render();
     },
@@ -163,6 +164,7 @@ const App = {
     },
 
     removeSubItem(categoryId, itemId, subItemIndex) {
+        if (!confirm('Remove this spoke and all its actions?')) return;
         DataModel.removeSubItem(categoryId, itemId, subItemIndex);
         this.render();
     },
@@ -176,6 +178,7 @@ const App = {
 
     
     removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
+        if (!confirm('Remove this action?')) return;
         DataModel.removeSpokeChild(categoryId, itemId, spokeIndex, childIndex);
         this.render();
     },

@@ -183,7 +183,7 @@ const UI = {
                                                         <span style="flex: 1;margin-right: 1em;">${typeof child === 'string' ? child : child.text}</span>
                                                         <div style="display: flex; gap: 4px;">
                                                             <button class="small" 
-                                                                    style="background: #4285F4; padding: 3px 8px;" 
+                                                                    style="background: #4285F4; padding: 3px 12px;" 
                                                                     onclick="UI.openCalendarForAction('${encodeURIComponent(typeof child === 'string' ? child : child.text)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}')"
                                                                     title="Add to calendar">📅</button>
                                                             <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
@@ -215,8 +215,8 @@ const UI = {
                                 <input type="text" 
                                        id="new-subitem-${item.id}" 
                                        placeholder="New Spoke" 
-                                       style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px;">
-                                <button class="small secondary" onclick="App.addSubItem('${category.id}', '${item.id}')">+ Add</button>
+                                       style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <button class="small secondary" onclick="App.addSubItem('${category.id}', '${item.id}')">+</button>
                                 
                             </div>
                         </div>
