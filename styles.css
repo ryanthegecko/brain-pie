@@ -13,12 +13,12 @@ body {
 h1 {
     font-size: 38px;
      @media (max-width: 1024px) {
-        font-size: 32px;
+        font-size: 34px;
     }   
 }
 h2 {
     @media (max-width: 1024px) {
-        font-size: 28px;
+        font-size: 42px;
     }
 }
 
@@ -41,7 +41,7 @@ h2 {
     width: 100%;
     @media (max-width: 1024px) {
         margin: -10vh 0 0 0;
-        min-height: 57vh;
+        min-height: 120vw;
         height: auto;
     }
 }
@@ -76,6 +76,13 @@ h2 {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 13px;
+}
+
+.add-spoke-input-container input {
+        font-size: 14px;
+    @media (max-width: 1024px) {
+        font-size: 28px;
+    }
 }
 
 .spoke-entry .add-actions-btn {
@@ -208,6 +215,9 @@ button {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
+    @media (max-width: 1024px) {
+        font-size: 18px;
+    }
 }
 
 button:hover {
@@ -230,9 +240,19 @@ button.tertiary:hover {
     background: #7B1FA2;
 }
 
+button.warn {
+    background: #f05252;
+}
+button.warn:hover {
+    background: #f04040;
+}
 button.small {
     padding: 4px 8px;
-    font-size: 11px;
+    font-size: 14px;
+    @media (max-width: 1024px) {
+        font-size: 20px;
+        padding: 8px 12px;
+    }
 }
 
 input[type="file"] {
@@ -330,8 +350,19 @@ select {
     border-radius: 6px;
     font-size: 14px;
     transition: border-color 0.2s;
+    @media (max-width: 1024px) {
+        font-size: 24px;
+    }
 }
 
+input[type="text"]{
+    padding: 10px 12px;
+    font-size: 14px;
+    @media (max-width: 1024px) {
+        font-size: 24px;
+        padding: 12px 8px;
+    }
+}
 select {
     cursor: pointer;
     min-width: 150px;
@@ -438,8 +469,11 @@ textarea {
 .categories-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-    gap: 20px;
+    gap: 22px;
     margin-top: 20px;
+    @media (max-width: 1024px) {
+        gap: 28px;
+    }
 }
 
 .category-card {
@@ -456,21 +490,37 @@ textarea {
     margin-bottom: 15px;
 }
 
+.category-percentage-input-container input {
+    font-size: 14px;
+    @media (max-width: 1024px) {
+        font-size: 28px;
+    }
+}
+
 .category-card h2 {
     color: #333;
     font-size: 18px;
+    @media (max-width: 1024px) {
+        font-size: 34px;
+    }
 }
 
 .category-card .auto-percentage {
     color: #666;
     font-size: 14px;
     font-weight: 600;
+    @media (max-width: 1024px) {
+        font-size: 28px;
+    }
 }
 
 .items-in-category {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
+    @media (max-width: 1024px) {
+        gap: 22px;
+    }
 }
 
 .item-card {
@@ -480,16 +530,30 @@ textarea {
     border-left: 3px solid #2196F3;
 }
 
+.item-percentage input {
+    font-size: 14px;
+    @media (max-width: 1024px) {
+        font-size: 28px;
+    }
+}
+
 .item-card h3 {
     color: #333;
     margin-bottom: 6px;
     font-size: 14px;
+    @media (max-width: 1024px) {
+        font-size: 28px;
+    }
 }
 
-.item-card .percentage {
+.item-card .item-percentage {
     color: #666;
     font-size: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    @media (max-width: 1024px) {
+        margin-bottom: 12px;
+        font-size: 28px;
+    }
 }
 
 .item-card ul {
@@ -498,12 +562,16 @@ textarea {
 }
 
 .item-card li {
-    padding: 3px 0;
+    padding: 4px 0;
     color: #555;
-    font-size: 12px;
+    font-size: 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    @media (max-width: 1024px) {
+        padding: 6px 0;
+        font-size: 24px;
+    }
 }
 
 .item-card li .sub-item-text:before {
@@ -586,7 +654,7 @@ textarea {
 .disclaimer-content h2 {
     color: #333;
     margin-bottom: 15px;
-    font-size: 22px;
+    font-size: 24px;
 }
 
 .disclaimer-content p {
@@ -714,7 +782,7 @@ textarea {
 .datetime-content h2 {
     color: #333;
     margin-bottom: 20px;
-    font-size: 22px;
+    font-size: 24px;
 }
 
 .datetime-section {
