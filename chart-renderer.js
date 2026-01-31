@@ -806,26 +806,50 @@ const ChartRenderer = {
         this.svg.transition().duration(300)
             .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
     },
-    openCalendarForAction(action, spokeData, sliceName, categoryName) {
-        // Get context for the calendar event
+    // openCalendarForAction(action, spokeData, sliceName, categoryName) {
+    //     // Get context for the calendar event
+    //     const actionText = action.text || action;
+    //     const spokeText = spokeData.text || spokeData;
+    //     // const sliceName = decodeURIComponent(sliceName);
+    //     // const categoryName = decodeURIComponent(categoryName);
+
+    //     const provider = UI.getCalendarProvider();
+        
+    //     const tomorrow = new Date();
+    //     tomorrow.setDate(tomorrow.getDate() + 1);
+    //     tomorrow.setHours(9, 0, 0, 0);
+        
+    //     const endTime = new Date(tomorrow);
+    //     endTime.setHours(10, 0, 0, 0);
+    //  if (provider === 'apple') {  
+    //     UI.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, tomorrow, endTime);
+    //  } else {
+    //     // Build calendar URL with pre-filled data
+    //     const params = new URLSearchParams({
+    //         action: 'TEMPLATE',
+    //         text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+    //         details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
+    //         // Optional: Set default time (tomorrow at 9am)
+    //         dates: this.getDefaultEventDates(),
+    //     });
+        
+    //     const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
+        
+    //     // Open in new tab
+    //     window.open(calendarUrl, '_blank');
+    //     }
+
+
+
+    // },
+    openCalendarForAction(action, spokeData, itemData, categoryData) {
         const actionText = action.text || action;
         const spokeText = spokeData.text || spokeData;
+        const sliceName = itemData;
+        const categoryName = categoryData;
         
-        // Build calendar URL with pre-filled data
-        const params = new URLSearchParams({
-            action: 'TEMPLATE',
-            text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
-            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
-            // Optional: Set default time (tomorrow at 9am)
-            dates: this.getDefaultEventDates(),
-        });
-        
-        const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
-        
-        // Open in new tab
-        window.open(calendarUrl, '_blank');
+        UI.showDateTimePicker(actionText, spokeText, sliceName, categoryName);
     },
-    
     getDefaultEventDates() {
         // Set event for tomorrow at 9 AM, duration 1 hour
         const tomorrow = new Date();

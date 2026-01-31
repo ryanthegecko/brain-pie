@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Brain Pie</title>
     <meta property="og:title" content="Brain Pie" />
     <meta property="og:description" content="A visualiser for your mind." />
     <meta property="og:type" content="website" />
-  
+    
+
+
     <meta property="og:url" content="https://ryanthegecko.github.io/brain-pie/" />
     <meta property="og:image" content="https://ryanthegecko.github.io/brain-pie/assets/og.png" />
     <meta property="og:image:width" content="845" />
@@ -29,14 +30,14 @@
             <h1>Brain Pie 🥧 <span class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></h1>
             <div class="top-buttons">
                 <div>
-                <button onclick="UI.showMenu()">➕ Add Slices</button>
-                <button class="tertiary" onclick="App.exportData()">📥 Export</button>
-                <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
+                    <button onclick="UI.showMenu()">➕ Add Slices</button>
                 </div>
                 <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">
                 <hr>
-                            <div>
-                <p>Hide spokes <input id="hide-labels" type="checkbox" name="hide-labels"></p>
+                <div>
+                    <button class="secondary" onclick="UI.showSettings()">⚙️ Settings</button>
+                    <p>&nbsp;</p>
+                    <p>Hide spokes <input id="hide-labels" type="checkbox" name="hide-labels"></p>
                 </div>
             </div>
         </div>
@@ -137,6 +138,76 @@
         </div>
     </div>
 
+    <!-- Settings Overlay -->
+    <div class="settings-overlay" id="settings-overlay" onclick="UI.closeSettings()">
+        <div class="settings-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeSettings()">✕</button>
+            <h2>Settings</h2>
+            
+            <div class="settings-section">
+                <h3>Calendar Provider</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Choose which calendar to use when creating events from actions</p>
+                
+                <label class="radio-option">
+                    <input type="radio" name="calendar-provider" value="google" checked onchange="UI.saveCalendarProvider('google')">
+                    <span>Google Calendar</span>
+                </label>
+                
+                <label class="radio-option">
+                    <input type="radio" name="calendar-provider" value="apple" onchange="UI.saveCalendarProvider('apple')">
+                    <span>Apple Calendar</span>
+                </label>
+            </div>
+
+            <div class="settings-section">
+                <button class="tertiary" onclick="App.exportData()">📥 Export Data & Settings to JSON</button>
+                <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
+            </div>
+            
+            <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
+        </div>
+    </div>
+
+    <!-- Date/Time Picker Overlay -->
+    <div class="datetime-overlay" id="datetime-overlay" onclick="UI.closeDateTimePicker()">
+        <div class="datetime-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeDateTimePicker()">✕</button>
+            <h2>Schedule Action</h2>
+            
+            <div id="action-details" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Action:</div>
+                <div id="action-name" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+                <div id="action-context" style="font-size: 12px; color: #999; margin-top: 5px;"></div>
+            </div>
+            
+            <div class="datetime-section">
+                <label for="event-date">Date</label>
+                <input type="date" id="event-date" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+            </div>
+            
+            <div class="datetime-section">
+                <label for="event-time">Time</label>
+                <input type="time" id="event-time" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+            </div>
+            
+            <div class="datetime-section">
+                <label for="event-duration">Duration</label>
+                <select id="event-duration" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                    <option value="15">15 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60" selected>1 hour</option>
+                    <option value="90">1.5 hours</option>
+                    <option value="120">2 hours</option>
+                    <option value="180">3 hours</option>
+                    <option value="240">4 hours</option>
+                </select>
+            </div>
+            
+            <button onclick="UI.createCalendarEvent()" style="margin-top: 20px; width: 100%; background: #4285F4;">
+                📅 Add to Calendar
+            </button>
+        </div>
+    </div>
 
     <script src="storage.js"></script>
     <script src="data-model.js"></script>
