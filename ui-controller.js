@@ -15,6 +15,31 @@ const UI = {
             this.closeMenu();
         }
     },
+
+    showSettings() {
+        document.getElementById('settings-overlay').classList.add('active');
+        this.loadCalendarProvider();
+    },
+    
+    closeSettings() {
+        document.getElementById('settings-overlay').classList.remove('active');
+    },
+    
+    saveCalendarProvider(provider) {
+        localStorage.setItem('calendarProvider', provider);
+    },
+    
+    loadCalendarProvider() {
+        const provider = localStorage.getItem('calendarProvider') || 'google';
+        const radio = document.querySelector(`input[name="calendar-provider"][value="${provider}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+    },
+    
+    getCalendarProvider() {
+        return localStorage.getItem('calendarProvider') || 'google';
+    },
     
     // Helper to determine if a color is dark
     isColorDark(hexColor) {
@@ -137,8 +162,8 @@ const UI = {
                                         ondragover="UI.handleSubItemDragOver(event)"
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <span class="sub-item-text" style="flex: 1;">${subText}</span>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;min-width: 60%;">
+                                            <span class="sub-item-text" style="flex: 1;padding-right:1em">${subText}</span>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 10px;">(${children.length})</span>` : ''}
                                                 <button class="small secondary" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
@@ -149,7 +174,7 @@ const UI = {
                                             <ul style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
                                                 ${children.map((child, childIdx) => `
                                                     <li style="cursor: default; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
-                                                        <span style="flex: 1;">${typeof child === 'string' ? child : child.text}</span>
+                                                        <span style="flex: 1;margin-right: 1em;">${typeof child === 'string' ? child : child.text}</span>
                                                         <div style="display: flex; gap: 4px;">
                                                             <button class="small" 
                                                                     style="background: #4285F4; padding: 3px 8px;" 
@@ -570,25 +595,152 @@ const UI = {
         }
     },
 
-    openCalendarForAction(actionText, spokeText, sliceName, categoryName) {
-        actionText = decodeURIComponent(actionText);
-        spokeText = decodeURIComponent(spokeText);
+    // openCalendarForAction(actionText, spokeText, sliceName, categoryName) {
+    //     actionText = decodeURIComponent(actionText);
+    //     spokeText = decodeURIComponent(spokeText);
+    //     sliceName = decodeURIComponent(sliceName);
+    //     categoryName = decodeURIComponent(categoryName);
+
+    //     const provider = this.getCalendarProvider();
         
-        // Get default dates (tomorrow at 9am, 1 hour duration)
+    //     // Get default dates (tomorrow at 9am, 1 hour duration)
+    //     const tomorrow = new Date();
+    //     tomorrow.setDate(tomorrow.getDate() + 1);
+    //     tomorrow.setHours(9, 0, 0, 0);
+        
+    //     const endTime = new Date(tomorrow);
+    //     endTime.setHours(10, 0, 0, 0);
+    //     if (provider === 'apple'){
+    //         // Apple Calendar uses .ics file download
+    //         this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, tomorrow, endTime);
+    //     } else { 
+    //         const formatDate = (date) => {
+    //             return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    //         };
+            
+    //         const dates = `${formatDate(tomorrow)}/${formatDate(endTime)}`;
+            
+    //         // Build calendar URL
+    //         const params = new URLSearchParams({
+    //             action: 'TEMPLATE',
+    //             text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+    //             details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
+    //             dates: dates
+    //         });
+            
+    //         const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
+    //         window.open(calendarUrl, '_blank');
+    //     }
+    // },
+    
+    // downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate) {
+    //     // Format dates for iCalendar format
+    //     const formatICSDate = (date) => {
+    //         const year = date.getFullYear();
+    //         const month = String(date.getMonth() + 1).padStart(2, '0');
+    //         const day = String(date.getDate()).padStart(2, '0');
+    //         const hours = String(date.getHours()).padStart(2, '0');
+    //         const minutes = String(date.getMinutes()).padStart(2, '0');
+    //         const seconds = String(date.getSeconds()).padStart(2, '0');
+    //         return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+    //     };
+        
+    //     const icsContent = [
+    //         'BEGIN:VCALENDAR',
+    //         'VERSION:2.0',
+    //         'PRODID:-//Brain Pie//Calendar//EN',
+    //         'BEGIN:VEVENT',
+    //         `DTSTART:${formatICSDate(startDate)}`,
+    //         `DTEND:${formatICSDate(endDate)}`,
+    //         `SUMMARY:${actionText} (${categoryName} - ${sliceName})`,
+    //         `DESCRIPTION:Category: ${categoryName}\\nSlice: ${sliceName}\\nSpoke: ${spokeText}\\nAction: ${actionText}\\n\\nCreated from Brain Pie`,
+    //         'END:VEVENT',
+    //         'END:VCALENDAR'
+    //     ].join('\r\n');
+        
+    //     // Create blob and download
+    //     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    //     const url = URL.createObjectURL(blob);
+    //     const link = document.createElement('a');
+    //     link.href = url;
+    //     link.download = `${actionText}.ics`;
+    //     document.body.appendChild(link);
+    //     link.click();
+    //     document.body.removeChild(link);
+    //     URL.revokeObjectURL(url);
+    // },
+
+    // Store pending calendar event data
+    pendingCalendarEvent: null,
+    
+    showDateTimePicker(actionText, spokeText, sliceName, categoryName) {
+        // Store event details
+        this.pendingCalendarEvent = {
+            actionText,
+            spokeText,
+            sliceName,
+            categoryName
+        };
+        
+        // Show action details
+        document.getElementById('action-name').textContent = actionText;
+        document.getElementById('action-context').textContent = `${categoryName} → ${sliceName} → ${spokeText}`;
+        
+        // Set default date/time (tomorrow at 9 AM)
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(9, 0, 0, 0);
         
-        const endTime = new Date(tomorrow);
-        endTime.setHours(10, 0, 0, 0);
+        const dateStr = tomorrow.toISOString().split('T')[0];
+        document.getElementById('event-date').value = dateStr;
+        document.getElementById('event-time').value = '09:00';
+        document.getElementById('event-duration').value = '60';
         
+        // Show modal
+        document.getElementById('datetime-overlay').classList.add('active');
+    },
+    
+    closeDateTimePicker() {
+        document.getElementById('datetime-overlay').classList.remove('active');
+        this.pendingCalendarEvent = null;
+    },
+    
+    createCalendarEvent() {
+        if (!this.pendingCalendarEvent) return;
+        
+        const { actionText, spokeText, sliceName, categoryName } = this.pendingCalendarEvent;
+        
+        // Get user-selected date/time
+        const dateStr = document.getElementById('event-date').value;
+        const timeStr = document.getElementById('event-time').value;
+        const duration = parseInt(document.getElementById('event-duration').value);
+        
+        if (!dateStr || !timeStr) {
+            alert('Please select both date and time');
+            return;
+        }
+        
+        // Combine date and time
+        const startDate = new Date(`${dateStr}T${timeStr}`);
+        const endDate = new Date(startDate.getTime() + duration * 60000); // Add duration in milliseconds
+        
+        const provider = this.getCalendarProvider();
+        
+        if (provider === 'apple') {
+            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+        } else {
+            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+        }
+        
+        this.closeDateTimePicker();
+    },
+    
+    openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate) {
         const formatDate = (date) => {
             return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         };
         
-        const dates = `${formatDate(tomorrow)}/${formatDate(endTime)}`;
+        const dates = `${formatDate(startDate)}/${formatDate(endDate)}`;
         
-        // Build calendar URL
         const params = new URLSearchParams({
             action: 'TEMPLATE',
             text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
@@ -598,6 +750,52 @@ const UI = {
         
         const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
         window.open(calendarUrl, '_blank');
+    },
+    
+    downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate) {
+        // Format dates for iCalendar format (local time, not UTC)
+        const formatICSDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+        };
+        
+        const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Brain Pie//Calendar//EN',
+            'BEGIN:VEVENT',
+            `DTSTART:${formatICSDate(startDate)}`,
+            `DTEND:${formatICSDate(endDate)}`,
+            `SUMMARY:${actionText} (${categoryName} - ${sliceName})`,
+            `DESCRIPTION:Category: ${categoryName}\\nSlice: ${sliceName}\\nSpoke: ${spokeText}\\nAction: ${actionText}\\n\\nCreated from Brain Pie`,
+            'END:VEVENT',
+            'END:VCALENDAR'
+        ].join('\r\n');
+        
+        // Create blob and download
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${actionText}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    },
+    
+    openCalendarForAction(actionText, spokeText, sliceName, categoryName) {
+        actionText = decodeURIComponent(actionText);
+        spokeText = decodeURIComponent(spokeText);
+        sliceName = decodeURIComponent(sliceName);
+        categoryName = decodeURIComponent(categoryName);
+        
+        this.showDateTimePicker(actionText, spokeText, sliceName, categoryName);
     },
     
     clearInputs() {

@@ -18,10 +18,16 @@ const DataModel = {
         const data = Storage.load();
 
         if (data && data.categories) {
-        // Returning user: use stored data
-        this.categories = data.categories;
-        this.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-        return;
+            // Returning user: use stored data
+            this.categories = data.categories;
+            this.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+            return;
+        }
+
+        if (data && data.settings) {
+            if (data.settings.calendarProvider) {
+                localStorage.setItem('calendarProvider', data.settings.calendarProvider);
+            }
         }
 
         // First time: load example data
@@ -31,15 +37,20 @@ const DataModel = {
 
         // Persist it so next visit is treated as “returning”
         Storage.save({
-        categories: this.categories,
-        categoryPercentageOverrides: this.categoryPercentageOverrides
+            categories: this.categories,
+            categoryPercentageOverrides: this.categoryPercentageOverrides
         });
     },
     
     saveToStorage() {
+        const calendarProvider = localStorage.getItem('calendarProvider') || 'google';
+        
         Storage.save({ 
             categories: this.categories,
-            categoryPercentageOverrides: this.categoryPercentageOverrides
+            categoryPercentageOverrides: this.categoryPercentageOverrides,
+            settings: {
+                calendarProvider: calendarProvider
+            }
         });
     },
     
