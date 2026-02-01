@@ -199,7 +199,7 @@ const ChartRenderer = {
                 .attr('stroke', 'white')
                 .attr('stroke-width', 2);
 
-            // Add hover effect
+            // Add click expand effect
             itemSlices.on('click', (event, d) => {
                 event.stopPropagation();
                 if (!this.currentExpanded) {
@@ -255,7 +255,6 @@ const ChartRenderer = {
                 const angleStep = (endAngle - startAngle) / subItems.length;
                 
                 subItems.forEach((subItem, idx) => {
-                    
                     // if (typeof subItem == 'object'){
                     //     alert(subItem);
                     //     return
@@ -318,13 +317,22 @@ const ChartRenderer = {
                         .style('cursor', 'pointer')
                         .text(typeof subItem === 'string' ? subItem : subItem.text)
                         .on('click', function(event) {
+                            
                             event.stopPropagation();
-                            ChartRenderer.expandBranch(subItem, catData, d, angle);
+                            if (true === true){
+                                if (subItem.children && subItem.children.length)
+                                    ChartRenderer.expandBranch(subItem, catData, d, angle);
+                                else {
+                                    UI.showAddActionInput(catData.data.name.toLowerCase(), Number(d.data.id).toString(), idx)
+                                }
+                            } else {
+                                
+                            }
                         });
                     
                     // Visual indicator if spoke has children
                     if (typeof subItem === 'object' && subItem.children && subItem.children.length > 0) {
-                        spokeLabel.text(spokeLabel.text() + '•')
+                        spokeLabel.text(spokeLabel.text() + ' •')
                         spokeLabel.style('font-weight', 'bold')
                             .style('fill', '#333333');
                     }

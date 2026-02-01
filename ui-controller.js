@@ -583,6 +583,7 @@ const UI = {
     },
 
     showAddActionInput(categoryId, itemId, spokeIndex) {
+        this.hideAllAddActionInputs();
         const inputDiv = document.getElementById(`add-action-${categoryId}-${itemId}-${spokeIndex}`);
         const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
         
@@ -591,16 +592,32 @@ const UI = {
             input.focus();
         }
     },
-    
-    hideAddActionInput(categoryId, itemId, spokeIndex) {
-        const inputDiv = document.getElementById(`add-action-${categoryId}-${itemId}-${spokeIndex}`);
-        const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
+
+    hideAllAddActionInputs() {
+        const inputDivs = document.querySelectorAll('[id^="add-action-"]');
         
-        if (inputDiv && input) {
+        inputDivs.forEach(inputDiv => {
+            // Derive the matching input id from the div id
+            const inputId = inputDiv.id.replace('add-action', 'action-input');
+            const input = document.getElementById(inputId);
+
+            if (input) {
             inputDiv.style.display = 'none';
             input.value = '';
-        }
+            }
+        });
     },
+
+    
+    // hideAddActionInput(categoryId, itemId, spokeIndex) {
+    //     const inputDiv = document.getElementById(`add-action-${categoryId}-${itemId}-${spokeIndex}`);
+    //     const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
+        
+    //     if (inputDiv && input) {
+    //         inputDiv.style.display = 'none';
+    //         input.value = '';
+    //     }
+    // },
     
     submitAddAction(categoryId, itemId, spokeIndex) {
         const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
@@ -608,7 +625,8 @@ const UI = {
         
         if (text) {
             App.addSpokeChild(categoryId, itemId, spokeIndex, text);
-            this.hideAddActionInput(categoryId, itemId, spokeIndex);
+            // this.hideAddActionInput(categoryId, itemId, spokeIndex);
+            this.hideAllAddActionInputs();
         }
     },
 
