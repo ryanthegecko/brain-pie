@@ -209,6 +209,10 @@ h1 {
     flex-direction: column;
     gap: 10px;
     text-align: right;
+    font-size: 18px;
+    @media (max-width: 1024px) {
+        font-size: 22px;
+    }
 }
 
 button {
@@ -223,6 +227,7 @@ button {
     transition: background 0.2s;
     @media (max-width: 1024px) {
         font-size: 18px;
+        padding: 25px 35px;
     }
 }
 
@@ -604,6 +609,10 @@ textarea {
     margin-top: 5px;
     top: 100px;
     right: 170px;
+    @media (max-width: 1024px) {
+        right: 260px;
+        top: 35px;
+    }
 }
 
 .storage-status.success {
