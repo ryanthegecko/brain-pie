@@ -821,3 +821,146 @@ select:focus {
     outline: none;
     border-color: #4285F4;
 }
+
+/* Spoke Configuration Overlay */
+.spoke-config-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2002;
+}
+
+.spoke-config-overlay.active {
+    display: flex;
+}
+
+.spoke-config-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.spoke-config-content h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 22px;
+}
+
+.spoke-type-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.spoke-type-option {
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.spoke-type-option:hover {
+    border-color: #4CAF50;
+    background: #f5fff5;
+}
+
+.spoke-type-option input[type="radio"]:checked ~ .spoke-type-label .spoke-type-title {
+    color: #4CAF50;
+    font-weight: 700;
+}
+
+.spoke-type-option input[type="radio"]:checked {
+    accent-color: #4CAF50;
+}
+
+.spoke-type-label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+}
+
+.spoke-type-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.spoke-type-description {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* Spoke Actions List */
+.spoke-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.spoke-action-entry {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.spoke-action-entry input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.spoke-action-entry input[type="text"]:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+.spoke-action-entry .remove-action-btn {
+    padding: 8px 12px;
+    background: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.spoke-action-entry .remove-action-btn:hover {
+    background: #d32f2f;
+}
+
+@media (max-width: 1024px) {
+    .spoke-config-content {
+        width: 96vw;
+        max-width: 96vw;
+        padding: 20px;
+    }
+
+    .spoke-type-title {
+        font-size: 20px;
+    }
+
+    .spoke-type-description {
+        font-size: 16px;
+    }
+
+    .spoke-action-entry input[type="text"] {
+        font-size: 18px;
+    }
+}

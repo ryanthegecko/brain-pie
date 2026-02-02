@@ -178,20 +178,36 @@ const UI = {
                                         </div>
                                         ${children.length > 0 ? `
                                             <ul style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
-                                                ${children.map((child, childIdx) => `
+                                                ${children.map((child, childIdx) => {
+                                                    const childText = typeof child === 'string' ? child : child.text;
+                                                    const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+                                                    let scheduleDisplay = '📅';
+                                                    let buttonStyle = 'background: #4285F4; padding: 3px 12px;';
+                                                    let buttonTitle = 'Add to calendar';
+
+                                                    if (hasSchedule) {
+                                                        const schedDate = new Date(child.scheduled.date + 'T' + child.scheduled.time);
+                                                        const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                                        const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                                        scheduleDisplay = dateStr + ' ' + timeStr;
+                                                        buttonStyle = 'background: #4CAF50; padding: 3px 8px; font-size: 10px;';
+                                                        buttonTitle = 'Reschedule';
+                                                    }
+
+                                                    return `
                                                     <li style="cursor: default; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
-                                                        <span style="flex: 1;margin-right: 1em;">${typeof child === 'string' ? child : child.text}</span>
+                                                        <span style="flex: 1;margin-right: 1em;">${childText}</span>
                                                         <div style="display: flex; gap: 4px;">
-                                                            <button class="small" 
-                                                                    style="background: #4285F4; padding: 3px 12px;" 
-                                                                    onclick="UI.openCalendarForAction('${encodeURIComponent(typeof child === 'string' ? child : child.text)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}')"
-                                                                    title="Add to calendar">📅</button>
+                                                            <button class="small"
+                                                                    style="${buttonStyle}"
+                                                                    onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${idx}, ${childIdx})"
+                                                                    title="${buttonTitle}">${scheduleDisplay}</button>
                                                             <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
                                                                 <img width="15" height="20" src="./assets/trash.svg" />
                                                             </button>
                                                         </div>
                                                     </li>
-                                                `).join('')}
+                                                `}).join('')}
                                             </ul>
                                         ` : ''}
                                         <div id="add-action-${category.id}-${item.id}-${idx}" style="display: none; margin-top: 6px; margin-left: 20px;">
@@ -621,66 +637,156 @@ const UI = {
 
     // Store pending calendar event data
     pendingCalendarEvent: null,
-    
-    showDateTimePicker(actionText, spokeText, sliceName, categoryName) {
-        // Store event details
+    // Queue for scheduling multiple actions
+    actionScheduleQueue: [],
+
+    showDateTimePicker(actionText, spokeText, sliceName, categoryName, dataLocation = null) {
+        // Store event details including data location for saving
         this.pendingCalendarEvent = {
             actionText,
             spokeText,
             sliceName,
-            categoryName
+            categoryName,
+            dataLocation // { categoryId, itemId, spokeIndex, childIndex }
         };
-        
+
         // Show action details
         document.getElementById('action-name').textContent = actionText;
         document.getElementById('action-context').textContent = `${categoryName} → ${sliceName} → ${spokeText}`;
-        
-        // Set default date/time (tomorrow at 9 AM)
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        const dateStr = tomorrow.toISOString().split('T')[0];
-        document.getElementById('event-date').value = dateStr;
-        document.getElementById('event-time').value = '09:00';
-        document.getElementById('event-duration').value = '60';
-        
+
+        // Check if action already has a scheduled time
+        let existingSchedule = null;
+        if (dataLocation) {
+            const category = DataModel.categories.find(c => c.id === dataLocation.categoryId);
+            if (category) {
+                const item = category.items.find(i => i.id === dataLocation.itemId);
+                if (item && item.subItems[dataLocation.spokeIndex]) {
+                    const spoke = item.subItems[dataLocation.spokeIndex];
+                    if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
+                        existingSchedule = spoke.children[dataLocation.childIndex].scheduled;
+                    }
+                }
+            }
+        }
+
+        // Set date/time from existing schedule or default to tomorrow at 9 AM
+        if (existingSchedule) {
+            document.getElementById('event-date').value = existingSchedule.date;
+            document.getElementById('event-time').value = existingSchedule.time;
+            document.getElementById('event-duration').value = existingSchedule.duration || '60';
+        } else {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('event-date').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('event-time').value = '09:00';
+            document.getElementById('event-duration').value = '60';
+        }
+
+        // Update button text and show reminder based on whether this is a reschedule
+        const addButton = document.getElementById('calendar-submit-btn');
+        const rescheduleReminder = document.getElementById('reschedule-reminder');
+
+        if (addButton) {
+            if (existingSchedule) {
+                addButton.textContent = '📅 Reschedule';
+            } else {
+                addButton.textContent = '📅 Add to Calendar';
+            }
+        }
+
+        if (rescheduleReminder) {
+            rescheduleReminder.style.display = existingSchedule ? 'block' : 'none';
+        }
+
         // Show modal
         document.getElementById('datetime-overlay').classList.add('active');
     },
-    
+
     closeDateTimePicker() {
         document.getElementById('datetime-overlay').classList.remove('active');
         this.pendingCalendarEvent = null;
+
+        // Return to spoke config if we came from there
+        if (this.pendingReturnToSpokeConfig && this.pendingSpokeConfig) {
+            this.pendingReturnToSpokeConfig = false;
+            document.getElementById('spoke-config-overlay').classList.add('active');
+            this.renderExistingActions();
+        } else {
+            App.render();
+        }
     },
-    
+
+    skipScheduling() {
+        // Skip this action and return to spoke config or close
+        document.getElementById('datetime-overlay').classList.remove('active');
+        this.pendingCalendarEvent = null;
+
+        if (this.pendingReturnToSpokeConfig && this.pendingSpokeConfig) {
+            this.pendingReturnToSpokeConfig = false;
+            document.getElementById('spoke-config-overlay').classList.add('active');
+            this.renderExistingActions();
+        } else {
+            App.render();
+        }
+    },
+
     createCalendarEvent() {
         if (!this.pendingCalendarEvent) return;
-        
-        const { actionText, spokeText, sliceName, categoryName } = this.pendingCalendarEvent;
-        
+
+        const { actionText, spokeText, sliceName, categoryName, dataLocation } = this.pendingCalendarEvent;
+
         // Get user-selected date/time
         const dateStr = document.getElementById('event-date').value;
         const timeStr = document.getElementById('event-time').value;
         const duration = parseInt(document.getElementById('event-duration').value);
-        
+
         if (!dateStr || !timeStr) {
             alert('Please select both date and time');
             return;
         }
-        
+
+        // Save scheduled time to the action data
+        if (dataLocation) {
+            const category = DataModel.categories.find(c => c.id === dataLocation.categoryId);
+            if (category) {
+                const item = category.items.find(i => i.id === dataLocation.itemId);
+                if (item && item.subItems[dataLocation.spokeIndex]) {
+                    const spoke = item.subItems[dataLocation.spokeIndex];
+                    if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
+                        spoke.children[dataLocation.childIndex].scheduled = {
+                            date: dateStr,
+                            time: timeStr,
+                            duration: duration
+                        };
+                        DataModel.saveToStorage();
+                    }
+                }
+            }
+        }
+
         // Combine date and time
         const startDate = new Date(`${dateStr}T${timeStr}`);
-        const endDate = new Date(startDate.getTime() + duration * 60000); // Add duration in milliseconds
-        
+        const endDate = new Date(startDate.getTime() + duration * 60000);
+
         const provider = this.getCalendarProvider();
-        
+
         if (provider === 'apple') {
             this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
         } else {
             this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
         }
-        
-        this.closeDateTimePicker();
+
+        // Close and return to spoke config if needed
+        document.getElementById('datetime-overlay').classList.remove('active');
+        this.pendingCalendarEvent = null;
+
+        if (this.pendingReturnToSpokeConfig && this.pendingSpokeConfig) {
+            this.pendingReturnToSpokeConfig = false;
+            document.getElementById('spoke-config-overlay').classList.add('active');
+            this.renderExistingActions();
+        } else {
+            App.render();
+        }
     },
     
     openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate) {
@@ -743,8 +849,256 @@ const UI = {
         spokeText = decodeURIComponent(spokeText);
         sliceName = decodeURIComponent(sliceName);
         categoryName = decodeURIComponent(categoryName);
-        
+
         this.showDateTimePicker(actionText, spokeText, sliceName, categoryName);
+    },
+
+    openCalendarForActionWithLocation(actionText, spokeText, sliceName, categoryName, categoryId, itemId, spokeIndex, childIndex) {
+        actionText = decodeURIComponent(actionText);
+        spokeText = decodeURIComponent(spokeText);
+        sliceName = decodeURIComponent(sliceName);
+        categoryName = decodeURIComponent(categoryName);
+
+        const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
+        this.showDateTimePicker(actionText, spokeText, sliceName, categoryName, dataLocation);
+    },
+
+    // Spoke Configuration
+    pendingSpokeConfig: null,
+
+    showSpokeConfig(categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName) {
+        this.pendingSpokeConfig = {
+            categoryId,
+            itemId,
+            spokeIndex,
+            spokeName,
+            sliceName,
+            categoryName
+        };
+
+        // Show spoke details
+        document.getElementById('spoke-config-name').textContent = spokeName;
+        document.getElementById('spoke-config-context').textContent = `${categoryName} → ${sliceName}`;
+
+        // Get current spoke type and metadata
+        const spokeType = DataModel.getSpokeType(categoryId, itemId, spokeIndex) || 'static';
+
+        // Set radio button
+        const radio = document.querySelector(`input[name="spoke-type"][value="${spokeType}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+
+        // Clear and populate existing actions
+        this.renderExistingActions();
+
+        // Clear new action input
+        const newActionInput = document.getElementById('new-spoke-action-input');
+        if (newActionInput) newActionInput.value = '';
+
+        // Show appropriate fields
+        this.updateSpokeTypeFields(spokeType);
+
+        // Show modal
+        document.getElementById('spoke-config-overlay').classList.add('active');
+    },
+
+    closeSpokeConfig() {
+        document.getElementById('spoke-config-overlay').classList.remove('active');
+        this.pendingSpokeConfig = null;
+        this.pendingReturnToSpokeConfig = false;
+
+        // Reset form
+        document.querySelector('input[name="spoke-type"][value="static"]').checked = true;
+        document.getElementById('spoke-existing-actions').innerHTML = '';
+        document.getElementById('spoke-actions-fields').style.display = 'none';
+        const newActionInput = document.getElementById('new-spoke-action-input');
+        if (newActionInput) newActionInput.value = '';
+
+        App.render();
+    },
+
+    updateSpokeTypeFields(type) {
+        // Show/hide actions section based on type
+        const actionsFields = document.getElementById('spoke-actions-fields');
+        actionsFields.style.display = type === 'action' ? 'block' : 'none';
+
+        // Render existing actions when switching to action type
+        if (type === 'action') {
+            this.renderExistingActions();
+        }
+    },
+
+    renderExistingActions() {
+        if (!this.pendingSpokeConfig) return;
+
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
+        const container = document.getElementById('spoke-existing-actions');
+        container.innerHTML = '';
+
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+
+        const spoke = item.subItems[spokeIndex];
+        if (typeof spoke !== 'object' || !spoke.children || spoke.children.length === 0) {
+            container.innerHTML = '<div style="color: #999; font-size: 13px; padding: 8px 0;">No actions yet. Add one below.</div>';
+            return;
+        }
+
+        spoke.children.forEach((child, idx) => {
+            const childText = typeof child === 'string' ? child : child.text;
+            const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+
+            let scheduleInfo = '<span style="color: #999;">Not scheduled</span>';
+            if (hasSchedule) {
+                const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
+                const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                scheduleInfo = `<span style="color: #4CAF50; font-weight: 600;">${dateStr} ${timeStr}</span>`;
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'spoke-action-entry';
+            entry.style.background = '#f5f5f5';
+            entry.style.padding = '8px 12px';
+            entry.style.borderRadius = '6px';
+            entry.innerHTML = `
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">${childText}</div>
+                    <div style="font-size: 12px; margin-top: 2px;">${scheduleInfo}</div>
+                </div>
+                <button type="button" class="small" style="background: #4285F4;"
+                        onclick="UI.rescheduleAction(${idx})" title="Schedule">
+                    ${hasSchedule ? '✏️' : '📅'}
+                </button>
+                <button type="button" class="small warn" onclick="UI.removeAction(${idx})" title="Remove">×</button>
+            `;
+            container.appendChild(entry);
+        });
+    },
+
+    addAndScheduleAction() {
+        if (!this.pendingSpokeConfig) return;
+
+        const input = document.getElementById('new-spoke-action-input');
+        const actionText = input.value.trim();
+
+        if (!actionText) {
+            alert('Please enter an action name');
+            return;
+        }
+
+        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
+
+        // Ensure spoke is action type and an object
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        // Convert spoke to object if needed
+        if (typeof item.subItems[spokeIndex] === 'string') {
+            item.subItems[spokeIndex] = {
+                text: item.subItems[spokeIndex],
+                type: 'action',
+                children: [],
+                metadata: {}
+            };
+        }
+
+        // Ensure children array exists
+        if (!item.subItems[spokeIndex].children) {
+            item.subItems[spokeIndex].children = [];
+        }
+
+        // Add the new action
+        const childIndex = item.subItems[spokeIndex].children.length;
+        item.subItems[spokeIndex].children.push({
+            text: actionText,
+            children: []
+        });
+
+        // Set spoke type to action
+        item.subItems[spokeIndex].type = 'action';
+        DataModel.saveToStorage();
+
+        // Clear input
+        input.value = '';
+
+        // Update display
+        this.renderExistingActions();
+
+        // Close spoke config temporarily and open scheduler
+        document.getElementById('spoke-config-overlay').classList.remove('active');
+
+        // Open scheduler with return-to-config flag
+        this.pendingReturnToSpokeConfig = true;
+        const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
+        this.showDateTimePicker(actionText, spokeName, sliceName, categoryName, dataLocation);
+    },
+
+    rescheduleAction(childIndex) {
+        if (!this.pendingSpokeConfig) return;
+
+        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
+
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+
+        const spoke = item.subItems[spokeIndex];
+        if (typeof spoke !== 'object' || !spoke.children || !spoke.children[childIndex]) return;
+
+        const action = spoke.children[childIndex];
+        const actionText = typeof action === 'string' ? action : action.text;
+
+        // Close spoke config temporarily
+        document.getElementById('spoke-config-overlay').classList.remove('active');
+
+        // Open scheduler with return-to-config flag
+        this.pendingReturnToSpokeConfig = true;
+        const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
+        this.showDateTimePicker(actionText, spokeName, sliceName, categoryName, dataLocation);
+    },
+
+    removeAction(childIndex) {
+        if (!this.pendingSpokeConfig) return;
+
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
+
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+
+        const spoke = item.subItems[spokeIndex];
+        if (typeof spoke !== 'object' || !spoke.children) return;
+
+        spoke.children.splice(childIndex, 1);
+        DataModel.saveToStorage();
+
+        this.renderExistingActions();
+    },
+
+    pendingReturnToSpokeConfig: false,
+
+    saveSpokeConfig() {
+        if (!this.pendingSpokeConfig) return;
+
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
+        const selectedType = document.querySelector('input[name="spoke-type"]:checked').value;
+
+        // Update the spoke type (actions are saved individually via addAndScheduleAction)
+        DataModel.updateSpokeType(categoryId, itemId, spokeIndex, selectedType, {});
+
+        this.closeSpokeConfig();
     },
     
     clearInputs() {
