@@ -797,6 +797,10 @@ const ChartRenderer = {
         }, 100);
     },
     expandBranch(spokeData, categoryData, itemData, spokeAngle, categoryId, itemId, spokeIndex) {
+        // Auto-close existing branches unless debug mode allows multiple
+        if (!Debug.isActive('allowMultipleBranches') && this.currentExpandedLocation) {
+            this.collapseBranch();
+        }
 
         this.currentExpanded = spokeData;
         this.currentExpandedLocation = { categoryId, itemId, spokeIndex };
@@ -846,9 +850,15 @@ const ChartRenderer = {
             const startX = Math.cos(renderAngle) * (that.outerRadius + 70);
             const startY = Math.sin(renderAngle) * (that.outerRadius + 80);
 
+            // Push bottom branches up with rapid scaling near 6:00
+            // testY: -1 at 12:00, 0 at 3:00/9:00, +1 at 6:00
+            // Use power curve: kicks in around 4:00, peaks at 6:00, scales out by 8:00
+            const yOffset = testY > 0 ? -35 * Math.pow(testY, 2) : 0;
+
             // Create branch visualization
             const branchGroup = that.highlightGroup.append('g')
-                .attr('class', 'branch-view');
+                .attr('class', 'branch-view')
+                .attr('transform', `translate(0, ${yOffset})`);
 
             // Calculate branch length based on spoke label text
             const spokeText = spokeData.text || spokeData;
