@@ -65,13 +65,28 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
           percentage: 33.33,
           color: "#hexcolor",
           subItems: [
-            "Simple spoke string",
+            "Simple spoke string (legacy format)",
             {
-              text: "Spoke with actions",
+              text: "Spoke with type and actions",
+              type: "action",  // 'static', 'action', 'repeating', 'pending'
               children: [
-                { text: "Action 1", children: [] },
+                {
+                  text: "Action 1",
+                  children: [],
+                  scheduled: {        // Optional: calendar scheduling
+                    date: "2026-02-15",
+                    time: "09:00",
+                    duration: 60
+                  }
+                },
                 { text: "Action 2", children: [] }
-              ]
+              ],
+              metadata: {
+                condition: null,        // For pending spokes
+                calendarEventId: null,  // For calendar sync
+                nextState: null,        // For pending → action transitions
+                recurrence: null        // For repeating spokes
+              }
             }
           ]
         }
@@ -101,16 +116,18 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Smooth transitions and animations
 
 #### 3. **UI Controller** (`ui-controller.js`)
-- Manages all overlay states (menu, settings, datetime picker, disclaimer)
+- Manages all overlay states (menu, settings, datetime picker, spoke config, disclaimer)
 - Handles drag-and-drop reordering
 - Builds the category/item list in the bottom section
 - Manages the spoke builder for adding new items
 - Calendar integration (Google Calendar & Apple iCal)
+- Spoke configuration and action scheduling workflow
 
 **Overlays:**
 - Add Slices Menu
 - Settings (calendar provider selection)
 - Date/Time Picker (for scheduling actions)
+- Spoke Configuration (set spoke type, add/schedule actions)
 - Disclaimer/About
 
 #### 4. **Storage** (`storage.js`)
@@ -146,19 +163,34 @@ Three ways to focus on specific areas:
 - Click a **category** to expand it with all slices
 - Click a **spoke with actions** to show branch tree
 
-### 4. Calendar Integration
+### 4. Spoke Type System
+Spokes can have different types that affect their behavior:
+- **Static** (default) - Persistent reminders that stay on your mind
+- **Action** - One-time tasks with calendar integration and scheduling
+- **Repeating** - Recurring tasks (planned, not yet implemented)
+- **Pending** - Conditional tasks awaiting state change (planned, not yet implemented)
+
+**Action Scheduling Workflow:**
+1. Click on a spoke to open configuration popup
+2. Select "Action(s)" type
+3. Add action name → Schedule or Skip → Repeat for more actions
+4. Scheduled actions show date/time instead of calendar icon
+5. Clicking scheduled action opens reschedule popup with reminder to delete old calendar entry
+
+### 5. Calendar Integration
 - **Google Calendar** - Opens web interface with pre-filled event
 - **Apple Calendar** - Downloads .ics file
 - **Custom scheduling** - Date/time picker for actions
 - **Configurable duration** - 15min to 4 hours
+- **Reschedule support** - Update existing scheduled actions
 
-### 5. Data Management
+### 6. Data Management
 - **Auto-save** to localStorage
 - **Import/Export** JSON files
 - **Example data** loaded for new users
 - **No cloud storage** - complete privacy
 
-### 6. Responsive Design
+### 7. Responsive Design
 Breakpoints:
 - Desktop: Full features, larger chart
 - Tablet (≤1024px): Adjusted sizing, single-column lists
@@ -179,10 +211,17 @@ Breakpoints:
 - **Edit percentages** to adjust visual weight
 
 ### Calendar Actions
-1. Click 📅 icon next to action
-2. Select date, time, and duration
-3. Choose "Add to Calendar"
-4. Opens Google Calendar or downloads .ics file
+1. Click on a spoke to open configuration popup
+2. Select "Action(s)" type and add action name
+3. Choose "Add & Schedule" to open date/time picker
+4. Select date, time, and duration (or click "Skip")
+5. Click "Add to Calendar" - opens Google Calendar or downloads .ics file
+6. Repeat for additional actions
+
+**Rescheduling:**
+- Scheduled actions show date/time (green pill) instead of calendar icon
+- Click to open reschedule popup
+- Warning reminder to manually delete old calendar entry
 
 ## Current Limitations & Known Issues
 
@@ -199,20 +238,24 @@ Breakpoints:
 3. **Mobile chart interactions** can be tricky with small slices
 4. **Text overflow** on small slices not handled gracefully
 
+## Recently Implemented
+
+### Spoke Type System (v1.1)
+- ✅ Static and Action spoke types
+- ✅ Spoke configuration popup
+- ✅ Sequential action scheduling workflow (add → schedule/skip)
+- ✅ Visual indicators for spoke types and action counts
+- ✅ Scheduled time display in branch view and list view
+- ✅ Reschedule functionality with reminder about old calendar entries
+- ✅ Backward compatibility with legacy string-based spokes
+
 ## Planned Features (Next Steps)
 
-### Priority 1: Spoke Type System
-Add four spoke types:
-- **Static** - Persistent reminders (default)
-- **Action** - One-time tasks with calendar integration
-- **Repeating** - Recurring tasks
+### Priority 1: Complete Spoke Type System
+Remaining spoke types to implement:
+- **Repeating** - Recurring tasks with calendar integration
 - **Pending** - Conditional tasks awaiting state change
-
-**Implementation needs:**
-- New spoke configuration popup
-- Visual indicators for each type
-- State management for pending → action transitions
-- Repeating event calendar integration
+- State management for pending → action/static transitions
 
 ### Priority 2: Expansion Refactor
 Replace the "redraw expanded view" approach with:
@@ -253,6 +296,12 @@ Replace the "redraw expanded view" approach with:
 - [ ] Responsive behavior
 - [ ] localStorage persistence
 - [ ] Example data for new users
+- [ ] Spoke type configuration (static ↔ action)
+- [ ] Action scheduling workflow (add → schedule/skip)
+- [ ] Scheduled time display in branch view
+- [ ] Scheduled time display in list view
+- [ ] Reschedule existing actions
+- [ ] Legacy spoke format compatibility
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
@@ -293,4 +342,4 @@ Built with D3.js
 ---
 
 **Last Updated:** February 2026
-**Current Version:** 1.0 (pre-spoke-types)
+**Current Version:** 1.1 (spoke-types-basic)
