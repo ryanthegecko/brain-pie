@@ -287,6 +287,33 @@ Replace the "redraw expanded view" approach with:
 - Event delegation where possible
 - localStorage for persistence
 
+### Debug Mode
+The app includes a debug system for development and testing. Access via browser console:
+
+```javascript
+// Toggle debug mode on/off
+Debug.toggle()
+
+// Check if debug mode is enabled
+Debug.enabled
+
+// Check if a specific flag is active
+Debug.isActive('allowMultipleBranches')
+
+// Log debug messages (only shown when enabled)
+Debug.log('message', data)
+```
+
+**Available Debug Flags:**
+| Flag | Description |
+|------|-------------|
+| `allowMultipleBranches` | Allow multiple branch views open simultaneously for alignment checking |
+
+**Adding New Debug Flags:**
+1. Add flag to `Debug.flags` object in `app.js`
+2. Use `Debug.isActive('flagName')` in code to check
+3. Document the flag in this table
+
 ### Testing Checklist
 - [ ] Add/edit/delete at each level
 - [ ] Drag-and-drop reordering

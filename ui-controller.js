@@ -193,7 +193,7 @@ const UI = {
                                                         const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                                                         const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                                                         scheduleDisplay = dateStr + ' ' + timeStr;
-                                                        buttonStyle = 'background: #4CAF50; padding: 3px 8px; font-size: 10px;';
+                                                        buttonStyle = 'background: #4CAF50; padding: 3px 8px;';
                                                         buttonTitle = 'Reschedule';
                                                     }
 

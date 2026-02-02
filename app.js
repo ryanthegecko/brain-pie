@@ -1,3 +1,40 @@
+/**
+ * Debug configuration for development and testing.
+ * Set flags to true to enable specific debug behaviors.
+ */
+const Debug = {
+    // Master switch - set to true to enable debug mode
+    enabled: false,
+
+    // Individual debug flags (only apply when enabled = true)
+    flags: {
+        // Allow multiple branch views to be open simultaneously for alignment checking
+        allowMultipleBranches: true,
+    },
+
+    // Check if a specific debug feature is active
+    isActive(flag) {
+        return this.enabled && this.flags[flag];
+    },
+
+    // Toggle debug mode on/off
+    toggle() {
+        this.enabled = !this.enabled;
+        console.log(`Debug mode: ${this.enabled ? 'ON' : 'OFF'}`);
+        return this.enabled;
+    },
+
+    // Log debug info (only when enabled)
+    log(...args) {
+        if (this.enabled) {
+            console.log('[DEBUG]', ...args);
+        }
+    }
+};
+
+// Expose Debug globally for console access
+window.Debug = Debug;
+
 const Controls = {
   HIDE_LABELS_KEY: 'hideSubitemLabels',
 
