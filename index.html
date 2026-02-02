@@ -202,8 +202,131 @@
                 </select>
             </div>
             
-            <button onclick="UI.createCalendarEvent()" style="margin-top: 20px; width: 100%; background: #4285F4;">
-                📅 Add to Calendar
+            <div id="reschedule-reminder" style="display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px; font-size: 13px; color: #856404;">
+                ⚠️ Remember to manually delete the old calendar entry if you no longer need it.
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="UI.skipScheduling()" class="secondary" style="flex: 1;">
+                    Skip
+                </button>
+                <button id="calendar-submit-btn" onclick="UI.createCalendarEvent()" style="flex: 2; background: #4285F4;">
+                    📅 Add to Calendar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spoke Configuration Overlay -->
+    <div class="spoke-config-overlay" id="spoke-config-overlay" onclick="UI.closeSpokeConfig()">
+        <div class="spoke-config-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeSpokeConfig()">✕</button>
+
+            <div id="spoke-config-details" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Spoke:</div>
+                <div id="spoke-config-name" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+                <div id="spoke-config-context" style="font-size: 12px; color: #999; margin-top: 5px;"></div>
+            </div>
+
+            <h2>Configure Spoke Type</h2>
+
+            <div class="spoke-type-options">
+                <label class="radio-option spoke-type-option">
+                    <input type="radio" name="spoke-type" value="static" checked onchange="UI.updateSpokeTypeFields('static')">
+                    <div class="spoke-type-label">
+                        <span class="spoke-type-title">📌 Static</span>
+                        <span class="spoke-type-description">Stays on your mind indefinitely (e.g., "Call Mum regularly")</span>
+                    </div>
+                </label>
+
+                <label class="radio-option spoke-type-option">
+                    <input type="radio" name="spoke-type" value="action" onchange="UI.updateSpokeTypeFields('action')">
+                    <div class="spoke-type-label">
+                        <span class="spoke-type-title">✓ Action(s)</span>
+                        <span class="spoke-type-description">One-time tasks to complete (can add to calendar)</span>
+                    </div>
+                </label>
+
+                <!-- HIDDEN UNTIL COMPLETE
+                <label class="radio-option spoke-type-option">
+                    <input type="radio" name="spoke-type" value="repeating" onchange="UI.updateSpokeTypeFields('repeating')">
+                    <div class="spoke-type-label">
+                        <span class="spoke-type-title">🔁 Repeating</span>
+                        <span class="spoke-type-description">Recurring task (daily, weekly, etc.)</span>
+                    </div>
+                </label>
+
+                <label class="radio-option spoke-type-option">
+                    <input type="radio" name="spoke-type" value="pending" onchange="UI.updateSpokeTypeFields('pending')">
+                    <div class="spoke-type-label">
+                        <span class="spoke-type-title">⏸ Pending</span>
+                        <span class="spoke-type-description">Waiting for something to happen first</span>
+                    </div>
+                </label>
+                -->
+            </div>
+
+            <!-- Action(s) section -->
+            <div id="spoke-actions-fields" style="display: none; margin-top: 20px;">
+                <div class="input-group">
+                    <label>Action(s) for this spoke:</label>
+
+                    <!-- Existing actions (read-only) -->
+                    <div id="spoke-existing-actions" class="spoke-actions-list" style="margin-bottom: 10px;">
+                        <!-- Existing actions will be shown here -->
+                    </div>
+
+                    <!-- Add new action -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text"
+                               id="new-spoke-action-input"
+                               placeholder="Enter action name..."
+                               style="flex: 1;"
+                               onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addAndScheduleAction();}">
+                        <button type="button" class="secondary" onclick="UI.addAndScheduleAction()">
+                            Add & Schedule
+                        </button>
+                    </div>
+                    <span class="helper-text">Add an action, then schedule it. Repeat for more actions.</span>
+                </div>
+            </div>
+
+            <!-- HIDDEN UNTIL FEATURES COMPLETE
+            <div id="spoke-pending-fields" style="display: none; margin-top: 20px;">
+                <div class="input-group">
+                    <label for="pending-condition">What are you waiting for?</label>
+                    <input type="text" id="pending-condition" placeholder="e.g., 'Waiting for approval', 'Until next month'">
+                </div>
+
+                <div class="input-group">
+                    <label for="pending-next-state">When condition is met, become:</label>
+                    <select id="pending-next-state">
+                        <option value="action">Action</option>
+                        <option value="static">Static</option>
+                        <option value="repeating">Repeating</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="spoke-repeating-fields" style="display: none; margin-top: 20px;">
+                <div class="input-group">
+                    <label for="recurrence-pattern">Repeat:</label>
+                    <select id="recurrence-pattern">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="biweekly">Every 2 weeks</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                    Note: Repeating events will create recurring calendar entries
+                </p>
+            </div>
+            -->
+
+            <button onclick="UI.saveSpokeConfig()" style="margin-top: 20px; width: 100%;">
+                Save Configuration
             </button>
         </div>
     </div>

@@ -2,6 +2,90 @@ const ChartRenderer = {
     svg: null,
     highlightGroup: null,
     currentExpanded: null,
+
+    // Spoke type helper functions
+    getSpokeVisualIndicator(spoke) {
+        if (typeof spoke === 'string') return '';
+
+        const type = spoke.type || 'static';
+        const hasChildren = spoke.children && spoke.children.length > 0;
+
+        // If it has children, show action indicator with count
+        if (hasChildren) {
+            return ` • (${spoke.children.length})`;
+        }
+
+        // Only show action indicator (repeating/pending hidden until complete)
+        switch(type) {
+            case 'action':
+                return ' ✓';
+            // HIDDEN UNTIL FEATURES COMPLETE:
+            // case 'repeating':
+            //     return ' 🔁';
+            // case 'pending':
+            //     return ' ⏸';
+            case 'static':
+            default:
+                return '';
+        }
+    },
+
+    getSpokeTextStyle(spoke) {
+        if (typeof spoke === 'string') return {};
+
+        const type = spoke.type || 'static';
+        const hasChildren = spoke.children && spoke.children.length > 0;
+
+        let style = {};
+
+        // Actions with children are bold
+        if (hasChildren) {
+            style['font-weight'] = 'bold';
+        }
+
+        // HIDDEN UNTIL FEATURES COMPLETE:
+        // Pending spokes are italic
+        // if (type === 'pending') {
+        //     style['font-style'] = 'italic';
+        //     style['fill'] = '#999';
+        // }
+
+        return style;
+    },
+
+    handleSpokeClick(event, subItem, catData, sliceData, spokeIndex, categoryId, itemId) {
+        event.stopPropagation();
+
+        // Get spoke type
+        const spokeType = DataModel.getSpokeType(categoryId, itemId, spokeIndex);
+        const hasChildren = (typeof subItem === 'object' && subItem.children && subItem.children.length > 0);
+
+        if (hasChildren) {
+            // Show branch expansion for spokes with children
+            const angle = sliceData.startAngle + ((sliceData.endAngle - sliceData.startAngle) / sliceData.data.subItems.length) * (spokeIndex + 0.5);
+            ChartRenderer.expandBranch(subItem, catData, sliceData, angle, categoryId, itemId, spokeIndex);
+        } else if (spokeType === 'action') {
+            // For action spokes without children, show calendar picker
+            const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
+            UI.showDateTimePicker(
+                spokeName,
+                spokeName,
+                sliceData.data.name,
+                catData.data.name
+            );
+        } else {
+            // For static, repeating, or pending spokes, show configuration
+            const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
+            UI.showSpokeConfig(
+                categoryId,
+                itemId,
+                spokeIndex,
+                spokeName,
+                sliceData.data.name,
+                catData.data.name
+            );
+        }
+    },
     
     init(containerId) {
         const container = d3.select(`#${containerId}`);
@@ -300,33 +384,33 @@ const ChartRenderer = {
                     const labelX = extendX + (Math.cos(renderAngle) * labelOffset);
                     const labelY = extendY + (Math.sin(renderAngle) * labelOffset);
 
-                    // Add label with click handler for branches
+                    // Add label with click handler using spoke type helpers
+                    const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
+                    const indicator = ChartRenderer.getSpokeVisualIndicator(subItem);
+                    const textStyle = ChartRenderer.getSpokeTextStyle(subItem);
+
                     const spokeLabel = group.append('text')
                         .attr('class', 'sub-item-label')
                         .attr('transform', `translate(${labelX}, ${labelY}) rotate(${textRotation})`)
                         .attr('text-anchor', extendX > 0 ? 'start' : 'end')
                         .style('cursor', 'pointer')
-                        .text(typeof subItem === 'string' ? subItem : subItem.text)
+                        .text(spokeName + indicator)
                         .on('click', function(event) {
-                            
-                            event.stopPropagation();
-                            if (true === true){
-                                if (subItem.children && subItem.children.length)
-                                    ChartRenderer.expandBranch(subItem, catData, d, angle);
-                                else {
-                                    UI.showAddActionInput(catData.data.id, d.data.id.toString(), idx)
-                                }
-                            } else {
-                                
-                            }
+                            ChartRenderer.handleSpokeClick(
+                                event,
+                                subItem,
+                                catData,
+                                d,
+                                idx,
+                                catData.data.id,
+                                d.data.id
+                            );
                         });
-                    
-                    // Visual indicator if spoke has children
-                    if (typeof subItem === 'object' && subItem.children && subItem.children.length > 0) {
-                        spokeLabel.text(spokeLabel.text() + ' •')
-                        spokeLabel.style('font-weight', 'bold')
-                            .style('fill', '#333333');
-                    }
+
+                    // Apply text styling based on spoke type
+                    Object.keys(textStyle).forEach(key => {
+                        spokeLabel.style(key, textStyle[key]);
+                    });
 
                 });
             });
@@ -425,8 +509,10 @@ const ChartRenderer = {
                     const angle = newStartAngle + (angleStep * (idx + 0.5));
                     const extendX = Math.cos(angle - Math.PI / 2) * (that.innerRadius + 80);
                     const extendY = Math.sin(angle - Math.PI / 2) * (that.innerRadius + 80);
-                    const text = (typeof subItem == 'string') ? subItem : subItem.text;
-                    
+                    const spokeName = (typeof subItem == 'string') ? subItem : subItem.text;
+                    const indicator = that.getSpokeVisualIndicator(subItem);
+                    const textStyle = that.getSpokeTextStyle(subItem);
+
                     // Draw line
                     expandedGroup.append('line')
                         .attr('class', 'sub-item-line')
@@ -449,15 +535,20 @@ const ChartRenderer = {
                         .attr('stroke', '#666')
                         .attr('stroke-width', 2);
 
-                    // Label
-                    expandedGroup.append('text')
+                    // Label with spoke type indicator
+                    const spokeLabel = expandedGroup.append('text')
                         .attr('class', 'sub-item-label')
                         .style('font-size', '13px')
                         .style('font-weight', '600')
                         .attr('x', extendX + ((horizontalLength + 5) * direction))
                         .attr('y', extendY + 4)
                         .attr('text-anchor', extendX > 0 ? 'start' : 'end')
-                        .text(text);
+                        .text(spokeName + indicator);
+
+                    // Apply text styling based on spoke type
+                    Object.keys(textStyle).forEach(key => {
+                        spokeLabel.style(key, textStyle[key]);
+                    });
                 });
             }
         }, 100)
@@ -584,8 +675,10 @@ const ChartRenderer = {
                             const angle = itemDatum.startAngle + (subAngleStep * (idx + 0.5));
                             const extendX = Math.cos(angle - Math.PI / 2) * (that.outerRadius + 110);
                             const extendY = Math.sin(angle - Math.PI / 2) * (that.outerRadius + 110);
-                            const name = (typeof subItem == 'string' ? subItem :subItem.text)
-                            
+                            const spokeName = (typeof subItem == 'string' ? subItem : subItem.text);
+                            const indicator = that.getSpokeVisualIndicator(subItem);
+                            const textStyle = that.getSpokeTextStyle(subItem);
+
                             // Draw line from center
                             expandedGroup.append('line')
                                 .attr('class', 'sub-item-line')
@@ -608,15 +701,20 @@ const ChartRenderer = {
                                 .attr('stroke', '#666')
                                 .attr('stroke-width', 2);
 
-                            // Label
-                            expandedGroup.append('text')
+                            // Label with spoke type indicator
+                            const spokeLabel = expandedGroup.append('text')
                                 .attr('class', 'sub-item-label')
                                 .style('font-size', '13px')
                                 .style('font-weight', '600')
                                 .attr('x', extendX + ((horizontalLength + 5) * direction))
                                 .attr('y', extendY + 4)
                                 .attr('text-anchor', extendX > 0 ? 'start' : 'end')
-                                .text(name);
+                                .text(spokeName + indicator);
+
+                            // Apply text styling based on spoke type
+                            Object.keys(textStyle).forEach(key => {
+                                spokeLabel.style(key, textStyle[key]);
+                            });
                         });
                     }
                 });
@@ -673,10 +771,12 @@ const ChartRenderer = {
 
         }, 100);
     },
-    expandBranch(spokeData, categoryData, itemData, spokeAngle) {
+    expandBranch(spokeData, categoryData, itemData, spokeAngle, categoryId, itemId, spokeIndex) {
 
         this.currentExpanded = spokeData;
         const that = this;
+        // Store location info for click handlers
+        const dataLocation = { categoryId, itemId, spokeIndex };
         
         setTimeout(() => {
             // Calculate opposite corner for pie shrinkage
@@ -727,7 +827,7 @@ const ChartRenderer = {
                 const childStartY = branchEndY;
                 const childEndX = childStartX + (Math.cos(childAngle) * childLength);
                 const childEndY = childStartY + (Math.sin(childAngle) * childLength);
-                
+
                 // Child branch line
                 branchGroup.append('line')
                     .attr('x1', childStartX)
@@ -737,32 +837,60 @@ const ChartRenderer = {
                     .attr('stroke', '#666')
                     .attr('stroke-width', 2);
 
-                // Add calendar icon/button
-                const iconSize = 20;
+                // Check if action has scheduled time
+                const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+                const childDataLocation = { ...dataLocation, childIndex: idx };
+
+                // Add calendar icon/button or scheduled time
                 const iconGroup = branchGroup.append('g')
                     .attr('transform', `translate(${childEndX}, ${childEndY - 25})`)
                     .style('cursor', 'pointer')
                     .on('click', function(event) {
                         event.stopPropagation();
-                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name);
+                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name, childDataLocation);
                     });
-                
-                // Calendar icon background
-                iconGroup.append('circle')
-                    .attr('r', iconSize / 2)
-                    .attr('fill', '#4285F4')
-                    .attr('stroke', 'white')
-                    .attr('stroke-width', 2);
-                
-                // Calendar icon (simplified)
-                iconGroup.append('text')
-                    .attr('text-anchor', 'middle')
-                    .attr('dy', '0.35em')
-                    .style('font-size', '12px')
-                    .style('fill', 'white')
-                    .style('font-weight', 'bold')
-                    .text('📅');    
-                
+
+                if (hasSchedule) {
+                    // Show scheduled time
+                    const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
+                    const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+                    // Background pill for scheduled time
+                    iconGroup.append('rect')
+                        .attr('x', -45)
+                        .attr('y', -12)
+                        .attr('width', 90)
+                        .attr('height', 24)
+                        .attr('rx', 12)
+                        .attr('fill', '#4CAF50')
+                        .attr('stroke', 'white')
+                        .attr('stroke-width', 2);
+
+                    iconGroup.append('text')
+                        .attr('text-anchor', 'middle')
+                        .attr('dy', '0.35em')
+                        .style('font-size', '11px')
+                        .style('fill', 'white')
+                        .style('font-weight', 'bold')
+                        .text(`${dateStr} ${timeStr}`);
+                } else {
+                    // Show calendar icon
+                    iconGroup.append('circle')
+                        .attr('r', 10)
+                        .attr('fill', '#4285F4')
+                        .attr('stroke', 'white')
+                        .attr('stroke-width', 2);
+
+                    iconGroup.append('text')
+                        .attr('text-anchor', 'middle')
+                        .attr('dy', '0.35em')
+                        .style('font-size', '12px')
+                        .style('fill', 'white')
+                        .style('font-weight', 'bold')
+                        .text('📅');
+                }
+
                 // Child label
                 branchGroup.append('text')
                     .attr('x', childEndX)
@@ -773,7 +901,7 @@ const ChartRenderer = {
                     .text(child.text || child)
                     .on('click', function(event) {
                         event.stopPropagation();
-                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name);
+                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name, childDataLocation);
                     });
             });
             
@@ -795,13 +923,13 @@ const ChartRenderer = {
         this.svg.transition().duration(300)
             .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
     },
-    openCalendarForAction(action, spokeData, itemData, categoryData) {
+    openCalendarForAction(action, spokeData, itemData, categoryData, dataLocation = null) {
         const actionText = action.text || action;
         const spokeText = spokeData.text || spokeData;
         const sliceName = itemData;
         const categoryName = categoryData;
-        
-        UI.showDateTimePicker(actionText, spokeText, sliceName, categoryName);
+
+        UI.showDateTimePicker(actionText, spokeText, sliceName, categoryName, dataLocation);
     },
     getDefaultEventDates() {
         // Set event for tomorrow at 9 AM, duration 1 hour
