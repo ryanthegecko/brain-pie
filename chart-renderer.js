@@ -2,6 +2,17 @@ const ChartRenderer = {
     svg: null,
     highlightGroup: null,
     currentExpanded: null,
+    currentExpandedLocation: null,  // Track {categoryId, itemId, spokeIndex} for toggle
+    branchClickOutsideHandler: null,  // Store reference to document click handler
+
+    // Check if branch is expanded and collapse it, returns true if collapsed
+    collapseIfBranchExpanded() {
+        if (this.currentExpandedLocation) {
+            this.collapseBranch();
+            return true;
+        }
+        return false;
+    },
 
     // Spoke type helper functions
     getSpokeVisualIndicator(spoke) {
@@ -61,10 +72,20 @@ const ChartRenderer = {
         const hasChildren = (typeof subItem === 'object' && subItem.children && subItem.children.length > 0);
 
         if (hasChildren) {
+            // Check if this spoke is already expanded (toggle behavior)
+            const loc = this.currentExpandedLocation;
+            if (loc && loc.categoryId === categoryId && loc.itemId === itemId && loc.spokeIndex === spokeIndex) {
+                // Same spoke clicked - collapse it
+                this.collapseBranch();
+                return;
+            }
+
             // Show branch expansion for spokes with children
             const angle = sliceData.startAngle + ((sliceData.endAngle - sliceData.startAngle) / sliceData.data.subItems.length) * (spokeIndex + 0.5);
             ChartRenderer.expandBranch(subItem, catData, sliceData, angle, categoryId, itemId, spokeIndex);
         } else if (spokeType === 'action') {
+            // Collapse any expanded branch first
+            this.collapseIfBranchExpanded();
             // For action spokes without children, show calendar picker
             const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
             UI.showDateTimePicker(
@@ -74,6 +95,8 @@ const ChartRenderer = {
                 catData.data.name
             );
         } else {
+            // Collapse any expanded branch first
+            this.collapseIfBranchExpanded();
             // For static, repeating, or pending spokes, show configuration
             const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
             UI.showSpokeConfig(
@@ -175,6 +198,8 @@ const ChartRenderer = {
         // Add click effect for categories
         categorySlices.on('click', (event, d) => {
             event.stopPropagation();
+            // Collapse branch if one is expanded
+            if (this.collapseIfBranchExpanded()) return;
             if (!this.currentExpanded) {
                 this.expandCategory(d, outerData);
             }
@@ -281,11 +306,11 @@ const ChartRenderer = {
             // Add click expand effect
             itemSlices.on('click', (event, d) => {
                 event.stopPropagation();
+                // Collapse branch if one is expanded
+                if (this.collapseIfBranchExpanded()) return;
                 if (!this.currentExpanded) {
                     this.expandSlice(d, catData, category, itemData)
                 }
-
-
             }).on('mouseleave', () => {
                 if (!this.currentExpanded) {
                     this.collapseSlice();
@@ -774,6 +799,7 @@ const ChartRenderer = {
     expandBranch(spokeData, categoryData, itemData, spokeAngle, categoryId, itemId, spokeIndex) {
 
         this.currentExpanded = spokeData;
+        this.currentExpandedLocation = { categoryId, itemId, spokeIndex };
         const that = this;
         // Store location info for click handlers
         const dataLocation = { categoryId, itemId, spokeIndex };
@@ -783,67 +809,76 @@ const ChartRenderer = {
             const renderAngle = spokeAngle - Math.PI / 2;
             const branchX = Math.cos(renderAngle);
             const branchY = Math.sin(renderAngle);
-            
+
             // Move pie to opposite corner (scale down and translate)
-            const shrinkScale = 0.7;
-            const translateDistance = 300;
+            const shrinkScale = 0.925;
+            const translateDistance = 108;
             const pieTranslateX = -branchX * translateDistance;
             const pieTranslateY = -branchY * translateDistance;
-            
+
             // Shrink and move main pie
             that.svg.transition().duration(300)
                 .attr('transform', `translate(${that.width / 2 + pieTranslateX}, ${that.height / 2 + pieTranslateY}) scale(${shrinkScale})`);
-            
-            // Create branch visualization
-            const branchGroup = that.highlightGroup.append('g')
-                .attr('class', 'branch-view');
-            
+
+            // Calculate text's visual angle (text is horizontal by default, then rotated)
+            const testX = branchX;
+            const testY = branchY;
+            const verticalness = Math.abs(testY);
+            const maxRotation = 30;
+            const rotationAmount = verticalness * maxRotation;
+
+            // Text rotation from horizontal baseline
+            let textRotationDeg;
+            if (testX > 0) {
+                textRotationDeg = testY < 0 ? -rotationAmount : rotationAmount;
+            } else {
+                textRotationDeg = testY < 0 ? rotationAmount : -rotationAmount;
+            }
+
+            // Branch should follow text's visual direction:
+            // - Right side (testX > 0): branch goes right, tilted by textRotation
+            // - Left side (testX < 0): branch goes left, tilted by textRotation
+            const baseAngleDeg = testX > 0 ? 0 : 180;  // Horizontal right or left
+            const branchAngleDeg = baseAngleDeg + textRotationDeg;
+            const branchAngleRad = (branchAngleDeg * Math.PI) / 180;
+
             // Starting point for branch (from spoke position)
             const startX = Math.cos(renderAngle) * (that.outerRadius + 70);
             const startY = Math.sin(renderAngle) * (that.outerRadius + 80);
-            
-            // Draw main branch line
-            const branchLength = 100;
-            const branchEndX = startX + (Math.cos(renderAngle) * branchLength);
-            const branchEndY = startY + (Math.sin(renderAngle) * branchLength);
-            
+
+            // Create branch visualization
+            const branchGroup = that.highlightGroup.append('g')
+                .attr('class', 'branch-view');
+
+            // Calculate branch length based on spoke label text
+            const spokeText = spokeData.text || spokeData;
+            const indicator = that.getSpokeVisualIndicator(spokeData);
+            const fullLabel = spokeText + indicator;
+            // Approximate width: ~7px per character at 14px font, plus padding
+            const textWidth = fullLabel.length * 7;
+            const branchLength = Math.max(60, textWidth + 15);  // minimum 60px, plus padding
+            const branchEndX = startX + (Math.cos(branchAngleRad) * branchLength);
+            const branchEndY = startY + (Math.sin(branchAngleRad) * branchLength);
+
             branchGroup.append('line')
                 .attr('x1', startX)
                 .attr('y1', startY)
                 .attr('x2', branchEndX)
                 .attr('y2', branchEndY)
-                .attr('stroke', '#333')
-                .attr('stroke-width', 4);
-            
-            // Draw children as sub-branches
+                .attr('stroke', '#888')
+                .attr('stroke-width', 1);
+
+            // Draw children - single child at end of trunk, multiple as branches
             const children = spokeData.children || [];
-            const childAngleSpread = Math.PI / 3; // 60 degrees spread
-            const childAngleStart = renderAngle - (childAngleSpread / 2);
-            
-            children.forEach((child, idx) => {
-                const childAngle = childAngleStart + (childAngleSpread * idx / Math.max(1, children.length - 1));
-                const childLength = 150;
-                const childStartX = branchEndX;
-                const childStartY = branchEndY;
-                const childEndX = childStartX + (Math.cos(childAngle) * childLength);
-                const childEndY = childStartY + (Math.sin(childAngle) * childLength);
 
-                // Child branch line
-                branchGroup.append('line')
-                    .attr('x1', childStartX)
-                    .attr('y1', childStartY)
-                    .attr('x2', childEndX)
-                    .attr('y2', childEndY)
-                    .attr('stroke', '#666')
-                    .attr('stroke-width', 2);
-
-                // Check if action has scheduled time
+            // Helper to render a single action (icon + label)
+            const renderAction = (child, idx, posX, posY, labelAnchor = 'middle') => {
                 const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
                 const childDataLocation = { ...dataLocation, childIndex: idx };
 
                 // Add calendar icon/button or scheduled time
                 const iconGroup = branchGroup.append('g')
-                    .attr('transform', `translate(${childEndX}, ${childEndY - 25})`)
+                    .attr('transform', `translate(${posX}, ${posY - 25})`)
                     .style('cursor', 'pointer')
                     .on('click', function(event) {
                         event.stopPropagation();
@@ -851,12 +886,10 @@ const ChartRenderer = {
                     });
 
                 if (hasSchedule) {
-                    // Show scheduled time
                     const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
                     const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-                    // Background pill for scheduled time
                     iconGroup.append('rect')
                         .attr('x', -45)
                         .attr('y', -12)
@@ -875,7 +908,6 @@ const ChartRenderer = {
                         .style('font-weight', 'bold')
                         .text(`${dateStr} ${timeStr}`);
                 } else {
-                    // Show calendar icon
                     iconGroup.append('circle')
                         .attr('r', 10)
                         .attr('fill', '#4285F4')
@@ -893,9 +925,9 @@ const ChartRenderer = {
 
                 // Child label
                 branchGroup.append('text')
-                    .attr('x', childEndX)
-                    .attr('y', childEndY - 5)
-                    .attr('text-anchor', 'middle')
+                    .attr('x', posX)
+                    .attr('y', posY - 5)
+                    .attr('text-anchor', labelAnchor)
                     .style('font-size', '14px')
                     .style('fill', '#333')
                     .text(child.text || child)
@@ -903,22 +935,69 @@ const ChartRenderer = {
                         event.stopPropagation();
                         that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name, childDataLocation);
                     });
-            });
+            };
+
+            if (children.length === 1) {
+                // Single child: place at end of trunk, no branch line
+                renderAction(children[0], 0, branchEndX, branchEndY);
+            } else {
+                // Multiple children: draw as branches
+                const childAngleSpread = Math.PI / 3; // 60 degrees spread
+                const childAngleStart = branchAngleRad - (childAngleSpread / 2);
+
+                children.forEach((child, idx) => {
+                    const childAngle = childAngleStart + (childAngleSpread * idx / Math.max(1, children.length - 1));
+                    const childLength = 120;
+                    const textPadding = 30;
+                    const childEndX = branchEndX + (Math.cos(childAngle) * childLength);
+                    const childEndY = branchEndY + (Math.sin(childAngle) * childLength);
+                    const textX = branchEndX + (Math.cos(childAngle) * (childLength + textPadding));
+                    const textY = branchEndY + (Math.sin(childAngle) * (childLength + textPadding));
+
+                    // Child branch line
+                    branchGroup.append('line')
+                        .attr('x1', branchEndX)
+                        .attr('y1', branchEndY)
+                        .attr('x2', childEndX)
+                        .attr('y2', childEndY)
+                        .attr('stroke', '#666')
+                        .attr('stroke-width', 2);
+
+                    renderAction(child, idx, textX, textY);
+                });
+            }
             
             that.highlightGroup.raise();
-            
-            // Click to collapse
-            that.highlightGroup.on('click', () => {
-                that.collapseBranch();
-            });
-            
+
+            // Add document-level click handler to collapse when clicking outside branch
+            // Use setTimeout to avoid the current click event triggering it immediately
+            setTimeout(() => {
+                that.branchClickOutsideHandler = function(event) {
+                    // Check if click is within the branch-view group
+                    const branchView = document.querySelector('.branch-view');
+                    if (branchView && branchView.contains(event.target)) {
+                        return; // Click was on branch elements, don't collapse
+                    }
+                    // Click was outside - collapse
+                    that.collapseBranch();
+                };
+                document.addEventListener('click', that.branchClickOutsideHandler);
+            }, 50);
+
         }, 100);
     },
-    
+
     collapseBranch() {
         this.currentExpanded = null;
+        this.currentExpandedLocation = null;
         this.highlightGroup.selectAll('*').remove();
-        
+
+        // Remove document click handler
+        if (this.branchClickOutsideHandler) {
+            document.removeEventListener('click', this.branchClickOutsideHandler);
+            this.branchClickOutsideHandler = null;
+        }
+
         // Restore main pie position and scale
         this.svg.transition().duration(300)
             .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
