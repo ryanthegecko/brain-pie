@@ -85,8 +85,6 @@ const App = {
         const name = document.getElementById('item-name').value.trim();
         let percentage = parseFloat(document.getElementById('item-percentage').value);
         const color = document.getElementById('item-color').value;
-        // const subItemsText = document.getElementById('sub-items').value.trim();
-        // const actionsText = document.getElementById('actions').value.trim();
         
         if (!categoryId) {
             alert('Please select a category');
@@ -182,10 +180,6 @@ const App = {
         DataModel.removeSpokeChild(categoryId, itemId, spokeIndex, childIndex);
         this.render();
     },
-    
-    // toggleSpokeChildren(categoryId, itemId, spokeIndex) {
-    //     this.addSpokeChild(categoryId, itemId, spokeIndex);
-    // },
 
     exportData() {
         const data = { categories: DataModel.getCategories() };
