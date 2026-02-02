@@ -152,7 +152,9 @@ const UI = {
                                 <span>% of category</span>
                             </div>
                             ${item.subItems.length > 0 
-                                ? `<ul style="position: relative;">${item.subItems.map((sub, idx) => {
+                                ? `<ul
+                                    class="spoke-list"
+                                    style="position: relative;">${item.subItems.map((sub, idx) => {
                                     const subText = typeof sub === 'string' ? sub : sub.text;
                                     const children = typeof sub === 'object' ? sub.children || [] : [];
                                     
@@ -177,7 +179,8 @@ const UI = {
                                             </div>
                                         </div>
                                         ${children.length > 0 ? `
-                                            <ul style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
+                                            <ul class="action-list" 
+                                            style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
                                                 ${children.map((child, childIdx) => {
                                                     const childText = typeof child === 'string' ? child : child.text;
                                                     const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;

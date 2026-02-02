@@ -570,22 +570,37 @@ textarea {
     }
 }
 
-.item-card ul {
+.item-card .spoke-list {
     list-style: none;
     padding-left: 0;
 }
 
-.item-card li {
+.item-card .spoke-list li {
     padding: 4px 0;
     color: #555;
     font-size: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
     @media (max-width: 1024px) {
         padding: 6px 0;
         font-size: 24px;
     }
+}
+.item-card .spoke-list li .action-list {
+    width: 100%;
+}
+
+.item-card .spoke-list li .action-list li {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    span {
+        max-width: 100%;
+        overflow: hidden;
+    }
+    
 }
 
 .item-card li .sub-item-text:before {
