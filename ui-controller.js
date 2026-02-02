@@ -476,27 +476,42 @@ const UI = {
     initSpokesBuilder() {
         const builder = document.getElementById('spokes-builder');
         builder.innerHTML = '';
+        this.pendingBuilderActions = {};  // Clear any pending actions
         this.addSpokeEntry();
     },
     
+    // Store pending actions for spokes being built (before slice is created)
+    pendingBuilderActions: {},
+
     addSpokeEntry() {
         const builder = document.getElementById('spokes-builder');
         const entryId = `spoke-${Date.now()}`;
+
+        // Initialize empty actions for this entry
+        this.pendingBuilderActions[entryId] = { type: 'static', actions: [] };
+        const button = document.createElement('button')
+        button.type = "button"
+        button.addEventListener('click' , ()=>{ UI.addSpokeEntry()}); 
+        button.innerHTML = "+ Add Spoke";
+        // builder.appendChild(button);
         
+        //`<button type="button" class="secondary" onclick="UI.addSpokeEntry()" style="margin-top: 10px; width: 100%;">+ Add Spoke</button>`
+
         const entry = document.createElement('div');
         entry.className = 'spoke-entry';
         entry.id = entryId;
         entry.innerHTML = `
-            <input type="text" 
-                   placeholder="Spoke name (press Enter for next)" 
-                   onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addSpokeEntry(); this.nextElementSibling?.focus();}"
+            <input type="text"
+                   placeholder="Spoke name (press Enter for next)"
+                   onkeydown="if(event.key= =='Enter'){event.preventDefault(); UI.addSpokeEntry(); this.nextElementSibling?.focus();}"
                    data-spoke-input>
-            <button class="add-actions-btn" onclick="UI.toggleActions('${entryId}')">+ Actions</button>
+            <button class="add-actions-btn" style="background: #4CAF50;" onclick="UI.showSpokeConfigForBuilder('${entryId}')">+ Actions</button>
             <button class="remove-btn" onclick="UI.removeSpokeEntry('${entryId}')">×</button>
+            <span class="builder-action-count" id="action-count-${entryId}"></span>
         `;
-        
+
         builder.appendChild(entry);
-        
+
         // Focus the new input
         const input = entry.querySelector('input');
         input.focus();
@@ -505,99 +520,101 @@ const UI = {
     removeSpokeEntry(entryId) {
         const entry = document.getElementById(entryId);
         if (entry) entry.remove();
+        // Clean up pending actions
+        delete this.pendingBuilderActions[entryId];
     },
-    
-    toggleActions(entryId) {
+
+    // Show spoke config popup for builder (new spokes, not yet saved)
+    showSpokeConfigForBuilder(entryId) {
         const entry = document.getElementById(entryId);
-        let actionsContainer = entry.querySelector('.actions-list');
-        
-        if (actionsContainer) {
-            // Toggle visibility
-            actionsContainer.style.display = actionsContainer.style.display === 'none' ? 'block' : 'none';
-        } else {
-            // Create actions container
-            actionsContainer = document.createElement('div');
-            actionsContainer.className = 'actions-list';
-            
-            const actionsWrapper = document.createElement('div');
-            actionsWrapper.innerHTML = `
-                <div style="margin-bottom: 8px; font-size: 12px; color: #666; font-weight: 600;">Actions for this spoke:</div>
-                <div class="actions-entries" data-actions-container></div>
-                <button class="small secondary" onclick="UI.addActionEntry('${entryId}')" style="margin-top: 5px;">+ Add Action</button>
-            `;
-            actionsContainer.appendChild(actionsWrapper);
-            
-            entry.appendChild(actionsContainer);
-            
-            // Add first action entry
-            this.addActionEntry(entryId);
+        const spokeInput = entry.querySelector('[data-spoke-input]');
+        const spokeName = spokeInput.value.trim() || 'New Spoke';
+
+        // Store builder context
+        this.pendingSpokeConfig = {
+            builderMode: true,
+            entryId: entryId,
+            spokeName: spokeName
+        };
+
+        // Show spoke details
+        document.getElementById('spoke-config-name').textContent = spokeName;
+        document.getElementById('spoke-config-context').textContent = 'Adding new spoke';
+
+        // Get current type from pending data
+        const pendingData = this.pendingBuilderActions[entryId] || { type: 'static', actions: [] };
+        const spokeType = pendingData.type;
+
+        // Set radio button
+        const radio = document.querySelector(`input[name="spoke-type"][value="${spokeType}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+
+        // Clear and populate existing actions
+        this.renderExistingActions();
+
+        // Clear new action input
+        const newActionInput = document.getElementById('new-spoke-action-input');
+        if (newActionInput) newActionInput.value = '';
+
+        // Show appropriate fields
+        this.updateSpokeTypeFields(spokeType);
+
+        // Show modal
+        document.getElementById('spoke-config-overlay').classList.add('active');
+    },
+
+    updateBuilderActionCount(entryId) {
+        const countSpan = document.getElementById(`action-count-${entryId}`);
+        const pendingData = this.pendingBuilderActions[entryId];
+        if (countSpan && pendingData && pendingData.actions.length > 0) {
+            countSpan.textContent = `(${pendingData.actions.length} action${pendingData.actions.length > 1 ? 's' : ''})`;
+            countSpan.style.color = '#4CAF50';
+            countSpan.style.fontWeight = 'bold';
+            countSpan.style.marginLeft = '8px';
+        } else if (countSpan) {
+            countSpan.textContent = '';
         }
     },
     
-    addActionEntry(spokeEntryId) {
-        const entry = document.getElementById(spokeEntryId);
-        const actionsContainer = entry.querySelector('[data-actions-container]');
-        
-        const actionId = `action-${Date.now()}`;
-        const actionEntry = document.createElement('div');
-        actionEntry.className = 'action-entry';
-        actionEntry.id = actionId;
-        actionEntry.innerHTML = `
-            <input type="text" 
-                   placeholder="Action name (press Enter for next)" 
-                   onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addActionEntry('${spokeEntryId}');}"
-                   data-action-input>
-            <button class="remove-action-btn" onclick="UI.removeActionEntry('${actionId}')">×</button>
-        `;
-        
-        actionsContainer.appendChild(actionEntry);
-        
-        // Focus the new action input
-        actionEntry.querySelector('input').focus();
-    },
-    
-    removeActionEntry(actionId) {
-        const entry = document.getElementById(actionId);
-        if (entry) entry.remove();
-    },
     
     getSpokesData() {
         const builder = document.getElementById('spokes-builder');
         const spokeEntries = builder.querySelectorAll('.spoke-entry');
         const spokes = [];
-        
+
         spokeEntries.forEach(entry => {
             const spokeInput = entry.querySelector('[data-spoke-input]');
             const spokeName = spokeInput.value.trim();
-            
+
             if (!spokeName) return; // Skip empty spokes
-            
-            const actionsContainer = entry.querySelector('[data-actions-container]');
-            const actions = [];
-            
-            if (actionsContainer) {
-                const actionInputs = actionsContainer.querySelectorAll('[data-action-input]');
-                actionInputs.forEach(actionInput => {
-                    const actionName = actionInput.value.trim();
-                    if (actionName) {
-                        actions.push({
-                            text: actionName,
-                            children: []
-                        });
-                    }
-                });
-            }
-            
+
+            const entryId = entry.id;
+            const pendingData = this.pendingBuilderActions[entryId];
+            const actions = pendingData ? pendingData.actions : [];
+            const spokeType = pendingData ? pendingData.type : 'static';
+
             if (actions.length > 0) {
                 spokes.push({
                     text: spokeName,
-                    children: actions
+                    type: spokeType,
+                    children: actions,
+                    metadata: {}
+                });
+            } else if (spokeType === 'action') {
+                // Action type but no actions yet
+                spokes.push({
+                    text: spokeName,
+                    type: spokeType,
+                    children: [],
+                    metadata: {}
                 });
             } else {
-                spokes.push(spokeName); // Just a string if no actions
+                spokes.push(spokeName); // Just a string for static spokes without actions
             }
         });
-        
+
         return spokes;
     },
 
@@ -935,9 +952,40 @@ const UI = {
     renderExistingActions() {
         if (!this.pendingSpokeConfig) return;
 
-        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
         const container = document.getElementById('spoke-existing-actions');
         container.innerHTML = '';
+
+        // Handle builder mode (new spokes not yet saved)
+        if (this.pendingSpokeConfig.builderMode) {
+            const { entryId } = this.pendingSpokeConfig;
+            const pendingData = this.pendingBuilderActions[entryId] || { type: 'static', actions: [] };
+
+            if (pendingData.actions.length === 0) {
+                container.innerHTML = '<div style="color: #999; font-size: 13px; padding: 8px 0;">No actions yet. Add one below.</div>';
+                return;
+            }
+
+            pendingData.actions.forEach((action, idx) => {
+                const actionText = typeof action === 'string' ? action : action.text;
+                const entry = document.createElement('div');
+                entry.className = 'spoke-action-entry';
+                entry.style.background = '#f5f5f5';
+                entry.style.padding = '8px 12px';
+                entry.style.borderRadius = '6px';
+                entry.innerHTML = `
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">${actionText}</div>
+                        <div style="font-size: 12px; margin-top: 2px; color: #999;">Schedule after saving slice</div>
+                    </div>
+                    <button type="button" class="small warn" onclick="UI.removeBuilderAction(${idx})" title="Remove">×</button>
+                `;
+                container.appendChild(entry);
+            });
+            return;
+        }
+
+        // Handle existing spokes
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
 
         const category = DataModel.categories.find(c => c.id === categoryId);
         if (!category) return;
@@ -983,6 +1031,17 @@ const UI = {
         });
     },
 
+    removeBuilderAction(actionIndex) {
+        if (!this.pendingSpokeConfig || !this.pendingSpokeConfig.builderMode) return;
+
+        const { entryId } = this.pendingSpokeConfig;
+        const pendingData = this.pendingBuilderActions[entryId];
+        if (pendingData && pendingData.actions) {
+            pendingData.actions.splice(actionIndex, 1);
+            this.renderExistingActions();
+        }
+    },
+
     addAndScheduleAction() {
         if (!this.pendingSpokeConfig) return;
 
@@ -991,6 +1050,19 @@ const UI = {
 
         if (!actionText) {
             alert('Please enter an action name');
+            return;
+        }
+
+        // Handle builder mode (new spokes not yet saved)
+        if (this.pendingSpokeConfig.builderMode) {
+            const { entryId } = this.pendingSpokeConfig;
+            const pendingData = this.pendingBuilderActions[entryId];
+            if (pendingData) {
+                pendingData.type = 'action';
+                pendingData.actions.push({ text: actionText, children: [] });
+            }
+            input.value = '';
+            this.renderExistingActions();
             return;
         }
 
@@ -1095,13 +1167,40 @@ const UI = {
     saveSpokeConfig() {
         if (!this.pendingSpokeConfig) return;
 
-        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
         const selectedType = document.querySelector('input[name="spoke-type"]:checked').value;
+
+        // Handle builder mode
+        if (this.pendingSpokeConfig.builderMode) {
+            const { entryId } = this.pendingSpokeConfig;
+            const pendingData = this.pendingBuilderActions[entryId];
+            if (pendingData) {
+                pendingData.type = selectedType;
+            }
+            this.updateBuilderActionCount(entryId);
+            this.closeSpokeConfigForBuilder();
+            return;
+        }
+
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
 
         // Update the spoke type (actions are saved individually via addAndScheduleAction)
         DataModel.updateSpokeType(categoryId, itemId, spokeIndex, selectedType, {});
 
         this.closeSpokeConfig();
+    },
+
+    closeSpokeConfigForBuilder() {
+        document.getElementById('spoke-config-overlay').classList.remove('active');
+        this.pendingSpokeConfig = null;
+        this.pendingReturnToSpokeConfig = false;
+
+        // Reset form
+        document.querySelector('input[name="spoke-type"][value="static"]').checked = true;
+        document.getElementById('spoke-existing-actions').innerHTML = '';
+        document.getElementById('spoke-actions-fields').style.display = 'none';
+        const newActionInput = document.getElementById('new-spoke-action-input');
+        if (newActionInput) newActionInput.value = '';
+        // Don't call App.render() - we're still in the builder
     },
     
     clearInputs() {
