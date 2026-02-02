@@ -607,17 +607,6 @@ const UI = {
             }
         });
     },
-
-    
-    // hideAddActionInput(categoryId, itemId, spokeIndex) {
-    //     const inputDiv = document.getElementById(`add-action-${categoryId}-${itemId}-${spokeIndex}`);
-    //     const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
-        
-    //     if (inputDiv && input) {
-    //         inputDiv.style.display = 'none';
-    //         input.value = '';
-    //     }
-    // },
     
     submitAddAction(categoryId, itemId, spokeIndex) {
         const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
@@ -629,81 +618,6 @@ const UI = {
             this.hideAllAddActionInputs();
         }
     },
-
-    // openCalendarForAction(actionText, spokeText, sliceName, categoryName) {
-    //     actionText = decodeURIComponent(actionText);
-    //     spokeText = decodeURIComponent(spokeText);
-    //     sliceName = decodeURIComponent(sliceName);
-    //     categoryName = decodeURIComponent(categoryName);
-
-    //     const provider = this.getCalendarProvider();
-        
-    //     // Get default dates (tomorrow at 9am, 1 hour duration)
-    //     const tomorrow = new Date();
-    //     tomorrow.setDate(tomorrow.getDate() + 1);
-    //     tomorrow.setHours(9, 0, 0, 0);
-        
-    //     const endTime = new Date(tomorrow);
-    //     endTime.setHours(10, 0, 0, 0);
-    //     if (provider === 'apple'){
-    //         // Apple Calendar uses .ics file download
-    //         this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, tomorrow, endTime);
-    //     } else { 
-    //         const formatDate = (date) => {
-    //             return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    //         };
-            
-    //         const dates = `${formatDate(tomorrow)}/${formatDate(endTime)}`;
-            
-    //         // Build calendar URL
-    //         const params = new URLSearchParams({
-    //             action: 'TEMPLATE',
-    //             text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
-    //             details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
-    //             dates: dates
-    //         });
-            
-    //         const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
-    //         window.open(calendarUrl, '_blank');
-    //     }
-    // },
-    
-    // downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate) {
-    //     // Format dates for iCalendar format
-    //     const formatICSDate = (date) => {
-    //         const year = date.getFullYear();
-    //         const month = String(date.getMonth() + 1).padStart(2, '0');
-    //         const day = String(date.getDate()).padStart(2, '0');
-    //         const hours = String(date.getHours()).padStart(2, '0');
-    //         const minutes = String(date.getMinutes()).padStart(2, '0');
-    //         const seconds = String(date.getSeconds()).padStart(2, '0');
-    //         return `${year}${month}${day}T${hours}${minutes}${seconds}`;
-    //     };
-        
-    //     const icsContent = [
-    //         'BEGIN:VCALENDAR',
-    //         'VERSION:2.0',
-    //         'PRODID:-//Brain Pie//Calendar//EN',
-    //         'BEGIN:VEVENT',
-    //         `DTSTART:${formatICSDate(startDate)}`,
-    //         `DTEND:${formatICSDate(endDate)}`,
-    //         `SUMMARY:${actionText} (${categoryName} - ${sliceName})`,
-    //         `DESCRIPTION:Category: ${categoryName}\\nSlice: ${sliceName}\\nSpoke: ${spokeText}\\nAction: ${actionText}\\n\\nCreated from Brain Pie`,
-    //         'END:VEVENT',
-    //         'END:VCALENDAR'
-    //     ].join('\r\n');
-        
-    //     // Create blob and download
-    //     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    //     const url = URL.createObjectURL(blob);
-    //     const link = document.createElement('a');
-    //     link.href = url;
-    //     link.download = `${actionText}.ics`;
-    //     document.body.appendChild(link);
-    //     link.click();
-    //     document.body.removeChild(link);
-    //     URL.revokeObjectURL(url);
-    // },
 
     // Store pending calendar event data
     pendingCalendarEvent: null,

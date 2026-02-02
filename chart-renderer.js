@@ -1,9 +1,5 @@
 const ChartRenderer = {
     svg: null,
-    // width: 2200,
-    // height: 1200,
-    // outerRadius: 600,
-    // innerRadius: 550,
     highlightGroup: null,
     currentExpanded: null,
     
@@ -134,7 +130,6 @@ const ChartRenderer = {
                 .append('textPath')
                 .attr('xlink:href', `#category-text-arc-${i}`)
                 .attr('startOffset', this.width > 1024 ? '20%' : '15%')
-                // .attr('text-anchor', 'bottom')
                 .text(d.data.name);
 
             // Percentage path (offset)
@@ -255,10 +250,6 @@ const ChartRenderer = {
                 const angleStep = (endAngle - startAngle) / subItems.length;
                 
                 subItems.forEach((subItem, idx) => {
-                    // if (typeof subItem == 'object'){
-                    //     alert(subItem);
-                    //     return
-                    // }
                     const angle = startAngle + (angleStep * (idx + 0.5));
                     const innerX = 0;
                     const innerY = 0;
@@ -323,7 +314,7 @@ const ChartRenderer = {
                                 if (subItem.children && subItem.children.length)
                                     ChartRenderer.expandBranch(subItem, catData, d, angle);
                                 else {
-                                    UI.showAddActionInput(catData.data.name.toLowerCase(), Number(d.data.id).toString(), idx)
+                                    UI.showAddActionInput(catData.data.id, d.data.id.toString(), idx)
                                 }
                             } else {
                                 
@@ -724,16 +715,6 @@ const ChartRenderer = {
                 .attr('stroke', '#333')
                 .attr('stroke-width', 4);
             
-            // Draw spoke name at branch start
-            // branchGroup.append('text')
-            //     .attr('x', startX)
-            //     .attr('y', startY - 10)
-            //     .attr('text-anchor', 'middle')
-            //     .style('font-size', '18px')
-            //     .style('font-weight', 'bold')
-            //     .style('fill', '#333')
-            //     .text(spokeData.text || spokeData);
-            
             // Draw children as sub-branches
             const children = spokeData.children || [];
             const childAngleSpread = Math.PI / 3; // 60 degrees spread
@@ -814,42 +795,6 @@ const ChartRenderer = {
         this.svg.transition().duration(300)
             .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
     },
-    // openCalendarForAction(action, spokeData, sliceName, categoryName) {
-    //     // Get context for the calendar event
-    //     const actionText = action.text || action;
-    //     const spokeText = spokeData.text || spokeData;
-    //     // const sliceName = decodeURIComponent(sliceName);
-    //     // const categoryName = decodeURIComponent(categoryName);
-
-    //     const provider = UI.getCalendarProvider();
-        
-    //     const tomorrow = new Date();
-    //     tomorrow.setDate(tomorrow.getDate() + 1);
-    //     tomorrow.setHours(9, 0, 0, 0);
-        
-    //     const endTime = new Date(tomorrow);
-    //     endTime.setHours(10, 0, 0, 0);
-    //  if (provider === 'apple') {  
-    //     UI.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, tomorrow, endTime);
-    //  } else {
-    //     // Build calendar URL with pre-filled data
-    //     const params = new URLSearchParams({
-    //         action: 'TEMPLATE',
-    //         text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
-    //         details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
-    //         // Optional: Set default time (tomorrow at 9am)
-    //         dates: this.getDefaultEventDates(),
-    //     });
-        
-    //     const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
-        
-    //     // Open in new tab
-    //     window.open(calendarUrl, '_blank');
-    //     }
-
-
-
-    // },
     openCalendarForAction(action, spokeData, itemData, categoryData) {
         const actionText = action.text || action;
         const spokeText = spokeData.text || spokeData;
