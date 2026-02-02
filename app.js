@@ -173,7 +173,7 @@ const App = {
     },
 
     removeItem(categoryId, itemId) {
-        if (!confirm('Remove this Slice?')) return;
+        if (!confirm('Remove this Slice and all it\'s Spokes & Actions?')) return;
         DataModel.removeItem(categoryId, itemId);
         this.render();
     },
@@ -221,6 +221,19 @@ const App = {
     exportData() {
         const data = { categories: DataModel.getCategories() };
         Storage.exportToFile(data);
+    },
+
+    removeAllData() {
+        if (!confirm('This will permanently delete all your data and start fresh. Are you sure?')) return;
+
+        // Clear all categories
+        DataModel.categories = [];
+        DataModel.categoryPercentageOverrides = {};
+        DataModel.saveToStorage();
+
+        // Close settings and re-render
+        UI.closeSettings();
+        this.render();
     },
 
     importData(event) {

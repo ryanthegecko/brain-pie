@@ -81,7 +81,11 @@ h2 {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 18px;
+    @media (max-width: 1024px) {
+        font-size: 24px;
+    }
+
 }
 
 .add-spoke-input-container input {
@@ -359,7 +363,7 @@ select {
     padding: 10px 12px;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 18px;
     transition: border-color 0.2s;
     @media (max-width: 1024px) {
         font-size: 24px;
@@ -368,7 +372,7 @@ select {
 
 input[type="text"]{
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: 18px;
     @media (max-width: 1024px) {
         font-size: 24px;
         padding: 12px 8px;
@@ -402,7 +406,7 @@ textarea {
 }
 
 .helper-text {
-    font-size: 12px;
+    font-size: 14px;
     color: #999;
     margin-top: 4px;
 }
@@ -744,6 +748,12 @@ textarea {
     color: #333;
     margin-bottom: 10px;
     font-size: 18px;
+}
+
+.settings-section.button-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .radio-option {

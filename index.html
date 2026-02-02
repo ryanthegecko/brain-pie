@@ -86,7 +86,7 @@
                         <div id="spokes-builder" style="border: 2px solid #e0e0e0; border-radius: 6px; padding: 10px; min-height: 150px; background: #fafafa;">
                             <!-- Dynamic spoke entries will be added here -->
                         </div>
-                        <button type="button" class="secondary" onclick="UI.addSpokeEntry()" style="margin-top: 10px; width: 100%;">+ Add Spoke</button>
+                        
                         <span class="helper-text">Press Enter to add another spoke, or click + to add actions</span>
                     </div>          
                 </div>
@@ -158,9 +158,12 @@
                 </label>
             </div>
 
-            <div class="settings-section">
+            <div class="settings-section button-section">
                 <button class="tertiary" onclick="App.exportData()">📥 Export Data & Settings to JSON</button>
                 <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
+                <button class="warn" style="margin-left: 5px;" onclick="App.removeAllData()">
+                    Remove all Data (Fresh Pie)<img width="25" height="27" src="./assets/trash.svg">
+                </button>
             </div>
             
             <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
