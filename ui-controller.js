@@ -66,6 +66,37 @@ const UI = {
         App.render();
     },
 
+    showMenuForCategory(categoryId) {
+        // First show the menu normally
+        this.showMenu();
+
+        // Then pre-select the category
+        const existingRadio = document.querySelector('input[name="category-mode"][value="existing"]');
+        if (existingRadio) existingRadio.checked = true;
+
+        document.getElementById('item-category').value = categoryId;
+        this.toggleCategoryMode('existing');
+        this.onCategorySelected();
+    },
+
+    showMenuForSlice(categoryId, sliceId) {
+        // First show the menu normally
+        this.showMenu();
+
+        // Pre-select the category
+        this.selectedCategoryId = categoryId;
+        const existingRadio = document.querySelector('input[name="category-mode"][value="existing"]');
+        if (existingRadio) existingRadio.checked = true;
+
+        document.getElementById('item-category').value = categoryId;
+        this.toggleCategoryMode('existing');
+        this.onCategorySelected();
+
+        // Set the slice to pre-select and switch to Tab 2
+        this.preselectedSliceId = sliceId;
+        this.switchMenuTab(2);
+    },
+
     switchMenuTab(tabNumber) {
         this.currentMenuTab = tabNumber;
 
@@ -394,7 +425,7 @@ const UI = {
             return;
         }
 
-        const { category, item, categoryId, itemId } = data;
+        const { item } = data;
 
         if (item.subItems.length === 0) {
             container.innerHTML = '<div class="tab2-spokes-empty">No spokes yet. Add one below.</div>';
@@ -640,11 +671,12 @@ const UI = {
                                     onfocus="this.style.background='#f0f0f0'"
                                     onblur="this.style.background='transparent'"
                                 >${item.name}</h3>
-                                <input type="color" 
-                                       value="${item.color}" 
+                                <input type="color"
+                                       value="${item.color}"
                                        title="Change color"
                                        style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;"
                                        onchange="App.updateItemColor('${category.id}', '${item.id}', this.value)">
+                                <button style="margin-left: 5px;" onclick="UI.showMenuForSlice('${category.id}', '${item.id}')">Add Spoke</button>
                                 <button class="warn" style="margin-left: 5px;" onclick="App.removeItem('${category.id}', '${item.id}')">
                                     <img width="15" height="15" src="./assets/trash.svg" />
                                 </button>
@@ -783,7 +815,7 @@ const UI = {
                                style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
                     </div>
-                    <button style="margin-left: 5px;" onclick="UI.showMenu()">Add Stuff</button>
+                    <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">Add Slice</button>
                     <button class="warn" style="margin-left: 5px;" onclick="App.removeCategory('${category.id}')">
                         <img width="15" height="15" src="./assets/trash.svg" />
                     </button>
@@ -994,17 +1026,29 @@ const UI = {
 
     hideAllAddActionInputs() {
         const inputDivs = document.querySelectorAll('[id^="add-action-"]');
-        
+
         inputDivs.forEach(inputDiv => {
             // Derive the matching input id from the div id
             const inputId = inputDiv.id.replace('add-action', 'action-input');
             const input = document.getElementById(inputId);
 
             if (input) {
-            inputDiv.style.display = 'none';
-            input.value = '';
+                inputDiv.style.display = 'none';
+                input.value = '';
             }
         });
+    },
+
+    hideAddActionInput(categoryId, itemId, spokeIndex) {
+        const inputDiv = document.getElementById(`add-action-${categoryId}-${itemId}-${spokeIndex}`);
+        const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
+
+        if (inputDiv) {
+            inputDiv.style.display = 'none';
+        }
+        if (input) {
+            input.value = '';
+        }
     },
     
     submitAddAction(categoryId, itemId, spokeIndex) {
@@ -1055,13 +1099,18 @@ const UI = {
         // Set date/time from existing schedule or default to tomorrow at 9 AM
         if (existingSchedule) {
             document.getElementById('event-date').value = existingSchedule.date;
-            document.getElementById('event-time').value = existingSchedule.time;
+            const [hour, minute] = existingSchedule.time.split(':');
+            document.getElementById('event-hour').value = hour;
+            // Round minute to nearest 5-minute increment
+            const roundedMinute = Math.round(parseInt(minute) / 5) * 5;
+            document.getElementById('event-minute').value = String(roundedMinute).padStart(2, '0');
             document.getElementById('event-duration').value = existingSchedule.duration || '60';
         } else {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('event-date').value = tomorrow.toISOString().split('T')[0];
-            document.getElementById('event-time').value = '09:00';
+            document.getElementById('event-hour').value = '09';
+            document.getElementById('event-minute').value = '00';
             document.getElementById('event-duration').value = '60';
         }
 
@@ -1120,11 +1169,13 @@ const UI = {
 
         // Get user-selected date/time
         const dateStr = document.getElementById('event-date').value;
-        const timeStr = document.getElementById('event-time').value;
+        const hourStr = document.getElementById('event-hour').value;
+        const minuteStr = document.getElementById('event-minute').value;
+        const timeStr = `${hourStr}:${minuteStr}`;
         const duration = parseInt(document.getElementById('event-duration').value);
 
-        if (!dateStr || !timeStr) {
-            alert('Please select both date and time');
+        if (!dateStr || !hourStr || !minuteStr) {
+            alert('Please select date and time');
             return;
         }
 

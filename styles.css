@@ -95,7 +95,7 @@ h2 {
     align-items: center;
     min-height: 800px;
     height: 100vh;
-    margin: -14vh 0 -2vw 0;
+    margin: -8vh 0 -8vw 0;
     width: 100%;
     max-width: 80vw;
     overflow: hidden;
@@ -105,7 +105,7 @@ h2 {
         height: auto;
     }
     @media (min-width: 1440px) {
-        margin: -6vh 0 -2vh 0;
+        margin: -3vh 0 -3vh 0;
     }
     @media (min-width: 1920px) {
         margin: -6vh 0 -5vh 0;
@@ -544,7 +544,7 @@ textarea {
 
 .categories-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
     gap: 22px;
     margin-top: 20px;
     @media (max-width: 1024px) {
