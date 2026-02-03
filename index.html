@@ -55,62 +55,135 @@
     <div class="menu-overlay" id="menu-overlay" onclick="UI.closeMenuIfOutside(event)">
         <div class="menu-content" onclick="event.stopPropagation()">
             <button class="menu-close" onclick="UI.closeMenu()">✕</button>
-            
-            <div class="menu-section">
-                <h2>Add New Slice</h2>
-                <div class="controls">
-                    <div class="input-group">
-                        <label for="item-category">Category</label>
-                        <select id="item-category">
-                            <option value="">Select category...</option>
-                        </select>
-                    </div>
 
-                    <div class="input-group">
-                        <label for="item-name">Slice Name</label>
-                        <input type="text" id="item-name" placeholder="e.g., Passport">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="item-percentage">Weight (%, optional)</label>
-                        <input type="number" id="item-percentage" min="1" max="100" placeholder="20">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="item-color">Color</label>
-                        <input type="color" id="item-color" value="#4CAF50">
-                    </div>
-                    
-                    <div class="input-group" style="flex: 1; min-width: 400px;">
-                        <label for="spokes-builder">Spokes & Actions</label>
-                        <div id="spokes-builder" style="border: 2px solid #e0e0e0; border-radius: 6px; padding: 10px; min-height: 150px; background: #fafafa;">
-                            <!-- Dynamic spoke entries will be added here -->
-                        </div>
-                        
-                        <span class="helper-text">Press Enter to add another spoke, or click + to add actions</span>
-                    </div>          
-                </div>
-                                    <div class="input-group" style="justify-content: flex-end;">
-                        <label>&nbsp;</label>
-                        <button class="secondary" onclick="App.addItem()">Add Slice</button>
-                    </div>  
+            <!-- Tab Navigation -->
+            <div class="menu-tabs">
+                <button class="menu-tab active" data-tab="1" onclick="UI.switchMenuTab(1)">
+                    1. Category & Slice
+                </button>
+                <button class="menu-tab" data-tab="2" onclick="UI.switchMenuTab(2)">
+                    2. Spokes & Actions
+                </button>
             </div>
 
-            <div class="menu-section">
-                <h2>Add New Category</h2>
-                <div class="controls" >
-                    <div class="input-group">
-                        <label for="new-category-name">Category Name</label>
-                        <input type="text" id="new-category-name" placeholder="e.g., Health">
+            <!-- Tab 1: Category & Slice -->
+            <div class="menu-tab-content active" id="menu-tab-1">
+                <div class="menu-section">
+                    <h3>Category</h3>
+                    <div class="category-choice">
+                        <label class="radio-option compact">
+                            <input type="radio" name="category-mode" value="new" checked onchange="UI.toggleCategoryMode('new')">
+                            <span>New Category</span>
+                        </label>
+                        <label class="radio-option compact">
+                            <input type="radio" name="category-mode" value="existing" onchange="UI.toggleCategoryMode('existing')">
+                            <span>Existing Category</span>
+                        </label>
                     </div>
-                    <div class="input-group">
-                        <label for="new-category-color">Color</label>
-                        <input type="color" id="new-category-color" value="#4CAF50">
+
+                    <!-- New Category Form -->
+                    <div id="new-category-form" class="controls" style="margin-top: 15px;">
+                        <div class="input-group">
+                            <label for="new-category-name">Category Name</label>
+                            <input type="text" id="new-category-name" placeholder="e.g., Health">
+                        </div>
+                        <div class="input-group">
+                            <label for="new-category-color">Color</label>
+                            <input type="color" id="new-category-color" value="#4CAF50">
+                        </div>
+                        <div class="input-group" style="justify-content: flex-end;">
+                            <label>&nbsp;</label>
+                            <button class="secondary" onclick="UI.addCategoryFromTab1()">Save Category</button>
+                        </div>
                     </div>
-                    <div class="input-group" style="justify-content: flex-end;">
-                        <label>&nbsp;</label>
-                        <button class="secondary" onclick="App.addCategory()">Add Category</button>
+
+                    <!-- Existing Category Dropdown -->
+                    <div id="existing-category-form" class="controls" style="margin-top: 15px; display: none;">
+                        <div class="input-group" style="flex: 1;">
+                            <label for="item-category">Select Category</label>
+                            <select id="item-category" onchange="UI.onCategorySelected()">
+                                <option value="">Select category...</option>
+                            </select>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Slice Section -->
+                <div class="menu-section" id="slice-section" style="opacity: 0.5; pointer-events: none;">
+                    <h3>Slice</h3>
+                    <p class="section-hint" id="slice-hint">Select or create a category first</p>
+                    <div class="controls" style="margin-top: 15px;">
+                        <div class="input-group" style="flex: 2;">
+                            <label for="item-name">Slice Name</label>
+                            <input type="text" id="item-name" placeholder="e.g., Passport">
+                        </div>
+                        <div class="input-group">
+                            <label for="item-percentage">Weight (%)</label>
+                            <input type="number" id="item-percentage" min="1" max="100" placeholder="20" style="width: 80px;">
+                        </div>
+                        <div class="input-group">
+                            <label for="item-color">Color</label>
+                            <input type="color" id="item-color" value="#4CAF50">
+                        </div>
+                        <div class="input-group" style="justify-content: flex-end;">
+                            <label>&nbsp;</label>
+                            <button onclick="UI.addSliceFromTab1()">Add Slice</button>
+                        </div>
+                    </div>
+
+                    <!-- Slices in Category List -->
+                    <div id="slices-in-category" style="margin-top: 20px; display: none;">
+                        <h4 style="color: #666; margin-bottom: 10px;">Slices in this Category:</h4>
+                        <ul id="category-slices-list" class="category-slices-list">
+                            <!-- Dynamically populated -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="menu-nav-buttons">
+                    <button class="secondary" onclick="UI.switchMenuTab(2)" id="continue-to-spokes-btn" disabled>
+                        Continue to Spokes & Actions →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Spokes & Actions -->
+            <div class="menu-tab-content" id="menu-tab-2">
+                <div class="menu-section">
+                    <div class="tab2-header">
+                        <div class="input-group" style="flex: 1;">
+                            <label for="tab2-slice-select">Working on slice:</label>
+                            <select id="tab2-slice-select" onchange="UI.onTab2SliceSelected()">
+                                <option value="">Select a slice...</option>
+                            </select>
+                        </div>
+                        <span id="tab2-category-name" style="color: #666; font-size: 14px;"></span>
+                    </div>
+                </div>
+
+                <div class="menu-section" id="spokes-section" style="opacity: 0.5; pointer-events: none;">
+                    <h3>Spokes</h3>
+                    <div id="tab2-spokes-list" class="tab2-spokes-list">
+                        <!-- Dynamically populated -->
+                    </div>
+
+                    <div class="add-spoke-form" style="margin-top: 15px;">
+                        <div style="display: flex; gap: 10px; align-items: flex-end;">
+                            <div class="input-group" style="flex: 1;">
+                                <label for="tab2-new-spoke">New spoke</label>
+                                <input type="text" id="tab2-new-spoke" placeholder="Enter spoke name..."
+                                       onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addSpokeFromTab2();}">
+                            </div>
+                            <button onclick="UI.addSpokeFromTab2()">Add Spoke</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="menu-nav-buttons">
+                    <button class="secondary" onclick="UI.switchMenuTab(1)">
+                        ← Back to Category & Slice
+                    </button>
+                    <button onclick="UI.closeMenu()">Done</button>
                 </div>
             </div>
         </div>

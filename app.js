@@ -117,34 +117,21 @@ const App = {
         this.render();
     },
 
-    addItem() {
-        const categoryId = document.getElementById('item-category').value;
-        const name = document.getElementById('item-name').value.trim();
-        let percentage = parseFloat(document.getElementById('item-percentage').value);
-        const color = document.getElementById('item-color').value;
-        
-        if (!categoryId) {
-            alert('Please select a category');
-            return;
+    // Note: Slices are now added via UI.addSliceFromTab1() which calls DataModel.addItem() directly
+    // This method is kept for potential programmatic use
+    addItem(categoryId, name, percentage, color, subItems = []) {
+        if (!categoryId || !name) {
+            return null;
         }
-        
-        if (!name) {
-            alert('Please enter an item name');
-            return;
-        }
-        
+
         // Default to 20% if no percentage is provided
         if (!percentage || percentage <= 0) {
             percentage = 20;
         }
 
-        // Get spokes with actions from the builder
-        const subItems = UI.getSpokesData();
-        
-        DataModel.addItem(categoryId, name, percentage, color, subItems);
-        UI.clearInputs();
+        const itemId = DataModel.addItem(categoryId, name, percentage, color, subItems);
         this.render();
-        UI.closeMenu();
+        return itemId;
     },
 
     updateItemName(categoryId, itemId, newName) {
