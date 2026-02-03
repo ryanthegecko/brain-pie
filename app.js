@@ -85,8 +85,10 @@ const App = {
             StorageAdapter.subscribeToUpdates((data) => {
                 if (data && data.categories) {
                     Debug.log('Received remote data update');
-                    DataModel.categories = data.categories;
-                    DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+                    // Clean internal metadata
+                    const { _saveId, _savedBy, ...cleanData } = data;
+                    DataModel.categories = cleanData.categories;
+                    DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
                     this.render();
                     Storage.showStatus('Synced from team', 'success');
 
