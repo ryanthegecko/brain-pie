@@ -250,23 +250,23 @@
                 </label>
             </div>
 
-            <div class="settings-section" id="team-sync-section">
-                <h3>Team Sync</h3>
+            <div class="settings-section" id="cloud-sync-section">
+                <h3>Cloud Sync</h3>
                 <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-                    Sync your Brain Pie with team members using Firebase
+                    Sync your Brain Pie with your devices using Firebase
                 </p>
 
                 <!-- Collapsed state: just the enable button -->
-                <div id="team-sync-collapsed">
-                    <button class="tertiary" onclick="UI.enableTeamSync()">
-                        🔄 Enable Team Sync
+                <div id="cloud-sync-collapsed">
+                    <button class="tertiary" onclick="UI.enableCloudSync()">
+                        🔄 Enable Cloud Sync
                     </button>
                 </div>
 
                 <!-- Expanded state: Firebase config and auth -->
-                <div id="team-sync-expanded" style="display: none;">
+                <div id="cloud-sync-expanded" style="display: none;">
                     <!-- Status indicator -->
-                    <div id="team-sync-status" class="sync-status">
+                    <div id="cloud-sync-status" class="sync-status">
                         <span class="sync-indicator offline"></span>
                         <span class="sync-text">Not connected</span>
                     </div>
@@ -304,8 +304,8 @@
                     <!-- Share URL -->
                     <div id="share-url-section" style="display: none; margin-top: 20px;">
                         <div class="input-group">
-                            <label for="team-share-url">Share this URL with your team:</label>
-                            <input type="text" id="team-share-url" readonly
+                            <label for="cloud-share-url">Share this URL with other devices or team:</label>
+                            <input type="text" id="cloud-share-url" readonly
                                    style="font-size: 11px; background: #f5f5f5; font-family: monospace;" />
                         </div>
                         <div style="display: flex; gap: 8px; margin-top: 8px;">
@@ -319,8 +319,8 @@
                     </div>
 
                     <!-- Disable button -->
-                    <button class="warn" onclick="UI.disableTeamSync()" style="margin-top: 20px;">
-                        Disable Team Sync
+                    <button class="warn" onclick="UI.disableCloudSync()" style="margin-top: 20px;">
+                        Disable Cloud Sync
                     </button>
                 </div>
             </div>

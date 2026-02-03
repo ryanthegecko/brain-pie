@@ -95,7 +95,7 @@ h2 {
     align-items: center;
     min-height: 800px;
     height: 100vh;
-    margin: -8vh 0 -8vw 0;
+    margin: -3vh 0 -3vw 0;
     width: 100%;
     max-width: 80vw;
     overflow: hidden;
@@ -1356,7 +1356,7 @@ select:focus {
 }
 
 /* ==========================================
-   Team Sync / Firebase Styles
+   Cloud Sync / Firebase Styles
    ========================================== */
 
 /* Settings page sync status */
@@ -1411,7 +1411,7 @@ select:focus {
 }
 
 /* Main UI permanent sync indicator (in #storage-status area) */
-.team-sync-badge {
+.cloud-sync-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1423,37 +1423,37 @@ select:focus {
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-.team-sync-badge .sync-icon {
+.cloud-sync-badge .sync-icon {
     font-size: 14px;
 }
 
-.team-sync-badge.synced .sync-icon {
+.cloud-sync-badge.synced .sync-icon {
     color: #4CAF50;
 }
 
-.team-sync-badge.syncing .sync-icon {
+.cloud-sync-badge.syncing .sync-icon {
     color: #FF9800;
     animation: pulse 0.5s infinite;
 }
 
-.team-sync-badge.offline .sync-icon {
+.cloud-sync-badge.offline .sync-icon {
     color: #9e9e9e;
 }
 
-.team-sync-badge .sync-project {
+.cloud-sync-badge .sync-project {
     max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* Team sync section in settings */
-#team-sync-section textarea {
+/* Cloud sync section in settings */
+#cloud-sync-section textarea {
     resize: vertical;
     min-height: 80px;
 }
 
-#team-sync-section .input-group {
+#cloud-sync-section .input-group {
     margin-bottom: 10px;
 }
 

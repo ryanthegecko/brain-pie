@@ -566,7 +566,7 @@ const UI = {
     showSettings() {
         document.getElementById('settings-overlay').classList.add('active');
         this.loadCalendarProvider();
-        this.loadTeamSyncState();
+        this.loadCloudSyncState();
     },
     
     closeSettings() {
@@ -1568,15 +1568,15 @@ const UI = {
     },
 
     // ==========================================
-    // Team Sync / Firebase Methods
+    // Cloud Sync / Firebase Methods
     // ==========================================
 
     /**
-     * Enable team sync - show expanded UI
+     * Enable cloud sync - show expanded UI
      */
-    enableTeamSync() {
-        document.getElementById('team-sync-collapsed').style.display = 'none';
-        document.getElementById('team-sync-expanded').style.display = 'block';
+    enableCloudSync() {
+        document.getElementById('cloud-sync-collapsed').style.display = 'none';
+        document.getElementById('cloud-sync-expanded').style.display = 'block';
 
         // Check for URL config parameter
         const urlConfig = FirebaseAdapter.parseConfigFromURL();
@@ -1588,15 +1588,15 @@ const UI = {
     },
 
     /**
-     * Disable team sync
+     * Disable cloud sync
      */
-    async disableTeamSync() {
-        if (!confirm('Disable Team Sync? Your data will remain in localStorage.')) return;
+    async disableCloudSync() {
+        if (!confirm('Disable Cloud Sync? Your data will remain in localStorage.')) return;
 
-        await StorageAdapter.disableTeamSync();
+        await StorageAdapter.disableCloudSync();
 
-        document.getElementById('team-sync-collapsed').style.display = 'block';
-        document.getElementById('team-sync-expanded').style.display = 'none';
+        document.getElementById('cloud-sync-collapsed').style.display = 'block';
+        document.getElementById('cloud-sync-expanded').style.display = 'none';
 
         this.updateSyncStatus('offline', 'Disconnected');
         this.updateMainSyncIndicator(null, null);
@@ -1688,8 +1688,8 @@ const UI = {
 
             this.updateSyncStatus('online', 'Connected as ' + (user.displayName || user.email));
 
-            // Enable team sync mode in StorageAdapter
-            StorageAdapter.enableTeamSync(FirebaseAdapter.config);
+            // Enable cloud sync mode in StorageAdapter
+            StorageAdapter.enableCloudSync(FirebaseAdapter.config);
 
             // Update main UI indicator
             this.updateMainSyncIndicator('synced', FirebaseAdapter.getProjectId());
@@ -1720,12 +1720,12 @@ const UI = {
             DataModel.categories = firebaseData.categories;
             DataModel.categoryPercentageOverrides = firebaseData.categoryPercentageOverrides || {};
             App.render();
-            Storage.showStatus('Synced from team', 'success');
+            Storage.showStatus('Synced from cloud', 'success');
         } else if (localData && localData.categories && localData.categories.length > 0) {
             // Firebase is empty but we have local data - offer to push
             const shouldPush = confirm(
                 'Firebase is empty but you have local data.\n\n' +
-                'Would you like to upload your existing data to share with your team?\n\n' +
+                'Would you like to upload your existing data to the cloud?\n\n' +
                 'Click OK to upload, or Cancel to start fresh.'
             );
 
@@ -1739,7 +1739,7 @@ const UI = {
                 });
 
                 if (success) {
-                    Storage.showStatus('Local data uploaded to team', 'success');
+                    Storage.showStatus('Local data uploaded to cloud', 'success');
                 } else {
                     Storage.showStatus('Failed to upload data', 'error');
                 }
@@ -1760,8 +1760,8 @@ const UI = {
      * @param {string} text - Status text to display
      */
     updateSyncStatus(state, text) {
-        const indicator = document.querySelector('#team-sync-status .sync-indicator');
-        const textEl = document.querySelector('#team-sync-status .sync-text');
+        const indicator = document.querySelector('#cloud-sync-status .sync-indicator');
+        const textEl = document.querySelector('#cloud-sync-status .sync-text');
 
         if (indicator) {
             indicator.className = 'sync-indicator ' + state;
@@ -1776,7 +1776,7 @@ const UI = {
      */
     generateShareURL() {
         const shareURL = FirebaseAdapter.generateShareURL();
-        const input = document.getElementById('team-share-url');
+        const input = document.getElementById('cloud-share-url');
         if (input && shareURL) {
             input.value = shareURL;
         }
@@ -1786,7 +1786,7 @@ const UI = {
      * Copy share URL to clipboard
      */
     copyShareURL() {
-        const input = document.getElementById('team-share-url');
+        const input = document.getElementById('cloud-share-url');
         if (input) {
             input.select();
             input.setSelectionRange(0, 99999); // For mobile
@@ -1821,14 +1821,14 @@ const UI = {
     },
 
     /**
-     * Load team sync state when Settings opened
+     * Load cloud sync state when Settings opened
      */
-    loadTeamSyncState() {
-        const teamSyncEnabled = localStorage.getItem('teamSyncEnabled') === 'true';
+    loadCloudSyncState() {
+        const cloudSyncEnabled = localStorage.getItem('cloudSyncEnabled') === 'true';
 
-        if (teamSyncEnabled && FirebaseAdapter.config) {
-            document.getElementById('team-sync-collapsed').style.display = 'none';
-            document.getElementById('team-sync-expanded').style.display = 'block';
+        if (cloudSyncEnabled && FirebaseAdapter.config) {
+            document.getElementById('cloud-sync-collapsed').style.display = 'none';
+            document.getElementById('cloud-sync-expanded').style.display = 'block';
 
             // Hide config form if already connected
             if (FirebaseAdapter.app) {
@@ -1839,15 +1839,15 @@ const UI = {
             this.updateAuthUI();
             this.generateShareURL();
         } else {
-            document.getElementById('team-sync-collapsed').style.display = 'block';
-            document.getElementById('team-sync-expanded').style.display = 'none';
+            document.getElementById('cloud-sync-collapsed').style.display = 'block';
+            document.getElementById('cloud-sync-expanded').style.display = 'none';
 
             // Check for URL config (for first-time setup)
             const urlConfig = FirebaseAdapter.parseConfigFromURL();
             if (urlConfig) {
                 // Pre-fill config and show expanded view
-                document.getElementById('team-sync-collapsed').style.display = 'none';
-                document.getElementById('team-sync-expanded').style.display = 'block';
+                document.getElementById('cloud-sync-collapsed').style.display = 'none';
+                document.getElementById('cloud-sync-expanded').style.display = 'block';
                 document.getElementById('firebase-config-input').value = JSON.stringify(urlConfig, null, 2);
             }
         }
@@ -1864,7 +1864,7 @@ const UI = {
 
         if (!state || !projectName) {
             // Clear the indicator (revert to normal status behavior)
-            const existingBadge = statusEl.querySelector('.team-sync-badge');
+            const existingBadge = statusEl.querySelector('.cloud-sync-badge');
             if (existingBadge) {
                 existingBadge.remove();
             }
@@ -1872,15 +1872,15 @@ const UI = {
         }
 
         // Create or update the badge
-        let badge = statusEl.querySelector('.team-sync-badge');
+        let badge = statusEl.querySelector('.cloud-sync-badge');
         if (!badge) {
             badge = document.createElement('div');
-            badge.className = 'team-sync-badge';
+            badge.className = 'cloud-sync-badge';
             statusEl.innerHTML = ''; // Clear any existing status
             statusEl.appendChild(badge);
         }
 
-        badge.className = 'team-sync-badge ' + state;
+        badge.className = 'cloud-sync-badge ' + state;
         badge.innerHTML = `
             <span class="sync-icon">🔄</span>
             <span class="sync-project">${projectName}</span>
