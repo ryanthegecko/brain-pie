@@ -89,6 +89,10 @@ const App = {
                     const { _saveId, _savedBy, ...cleanData } = data;
                     DataModel.categories = cleanData.categories;
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
+
+                    // Save to localStorage so it's up-to-date on next page load
+                    Storage.save(cleanData);
+
                     this.render();
                     Storage.showStatus('Synced from cloud', 'success');
 
