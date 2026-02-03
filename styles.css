@@ -83,11 +83,26 @@ h2 {
         display: flex;
     }
 }
+.main {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    scroll-snap-type: y mandatory;
+}
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+}
 #chart-outer {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     overflow: hidden;
+    scroll-snap-align: end;
+}
+#cards-outer {
+    scroll-snap-align: start;
 }
 #chart-container {
     display: flex;
@@ -99,6 +114,9 @@ h2 {
     width: 100%;
     max-width: 80vw;
     overflow: hidden;
+    @media (min-height: 1024) and (min-width: 1440px) {
+        margin: -7vh 0 -5vw 0;
+    }
     @media (max-width: 1024px) {
         margin: 0vw 0 -8vw 0;
         min-height: 120vw;
@@ -119,16 +137,6 @@ h2 {
     .sub-item-line {
         display: none;
     }
-}
-.main {
-        border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.container {
-    max-width: 100%;
-    margin: 0 auto;
-    background: white;
-    padding: 20px;
 }
 
 .spoke-entry {
