@@ -1,13 +1,507 @@
 const UI = {
     draggedElement: null,
     draggedData: null,
-    
+
+    // Menu tab state
+    currentMenuTab: 1,
+    selectedCategoryId: null,
+    newlyAddedSliceIds: [],
+    preselectedSliceId: null,
+
     showMenu() {
+        // Reset state
+        this.currentMenuTab = 1;
+        this.selectedCategoryId = null;
+        this.newlyAddedSliceIds = [];
+        this.preselectedSliceId = null;
+        this.expandedSpokeActions = {};
+
+        // Clear Tab 2 state
+        const tab2SpokesList = document.getElementById('tab2-spokes-list');
+        if (tab2SpokesList) {
+            tab2SpokesList.innerHTML = '<div class="tab2-spokes-empty">Select a slice to manage spokes</div>';
+        }
+        const spokesSection = document.getElementById('spokes-section');
+        if (spokesSection) {
+            spokesSection.style.opacity = '0.5';
+            spokesSection.style.pointerEvents = 'none';
+        }
+        const tab2SliceSelect = document.getElementById('tab2-slice-select');
+        if (tab2SliceSelect) {
+            tab2SliceSelect.innerHTML = '<option value="">Select a slice...</option>';
+        }
+
+        // Reset tab display
+        document.querySelectorAll('.menu-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === '1');
+        });
+        document.querySelectorAll('.menu-tab-content').forEach(content => {
+            content.classList.toggle('active', content.id === 'menu-tab-1');
+        });
+
+        // Reset category mode to "new"
+        const newRadio = document.querySelector('input[name="category-mode"][value="new"]');
+        if (newRadio) newRadio.checked = true;
+        this.toggleCategoryMode('new');
+
+        // Reset slice section
+        this.disableSliceSection();
+
+        // Populate category dropdown
+        this.populateCategoryDropdown();
+
+        // Clear forms
+        this.clearCategoryInputs();
+        this.clearSliceInputs();
+
         document.getElementById('menu-overlay').classList.add('active');
     },
-    
+
     closeMenu() {
         document.getElementById('menu-overlay').classList.remove('active');
+        // Reset state
+        this.currentMenuTab = 1;
+        this.selectedCategoryId = null;
+        this.newlyAddedSliceIds = [];
+        App.render();
+    },
+
+    switchMenuTab(tabNumber) {
+        this.currentMenuTab = tabNumber;
+
+        // Update tab buttons
+        document.querySelectorAll('.menu-tab').forEach(tab => {
+            tab.classList.toggle('active', parseInt(tab.dataset.tab) === tabNumber);
+        });
+
+        // Update tab content
+        document.querySelectorAll('.menu-tab-content').forEach(content => {
+            content.classList.toggle('active', content.id === `menu-tab-${tabNumber}`);
+        });
+
+        // When switching to Tab 2, populate the slice dropdown
+        if (tabNumber === 2) {
+            // Reset expanded states
+            this.expandedSpokeActions = {};
+            this.populateTab2SliceDropdown();
+        }
+    },
+
+    toggleCategoryMode(mode) {
+        const newForm = document.getElementById('new-category-form');
+        const existingForm = document.getElementById('existing-category-form');
+
+        if (mode === 'new') {
+            newForm.style.display = 'flex';
+            existingForm.style.display = 'none';
+            this.disableSliceSection();
+            this.selectedCategoryId = null;
+        } else {
+            newForm.style.display = 'none';
+            existingForm.style.display = 'flex';
+            // Check if a category is already selected
+            const categorySelect = document.getElementById('item-category');
+            if (categorySelect.value) {
+                this.onCategorySelected();
+            } else {
+                this.disableSliceSection();
+            }
+        }
+    },
+
+    populateCategoryDropdown() {
+        const select = document.getElementById('item-category');
+        select.innerHTML = '<option value="">Select category...</option>';
+
+        DataModel.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            select.appendChild(option);
+        });
+    },
+
+    onCategorySelected() {
+        const select = document.getElementById('item-category');
+        this.selectedCategoryId = select.value;
+
+        if (this.selectedCategoryId) {
+            this.enableSliceSection();
+            this.renderSlicesForCategory(this.selectedCategoryId);
+        } else {
+            this.disableSliceSection();
+        }
+    },
+
+    enableSliceSection() {
+        const section = document.getElementById('slice-section');
+        const hint = document.getElementById('slice-hint');
+        const continueBtn = document.getElementById('continue-to-spokes-btn');
+
+        section.style.opacity = '1';
+        section.style.pointerEvents = 'auto';
+        hint.textContent = '';
+
+        // Enable continue button if there are slices
+        const category = DataModel.categories.find(c => c.id === this.selectedCategoryId);
+        continueBtn.disabled = !(category && category.items.length > 0);
+    },
+
+    disableSliceSection() {
+        const section = document.getElementById('slice-section');
+        const hint = document.getElementById('slice-hint');
+        const slicesContainer = document.getElementById('slices-in-category');
+        const continueBtn = document.getElementById('continue-to-spokes-btn');
+
+        section.style.opacity = '0.5';
+        section.style.pointerEvents = 'none';
+        hint.textContent = 'Select or create a category first';
+        slicesContainer.style.display = 'none';
+        continueBtn.disabled = true;
+    },
+
+    addCategoryFromTab1() {
+        const name = document.getElementById('new-category-name').value.trim();
+        const color = document.getElementById('new-category-color').value;
+
+        if (!name) {
+            alert('Please enter a category name');
+            return;
+        }
+
+        const categoryId = DataModel.addCategory(name, color);
+        this.selectedCategoryId = categoryId;
+
+        // Switch to existing category mode and select the new category
+        const existingRadio = document.querySelector('input[name="category-mode"][value="existing"]');
+        if (existingRadio) existingRadio.checked = true;
+
+        this.populateCategoryDropdown();
+        document.getElementById('item-category').value = categoryId;
+        this.toggleCategoryMode('existing');
+        this.onCategorySelected();
+
+        // Clear category inputs
+        this.clearCategoryInputs();
+
+        // Render to update the main UI
+        App.render();
+    },
+
+    addSliceFromTab1() {
+        if (!this.selectedCategoryId) {
+            alert('Please select or create a category first');
+            return;
+        }
+
+        const name = document.getElementById('item-name').value.trim();
+        let percentage = parseFloat(document.getElementById('item-percentage').value);
+        const color = document.getElementById('item-color').value;
+
+        if (!name) {
+            alert('Please enter a slice name');
+            return;
+        }
+
+        // Default to 20% if no percentage is provided
+        if (!percentage || percentage <= 0) {
+            percentage = 20;
+        }
+
+        // Add slice without spokes (spokes will be added in Tab 2)
+        const sliceId = DataModel.addItem(this.selectedCategoryId, name, percentage, color, []);
+
+        // Track as newly added
+        this.newlyAddedSliceIds.push(sliceId);
+
+        // Refresh the slice list
+        this.renderSlicesForCategory(this.selectedCategoryId);
+
+        // Clear slice inputs
+        this.clearSliceInputs();
+
+        // Enable continue button
+        document.getElementById('continue-to-spokes-btn').disabled = false;
+
+        // Render to update the main UI
+        App.render();
+    },
+
+    clearSliceInputs() {
+        document.getElementById('item-name').value = '';
+        document.getElementById('item-percentage').value = '';
+        document.getElementById('item-color').value = this.getRandomColor();
+    },
+
+    renderSlicesForCategory(categoryId) {
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        const container = document.getElementById('slices-in-category');
+        const list = document.getElementById('category-slices-list');
+
+        if (!category || category.items.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        list.innerHTML = '';
+
+        category.items.forEach(item => {
+            const li = document.createElement('li');
+            const isNew = this.newlyAddedSliceIds.includes(item.id);
+            if (isNew) li.classList.add('newly-added');
+
+            li.innerHTML = `
+                <span class="slice-name">${item.name}</span>
+                <span class="slice-percentage">${item.percentage.toFixed(1)}%</span>
+                ${isNew ? '<span class="new-badge">New</span>' : ''}
+                <span class="slice-edit-hint">Edit →</span>
+            `;
+
+            // Click to jump to Tab 2 with this slice selected
+            li.style.cursor = 'pointer';
+            li.addEventListener('click', () => {
+                this.selectSliceAndGoToTab2(categoryId, item.id);
+            });
+
+            list.appendChild(li);
+        });
+    },
+
+    selectSliceAndGoToTab2(categoryId, itemId) {
+        // Store the selection for Tab 2
+        this.selectedCategoryId = categoryId;
+        this.preselectedSliceId = itemId;
+
+        // Switch to Tab 2
+        this.switchMenuTab(2);
+    },
+
+    // Tab 2 methods
+    populateTab2SliceDropdown() {
+        const select = document.getElementById('tab2-slice-select');
+        const categoryLabel = document.getElementById('tab2-category-name');
+        const spokesSection = document.getElementById('spokes-section');
+        const spokesList = document.getElementById('tab2-spokes-list');
+
+        // Reset to default state first
+        select.innerHTML = '<option value="">Select a slice...</option>';
+        spokesSection.style.opacity = '0.5';
+        spokesSection.style.pointerEvents = 'none';
+        spokesList.innerHTML = '<div class="tab2-spokes-empty">Select a slice to manage spokes</div>';
+
+        // If we have a selected category from Tab 1, use it
+        if (this.selectedCategoryId) {
+            const category = DataModel.categories.find(c => c.id === this.selectedCategoryId);
+            if (category) {
+                categoryLabel.textContent = `in ${category.name}`;
+
+                let hasPreselection = false;
+                category.items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = `${category.id}|${item.id}`;
+                    option.textContent = item.name;
+
+                    // Pre-select: first check for explicitly preselected slice (from clicking in list)
+                    if (this.preselectedSliceId && item.id === this.preselectedSliceId) {
+                        option.selected = true;
+                        hasPreselection = true;
+                    }
+                    // Otherwise pre-select the most recently added slice
+                    else if (!this.preselectedSliceId &&
+                             this.newlyAddedSliceIds.length > 0 &&
+                             item.id === this.newlyAddedSliceIds[this.newlyAddedSliceIds.length - 1]) {
+                        option.selected = true;
+                        hasPreselection = true;
+                    }
+                    select.appendChild(option);
+                });
+
+                // Clear preselection after using it
+                this.preselectedSliceId = null;
+
+                // If we have a preselection, trigger selection
+                if (hasPreselection) {
+                    this.onTab2SliceSelected();
+                }
+                return;
+            }
+        }
+
+        // Otherwise, show all slices from all categories
+        categoryLabel.textContent = '';
+        DataModel.categories.forEach(category => {
+            if (category.items.length > 0) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category.name;
+
+                category.items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = `${category.id}|${item.id}`;
+                    option.textContent = item.name;
+                    optgroup.appendChild(option);
+                });
+
+                select.appendChild(optgroup);
+            }
+        });
+    },
+
+    onTab2SliceSelected() {
+        const select = document.getElementById('tab2-slice-select');
+        const spokesSection = document.getElementById('spokes-section');
+        const spokesList = document.getElementById('tab2-spokes-list');
+
+        if (!select.value) {
+            spokesSection.style.opacity = '0.5';
+            spokesSection.style.pointerEvents = 'none';
+            spokesList.innerHTML = '<div class="tab2-spokes-empty">Select a slice to manage spokes</div>';
+            return;
+        }
+
+        spokesSection.style.opacity = '1';
+        spokesSection.style.pointerEvents = 'auto';
+
+        // Reset expanded states when switching slices
+        this.expandedSpokeActions = {};
+
+        this.renderTab2Spokes();
+    },
+
+    getTab2SelectedSlice() {
+        const select = document.getElementById('tab2-slice-select');
+        if (!select.value) return null;
+
+        const [categoryId, itemId] = select.value.split('|');
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return null;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return null;
+
+        return { category, item, categoryId, itemId };
+    },
+
+    // Track which spokes have expanded action lists
+    expandedSpokeActions: {},
+
+    renderTab2Spokes() {
+        const container = document.getElementById('tab2-spokes-list');
+        const data = this.getTab2SelectedSlice();
+
+        if (!data) {
+            container.innerHTML = '<div class="tab2-spokes-empty">Select a slice to manage spokes</div>';
+            return;
+        }
+
+        const { category, item, categoryId, itemId } = data;
+
+        if (item.subItems.length === 0) {
+            container.innerHTML = '<div class="tab2-spokes-empty">No spokes yet. Add one below.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+
+        item.subItems.forEach((spoke, idx) => {
+            const spokeText = typeof spoke === 'string' ? spoke : spoke.text;
+            const children = typeof spoke === 'object' ? spoke.children || [] : [];
+            const hasScheduled = children.some(c => c.scheduled && c.scheduled.date);
+            const isExpanded = this.expandedSpokeActions[idx];
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'tab2-spoke-wrapper';
+
+            const div = document.createElement('div');
+            div.className = 'tab2-spoke-item';
+            div.innerHTML = `
+                <span class="spoke-name">${spokeText}</span>
+                ${children.length > 0 ? `<span class="spoke-actions-count clickable" onclick="UI.toggleSpokeActions(${idx})" title="Click to ${isExpanded ? 'collapse' : 'expand'}">${isExpanded ? '▼' : '▶'} (${children.length} action${children.length > 1 ? 's' : ''})</span>` : ''}
+                ${hasScheduled ? '<span class="spoke-scheduled">Scheduled</span>' : ''}
+                <button class="secondary" onclick="UI.openSpokeConfigFromTab2(${idx})" title="Configure spoke and add actions">+ Actions</button>
+                <button class="warn" onclick="UI.removeSpokeFromTab2(${idx})" title="Remove spoke">×</button>
+            `;
+            wrapper.appendChild(div);
+
+            // Render expanded action list if open
+            if (isExpanded && children.length > 0) {
+                const actionsList = document.createElement('div');
+                actionsList.className = 'tab2-actions-expanded';
+                actionsList.innerHTML = children.map((child) => {
+                    const childText = typeof child === 'string' ? child : child.text;
+                    const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+                    let scheduleDisplay = '';
+                    if (hasSchedule) {
+                        const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
+                        const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                        scheduleDisplay = `<span class="action-schedule">${dateStr} ${timeStr}</span>`;
+                    }
+                    return `
+                        <div class="tab2-action-item">
+                            <span class="action-text">${childText}</span>
+                            ${scheduleDisplay}
+                        </div>
+                    `;
+                }).join('');
+                wrapper.appendChild(actionsList);
+            }
+
+            container.appendChild(wrapper);
+        });
+    },
+
+    toggleSpokeActions(spokeIndex) {
+        this.expandedSpokeActions[spokeIndex] = !this.expandedSpokeActions[spokeIndex];
+        this.renderTab2Spokes();
+    },
+
+    addSpokeFromTab2() {
+        const data = this.getTab2SelectedSlice();
+        if (!data) {
+            alert('Please select a slice first');
+            return;
+        }
+
+        const input = document.getElementById('tab2-new-spoke');
+        const spokeText = input.value.trim();
+
+        if (!spokeText) {
+            alert('Please enter a spoke name');
+            return;
+        }
+
+        const { categoryId, itemId } = data;
+        DataModel.addSubItem(categoryId, itemId, spokeText);
+
+        input.value = '';
+        this.renderTab2Spokes();
+        App.render();
+    },
+
+    removeSpokeFromTab2(spokeIndex) {
+        if (!confirm('Remove this spoke and all its actions?')) return;
+
+        const data = this.getTab2SelectedSlice();
+        if (!data) return;
+
+        const { categoryId, itemId } = data;
+        DataModel.removeSubItem(categoryId, itemId, spokeIndex);
+
+        this.renderTab2Spokes();
+        App.render();
+    },
+
+    openSpokeConfigFromTab2(spokeIndex) {
+        const data = this.getTab2SelectedSlice();
+        if (!data) return;
+
+        const { category, item, categoryId, itemId } = data;
+        const spoke = item.subItems[spokeIndex];
+        const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
+
+        // Use existing spoke config popup
+        this.showSpokeConfig(categoryId, itemId, spokeIndex, spokeName, item.name, category.name);
     },
     
     closeMenuIfOutside(event) {
@@ -52,17 +546,10 @@ const UI = {
     
     renderCategoriesList(categories) {
         const container = document.getElementById('categories-list');
-        const select = document.getElementById('item-category');
-        
+
         container.innerHTML = '';
-        select.innerHTML = '<option value="">Select category...</option>';
-        
+
         categories.forEach((category, categoryIndex) => {
-            // Update select dropdown
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            select.appendChild(option);
             
             // Create category card
             const card = document.createElement('div');
@@ -87,7 +574,7 @@ const UI = {
                 }
             });
             
-            card.addEventListener('dragleave', (e) => {
+            card.addEventListener('dragleave', () => {
                 if (this.draggedData && this.draggedData.type === 'item') {
                     card.style.background = '';
                 }
@@ -450,7 +937,7 @@ const UI = {
         }
     },
     
-    handleDragEnd(event) {
+    handleDragEnd() {
         if (this.draggedElement) {
             this.draggedElement.style.opacity = '';
         }
@@ -470,152 +957,6 @@ const UI = {
         document.querySelectorAll('li').forEach(li => {
             li.style.borderTop = '';
         });
-    },
-
-    // Initialize spoke builder with one empty entry
-    initSpokesBuilder() {
-        const builder = document.getElementById('spokes-builder');
-        builder.innerHTML = '';
-        this.pendingBuilderActions = {};  // Clear any pending actions
-        this.addSpokeEntry();
-    },
-    
-    // Store pending actions for spokes being built (before slice is created)
-    pendingBuilderActions: {},
-
-    addSpokeEntry() {
-        const builder = document.getElementById('spokes-builder');
-        const entryId = `spoke-${Date.now()}`;
-
-        // Initialize empty actions for this entry
-        this.pendingBuilderActions[entryId] = { type: 'static', actions: [] };
-        const button = document.createElement('button')
-        button.type = "button"
-        button.addEventListener('click' , ()=>{ UI.addSpokeEntry()}); 
-        button.innerHTML = "+ Add Spoke";
-        // builder.appendChild(button);
-        
-        //`<button type="button" class="secondary" onclick="UI.addSpokeEntry()" style="margin-top: 10px; width: 100%;">+ Add Spoke</button>`
-
-        const entry = document.createElement('div');
-        entry.className = 'spoke-entry';
-        entry.id = entryId;
-        entry.innerHTML = `
-            <input type="text"
-                   placeholder="Spoke name (press Enter for next)"
-                   onkeydown="if(event.key= =='Enter'){event.preventDefault(); UI.addSpokeEntry(); this.nextElementSibling?.focus();}"
-                   data-spoke-input>
-            <button class="add-actions-btn" style="background: #4CAF50;" onclick="UI.showSpokeConfigForBuilder('${entryId}')">+ Actions</button>
-            <button class="remove-btn" onclick="UI.removeSpokeEntry('${entryId}')">×</button>
-            <span class="builder-action-count" id="action-count-${entryId}"></span>
-        `;
-
-        builder.appendChild(entry);
-
-        // Focus the new input
-        const input = entry.querySelector('input');
-        input.focus();
-    },
-    
-    removeSpokeEntry(entryId) {
-        const entry = document.getElementById(entryId);
-        if (entry) entry.remove();
-        // Clean up pending actions
-        delete this.pendingBuilderActions[entryId];
-    },
-
-    // Show spoke config popup for builder (new spokes, not yet saved)
-    showSpokeConfigForBuilder(entryId) {
-        const entry = document.getElementById(entryId);
-        const spokeInput = entry.querySelector('[data-spoke-input]');
-        const spokeName = spokeInput.value.trim() || 'New Spoke';
-
-        // Store builder context
-        this.pendingSpokeConfig = {
-            builderMode: true,
-            entryId: entryId,
-            spokeName: spokeName
-        };
-
-        // Show spoke details
-        document.getElementById('spoke-config-name').textContent = spokeName;
-        document.getElementById('spoke-config-context').textContent = 'Adding new spoke';
-
-        // Get current type from pending data
-        const pendingData = this.pendingBuilderActions[entryId] || { type: 'static', actions: [] };
-        const spokeType = pendingData.type;
-
-        // Set radio button
-        const radio = document.querySelector(`input[name="spoke-type"][value="${spokeType}"]`);
-        if (radio) {
-            radio.checked = true;
-        }
-
-        // Clear and populate existing actions
-        this.renderExistingActions();
-
-        // Clear new action input
-        const newActionInput = document.getElementById('new-spoke-action-input');
-        if (newActionInput) newActionInput.value = '';
-
-        // Show appropriate fields
-        this.updateSpokeTypeFields(spokeType);
-
-        // Show modal
-        document.getElementById('spoke-config-overlay').classList.add('active');
-    },
-
-    updateBuilderActionCount(entryId) {
-        const countSpan = document.getElementById(`action-count-${entryId}`);
-        const pendingData = this.pendingBuilderActions[entryId];
-        if (countSpan && pendingData && pendingData.actions.length > 0) {
-            countSpan.textContent = `(${pendingData.actions.length} action${pendingData.actions.length > 1 ? 's' : ''})`;
-            countSpan.style.color = '#4CAF50';
-            countSpan.style.fontWeight = 'bold';
-            countSpan.style.marginLeft = '8px';
-        } else if (countSpan) {
-            countSpan.textContent = '';
-        }
-    },
-    
-    
-    getSpokesData() {
-        const builder = document.getElementById('spokes-builder');
-        const spokeEntries = builder.querySelectorAll('.spoke-entry');
-        const spokes = [];
-
-        spokeEntries.forEach(entry => {
-            const spokeInput = entry.querySelector('[data-spoke-input]');
-            const spokeName = spokeInput.value.trim();
-
-            if (!spokeName) return; // Skip empty spokes
-
-            const entryId = entry.id;
-            const pendingData = this.pendingBuilderActions[entryId];
-            const actions = pendingData ? pendingData.actions : [];
-            const spokeType = pendingData ? pendingData.type : 'static';
-
-            if (actions.length > 0) {
-                spokes.push({
-                    text: spokeName,
-                    type: spokeType,
-                    children: actions,
-                    metadata: {}
-                });
-            } else if (spokeType === 'action') {
-                // Action type but no actions yet
-                spokes.push({
-                    text: spokeName,
-                    type: spokeType,
-                    children: [],
-                    metadata: {}
-                });
-            } else {
-                spokes.push(spokeName); // Just a string for static spokes without actions
-            }
-        });
-
-        return spokes;
     },
 
     showAddActionInput(categoryId, itemId, spokeIndex) {
@@ -935,6 +1276,11 @@ const UI = {
         const newActionInput = document.getElementById('new-spoke-action-input');
         if (newActionInput) newActionInput.value = '';
 
+        // Refresh Tab 2 spokes list if menu is open
+        if (document.getElementById('menu-overlay').classList.contains('active')) {
+            this.renderTab2Spokes();
+        }
+
         App.render();
     },
 
@@ -955,36 +1301,6 @@ const UI = {
         const container = document.getElementById('spoke-existing-actions');
         container.innerHTML = '';
 
-        // Handle builder mode (new spokes not yet saved)
-        if (this.pendingSpokeConfig.builderMode) {
-            const { entryId } = this.pendingSpokeConfig;
-            const pendingData = this.pendingBuilderActions[entryId] || { type: 'static', actions: [] };
-
-            if (pendingData.actions.length === 0) {
-                container.innerHTML = '<div style="color: #999; font-size: 13px; padding: 8px 0;">No actions yet. Add one below.</div>';
-                return;
-            }
-
-            pendingData.actions.forEach((action, idx) => {
-                const actionText = typeof action === 'string' ? action : action.text;
-                const entry = document.createElement('div');
-                entry.className = 'spoke-action-entry';
-                entry.style.background = '#f5f5f5';
-                entry.style.padding = '8px 12px';
-                entry.style.borderRadius = '6px';
-                entry.innerHTML = `
-                    <div style="flex: 1;">
-                        <div style="font-weight: 500;">${actionText}</div>
-                        <div style="font-size: 12px; margin-top: 2px; color: #999;">Schedule after saving slice</div>
-                    </div>
-                    <button type="button" class="small warn" onclick="UI.removeBuilderAction(${idx})" title="Remove">×</button>
-                `;
-                container.appendChild(entry);
-            });
-            return;
-        }
-
-        // Handle existing spokes
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
 
         const category = DataModel.categories.find(c => c.id === categoryId);
@@ -1031,17 +1347,6 @@ const UI = {
         });
     },
 
-    removeBuilderAction(actionIndex) {
-        if (!this.pendingSpokeConfig || !this.pendingSpokeConfig.builderMode) return;
-
-        const { entryId } = this.pendingSpokeConfig;
-        const pendingData = this.pendingBuilderActions[entryId];
-        if (pendingData && pendingData.actions) {
-            pendingData.actions.splice(actionIndex, 1);
-            this.renderExistingActions();
-        }
-    },
-
     addAndScheduleAction() {
         if (!this.pendingSpokeConfig) return;
 
@@ -1050,19 +1355,6 @@ const UI = {
 
         if (!actionText) {
             alert('Please enter an action name');
-            return;
-        }
-
-        // Handle builder mode (new spokes not yet saved)
-        if (this.pendingSpokeConfig.builderMode) {
-            const { entryId } = this.pendingSpokeConfig;
-            const pendingData = this.pendingBuilderActions[entryId];
-            if (pendingData) {
-                pendingData.type = 'action';
-                pendingData.actions.push({ text: actionText, children: [] });
-            }
-            input.value = '';
-            this.renderExistingActions();
             return;
         }
 
@@ -1168,19 +1460,6 @@ const UI = {
         if (!this.pendingSpokeConfig) return;
 
         const selectedType = document.querySelector('input[name="spoke-type"]:checked').value;
-
-        // Handle builder mode
-        if (this.pendingSpokeConfig.builderMode) {
-            const { entryId } = this.pendingSpokeConfig;
-            const pendingData = this.pendingBuilderActions[entryId];
-            if (pendingData) {
-                pendingData.type = selectedType;
-            }
-            this.updateBuilderActionCount(entryId);
-            this.closeSpokeConfigForBuilder();
-            return;
-        }
-
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
 
         // Update the spoke type (actions are saved individually via addAndScheduleAction)
@@ -1188,27 +1467,12 @@ const UI = {
 
         this.closeSpokeConfig();
     },
-
-    closeSpokeConfigForBuilder() {
-        document.getElementById('spoke-config-overlay').classList.remove('active');
-        this.pendingSpokeConfig = null;
-        this.pendingReturnToSpokeConfig = false;
-
-        // Reset form
-        document.querySelector('input[name="spoke-type"][value="static"]').checked = true;
-        document.getElementById('spoke-existing-actions').innerHTML = '';
-        document.getElementById('spoke-actions-fields').style.display = 'none';
-        const newActionInput = document.getElementById('new-spoke-action-input');
-        if (newActionInput) newActionInput.value = '';
-        // Don't call App.render() - we're still in the builder
-    },
     
     clearInputs() {
         document.getElementById('item-name').value = '';
         document.getElementById('item-percentage').value = '';
         document.getElementById('item-category').value = '';
         document.getElementById('item-color').value = this.getRandomColor();
-        this.initSpokesBuilder(); // Reset the builder
     },
     
     clearCategoryInputs() {
