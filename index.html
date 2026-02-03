@@ -25,31 +25,50 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="top-bar">
-            <h1>Brain Pie 🥧 <span class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></h1>
-            <div class="top-buttons">
+    <main class="main">
+        <div id="chart-outer" class="container">
+            <div class="top-bar-left">
+                <h1>Brain Pie 🥧 <span class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></h1>
+            </div>
+            <div class="top-bar-right">
                 <div>
-                    <button onclick="UI.showMenu()">➕ Add Slices</button>
+                    <button onclick="UI.showMenu()">➕ Add Stuff</button>
                 </div>
-                <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">
                 <hr>
                 <div>
                     <button class="secondary" onclick="UI.showSettings()">⚙️ Settings</button>
                     <p>&nbsp;</p>
-                    <p>Hide spokes <input id="hide-labels" type="checkbox" name="hide-labels"></p>
+                    <p>Hide spokes <input class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"></p>
                 </div>
             </div>
-        </div>
-        <div class="storage-status" id="storage-status"></div>
+            <div class="top-bar-right-mobile">
+                <div>
+                    <button onclick="UI.showMenu()">➕</button>
+                    <button class="secondary" onclick="UI.showSettings()">⚙️</button>
+                </div>
+                <div>
+                    <p>&nbsp;</p>
+                    <p style="position: relative; display: flex; flex-direction: row; width: 100%;">Hide spokes 
+                        <input
+                        style="position: absolute;right: 0px;bottom: 3px;width: 20px;height: 20px;"
+                        class="hide-labels"
+                        id="hide-labels-mobile"
+                        type="checkbox"
+                        name="hide-labels">
+                    </p>
+                </div>
+            </div>
+            <div class="storage-status" id="storage-status"></div>
 
-        <div id="chart-container"></div>
-
-        <div class="categories-section">
-            <h2>Categories, Slices, Spokes & Actions </h2>
-            <div class="categories-grid" id="categories-list"></div>
+            <div id="chart-container"></div>
         </div>
-    </div>
+        <div id="cards-outer" class="container">
+            <div class="categories-section">
+                <h2>Categories, Slices, Spokes & Actions </h2>
+                <div class="categories-grid" id="categories-list"></div>
+            </div>
+        </div>
+    </main>
 
     <!-- Menu Overlay -->
     <div class="menu-overlay" id="menu-overlay" onclick="UI.closeMenuIfOutside(event)">
@@ -234,6 +253,7 @@
             <div class="settings-section button-section">
                 <button class="tertiary" onclick="App.exportData()">📥 Export Data & Settings to JSON</button>
                 <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
+                <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">
                 <button class="warn" style="margin-left: 5px;" onclick="App.removeAllData()">
                     Remove all Data (Fresh Pie)<img width="25" height="27" src="./assets/trash.svg">
                 </button>

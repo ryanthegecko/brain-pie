@@ -8,6 +8,9 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: #f5f5f5;
     padding: 20px;
+    @media (max-width: 1024px) {
+        padding: 5px;
+    }
 }
 
 h1 {
@@ -22,50 +25,112 @@ h2 {
     }
 }
 
-.top-bar {
-    position: relative;
-    z-index: 50;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 20px;
+.mobile-only {
+    display: none;
+    @media (max-width: 1024px) {
+        display: block;
+    }
+}
+.top-bar-left {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    /* background: white; */
+    padding: 10px 15px;
+    /* border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
 }
 
+.top-bar-right, .top-bar-right-mobile {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: right;
+    font-size: 18px;
+}
+
+.top-bar-right, .top-bar-right-mobile {
+    text-align: left;
+    @media (max-width: 1024x) {
+        flex-wrap: wrap;
+    }
+}
+.top-bar-right{
+    display: flex;
+    @media (max-width: 1024px) {
+        display: none;
+    }
+}
+.top-bar-right-mobile {
+    
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .top-bar-right {
+        font-size: 22px;
+    }
+    .top-bar-right-mobile {
+        display: flex;
+    }
+}
+#chart-outer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow: hidden;
+}
 #chart-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 800px;
     height: 100vh;
-    margin: -12vh 0 -2vw 0;
+    margin: -14vh 0 -2vw 0;
     width: 100%;
+    max-width: 80vw;
+    overflow: hidden;
     @media (max-width: 1024px) {
-        margin: -22vw 0 -8vw 0;
+        margin: 0vw 0 -8vw 0;
         min-height: 120vw;
         height: auto;
     }
     @media (min-width: 1440px) {
-        margin: -15vh 0 -2vh 0;
+        margin: -6vh 0 -2vh 0;
     }
     @media (min-width: 1920px) {
-        margin: -15vh 0 -5vh 0;
+        margin: -6vh 0 -5vh 0;
     }
 }
 
 #chart-container.hide-subitem-labels {
-
+    transform: scale(1.3);
+    transform-origin: center center;
+    @media (max-width: 1024px) {
+    transform: scale(1.6);
+    }
     .sub-item-label,
     .sub-item-line {
         display: none;
     }
 }
-
+.main {
+        border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 .container {
     max-width: 100%;
     margin: 0 auto;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
 }
 
@@ -183,14 +248,15 @@ h2 {
         min-width: 100%;
     }
 
-    .top-bar {
-        flex-direction: column;
-        gap: 15px;
-        align-items: stretch;
-    }
-
-    .top-buttons {
-        flex-direction: column;
+    .top-bar-left,
+    .top-bar-right {
+        position: relative;
+        top: auto;
+        left: auto;
+        right: auto;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
     }
 }
 
@@ -208,17 +274,6 @@ h1 {
     color: #333;
 }
 
-.top-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    text-align: right;
-    font-size: 18px;
-    @media (max-width: 1024px) {
-        font-size: 22px;
-    }
-}
-
 button {
     padding: 10px 20px;
     background: #4CAF50;
@@ -231,7 +286,7 @@ button {
     transition: background 0.2s;
     @media (max-width: 1024px) {
         font-size: 18px;
-        padding: 25px 35px;
+        padding: 20px 30px;
     }
 }
 
@@ -468,6 +523,9 @@ textarea {
     font-weight: 600;
     /* fill: #333; */
     pointer-events: none;
+    @media (max-width: 960px) {
+        font-size: 10px;
+    }
 }
 
 .sub-item-label {
@@ -626,8 +684,8 @@ textarea {
     font-size: 12px;
     color: #666;
     margin-top: 5px;
-    top: 100px;
-    right: 170px;
+    top: 25px;
+    right: 200px;
     @media (max-width: 1024px) {
         right: 260px;
         top: 35px;
@@ -724,7 +782,7 @@ textarea {
     background: white;
     border-radius: 12px;
     padding: 30px;
-    max-width: 500px;
+    max-width: 800px;
     max-height: 80vh;
     overflow-y: auto;
     position: relative;
@@ -1253,6 +1311,13 @@ select:focus {
     padding: 2px 8px;
     border-radius: 10px;
     margin-left: 10px;
+}
+
+.tab2-action-item button.small {
+    padding: 2px 8px;
+    font-size: 12px;
+    margin-left: 8px;
+    flex-shrink: 0;
 }
 
 @media (max-width: 1024px) {

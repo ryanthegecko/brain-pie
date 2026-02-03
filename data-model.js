@@ -417,7 +417,7 @@ const DataModel = {
     },
 
     removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
-        const category = this.categories.find(cat => cat.id !== categoryId);
+        const category = this.categories.find(cat => cat.id === categoryId);
         if (!category) return;
 
         const item = category.items.find(i => i.id === itemId);

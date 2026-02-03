@@ -39,21 +39,34 @@ const Controls = {
   HIDE_LABELS_KEY: 'hideSubitemLabels',
 
   init() {
-    const checkbox = document.getElementById('hide-labels');
+    const checkboxDesktop = document.getElementById('hide-labels');
+    const checkboxMobile = document.getElementById('hide-labels-mobile');
     const container = document.getElementById('chart-container');
 
     // Restore state from localStorage
     const stored = localStorage.getItem(this.HIDE_LABELS_KEY);
     const hide = stored === 'true';
-    checkbox.checked = hide;
+
+    // Set both checkboxes to the stored state
+    if (checkboxDesktop) checkboxDesktop.checked = hide;
+    if (checkboxMobile) checkboxMobile.checked = hide;
     container.classList.toggle('hide-subitem-labels', hide);
 
-    // Toggle class + save state
-    checkbox.addEventListener('change', (e) => {
-      const shouldHide = e.target.checked;
+    // Helper to sync both checkboxes and update state
+    const updateState = (shouldHide) => {
+      if (checkboxDesktop) checkboxDesktop.checked = shouldHide;
+      if (checkboxMobile) checkboxMobile.checked = shouldHide;
       container.classList.toggle('hide-subitem-labels', shouldHide);
       localStorage.setItem(this.HIDE_LABELS_KEY, String(shouldHide));
-    });
+    };
+
+    // Add change listeners to both checkboxes
+    if (checkboxDesktop) {
+      checkboxDesktop.addEventListener('change', (e) => updateState(e.target.checked));
+    }
+    if (checkboxMobile) {
+      checkboxMobile.addEventListener('change', (e) => updateState(e.target.checked));
+    }
   }
 };
 

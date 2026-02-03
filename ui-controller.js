@@ -427,7 +427,7 @@ const UI = {
             if (isExpanded && children.length > 0) {
                 const actionsList = document.createElement('div');
                 actionsList.className = 'tab2-actions-expanded';
-                actionsList.innerHTML = children.map((child) => {
+                actionsList.innerHTML = children.map((child, childIdx) => {
                     const childText = typeof child === 'string' ? child : child.text;
                     const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
                     let scheduleDisplay = '';
@@ -441,6 +441,7 @@ const UI = {
                         <div class="tab2-action-item">
                             <span class="action-text">${childText}</span>
                             ${scheduleDisplay}
+                            <button class="small warn" onclick="UI.removeActionFromTab2(${idx}, ${childIdx})" title="Remove action">×</button>
                         </div>
                     `;
                 }).join('');
@@ -454,6 +455,27 @@ const UI = {
     toggleSpokeActions(spokeIndex) {
         this.expandedSpokeActions[spokeIndex] = !this.expandedSpokeActions[spokeIndex];
         this.renderTab2Spokes();
+    },
+
+    removeActionFromTab2(spokeIndex, actionIndex) {
+        const data = this.getTab2SelectedSlice();
+        if (!data) return;
+
+        const { categoryId, itemId } = data;
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+
+        const spoke = item.subItems[spokeIndex];
+        if (typeof spoke !== 'object' || !spoke.children) return;
+
+        spoke.children.splice(actionIndex, 1);
+        DataModel.saveToStorage();
+
+        this.renderTab2Spokes();
+        App.render();
     },
 
     addSpokeFromTab2() {
@@ -761,7 +783,7 @@ const UI = {
                                style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
                     </div>
-                    <button style="margin-left: 5px;" onclick="UI.showMenu()">Add Slice</button>
+                    <button style="margin-left: 5px;" onclick="UI.showMenu()">Add Stuff</button>
                     <button class="warn" style="margin-left: 5px;" onclick="App.removeCategory('${category.id}')">
                         <img width="15" height="15" src="./assets/trash.svg" />
                     </button>
