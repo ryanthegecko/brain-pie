@@ -107,9 +107,6 @@ h2 {
     @media (min-width: 1440px) {
         margin: -3vh 0 -3vh 0;
     }
-    @media (min-width: 1920px) {
-        margin: -6vh 0 -5vh 0;
-    }
 }
 
 #chart-container.hide-subitem-labels {
