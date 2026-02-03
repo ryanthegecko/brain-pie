@@ -32,7 +32,7 @@
             </div>
             <div class="top-bar-right">
                 <div>
-                    <button onclick="UI.showMenu()">➕ Add Stuff</button>
+                    <button onclick="UI.showMenu()">➕ Add</button>
                 </div>
                 <hr>
                 <div>
@@ -260,6 +260,10 @@
             </div>
             
             <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
+
+            <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
+                Version 0.1
+            </div>
         </div>
     </div>
 
@@ -281,8 +285,50 @@
             </div>
             
             <div class="datetime-section">
-                <label for="event-time">Time</label>
-                <input type="time" id="event-time" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                <label>Time</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="event-hour" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                        <option value="00">00</option>
+                        <option value="01">01</option>
+                        <option value="02">02</option>
+                        <option value="03">03</option>
+                        <option value="04">04</option>
+                        <option value="05">05</option>
+                        <option value="06">06</option>
+                        <option value="07">07</option>
+                        <option value="08">08</option>
+                        <option value="09" selected>09</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="21">21</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                    </select>
+                    <span style="font-size: 18px; font-weight: bold;">:</span>
+                    <select id="event-minute" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                        <option value="00" selected>00</option>
+                        <option value="05">05</option>
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                        <option value="30">30</option>
+                        <option value="35">35</option>
+                        <option value="40">40</option>
+                        <option value="45">45</option>
+                        <option value="50">50</option>
+                        <option value="55">55</option>
+                    </select>
+                </div>
             </div>
             
             <div class="datetime-section">

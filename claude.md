@@ -238,21 +238,39 @@ Breakpoints:
 3. **Mobile chart interactions** can be tricky with small slices
 4. **Text overflow** on small slices not handled gracefully
 
-## Recently Implemented
+## Changelog
 
-### Spoke Type System (v1.1)
-- ✅ Static and Action spoke types
-- ✅ Spoke configuration popup
-- ✅ Sequential action scheduling workflow (add → schedule/skip)
-- ✅ Visual indicators for spoke types and action counts
-- ✅ Scheduled time display in branch view and list view
-- ✅ Reschedule functionality with reminder about old calendar entries
-- ✅ Backward compatibility with legacy string-based spokes
+### v0.1 (February 2026)
+Initial public release with core functionality:
+
+**Core Features:**
+- 4-layer pie chart visualization (Categories, Slices, Spokes, Actions)
+- Spoke Type System with Static and Action types
+- Calendar integration (Google Calendar & Apple iCal)
+- Action scheduling workflow with date/time picker
+- Reschedule functionality for existing actions
+
+**UI/UX:**
+- Tabbed "Add Stuff" menu with progressive save flow
+  - Tab 1: Create/select categories and add slices
+  - Tab 2: Add spokes and actions to existing slices
+- Expandable action lists in spokes section
+- Remove action button in expanded action lists
+- Responsive design with mobile-optimized controls
+- Split top-bar layout (left: title, right: buttons)
+- Hide spokes toggle with synced desktop/mobile checkboxes
+- Pie chart scales 30% larger when spokes are hidden
+- Custom time picker with 5-minute increments (cross-browser)
+
+**Data Management:**
+- Auto-save to localStorage
+- JSON import/export
+- Example data for new users
+- Debug mode for development
 
 ## Planned Features (Next Steps)
 
 ### Priority 1: Complete Spoke Type System
-Remaining spoke types to implement:
 - **Repeating** - Recurring tasks with calendar integration
 - **Pending** - Conditional tasks awaiting state change
 - State management for pending → action/static transitions
@@ -262,13 +280,11 @@ Replace the "redraw expanded view" approach with:
 - Smart hiding of non-relevant slices
 - Transform/zoom on selected slice
 - Reuse existing DOM elements (no duplication)
-- Better performance and maintainability
 
 ### Priority 3: Two-Way Calendar Sync
 - Store calendar event IDs with actions
 - Detect existing events
 - Allow editing existing events vs creating new
-- Handle event updates and deletions
 
 ## Development Notes
 
@@ -369,4 +385,4 @@ Built with D3.js
 ---
 
 **Last Updated:** February 2026
-**Current Version:** 1.1 (spoke-types-basic)
+**Current Version:** v0.1
