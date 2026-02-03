@@ -1,5 +1,8 @@
 # Brain Pie - Project Documentation
 
+**Last Updated:** February 2026
+**Current Version:** v0.2
+
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
 
@@ -15,9 +18,9 @@ The app uses a hierarchical structure with four layers:
 ## Technical Stack
 - **Frontend:** Vanilla JavaScript (no framework)
 - **Visualization:** D3.js v7.8.5
-- **Storage:** Browser localStorage
+- **Storage:** Browser localStorage (default) or Firebase Realtime Database (team sync)
 - **Styling:** CSS with responsive design
-- **No backend/database** - Everything runs client-side
+- **Optional:** Firebase for team collaboration (user-provided project)
 
 ## File Structure
 
@@ -30,6 +33,8 @@ brain-pie/
 ├── chart-renderer.js    # D3.js visualization and interactions
 ├── ui-controller.js     # UI state, overlays, and user interactions
 ├── storage.js           # localStorage persistence and import/export
+├── firebase-adapter.js  # Firebase Realtime Database integration
+├── storage-adapter.js   # Abstraction layer for localStorage/Firebase switching
 └── assets/              # Images and icons
     ├── og.png
     └── trash.svg
@@ -188,7 +193,17 @@ Spokes can have different types that affect their behavior:
 - **Auto-save** to localStorage
 - **Import/Export** JSON files
 - **Example data** loaded for new users
-- **No cloud storage** - complete privacy
+- **Privacy by default** - localStorage only unless team sync enabled
+
+### 7. Team Sync (Firebase)
+Optional real-time collaboration using Firebase Realtime Database:
+- **URL-based config** - Share `?config=base64...` URL with team members
+- **Google authentication** - Each team uses their own Firebase project
+- **Real-time sync** - Changes appear instantly across all connected users
+- **First-time sync prompt** - Option to push local data or start fresh
+- **Export Firebase config** - Download config as JSON for sharing
+- **Offline fallback** - Automatically uses localStorage when disconnected
+- **Visual indicator** - Shows project name and sync status in main UI
 
 ### 7. Responsive Design
 Breakpoints:
@@ -239,6 +254,34 @@ Breakpoints:
 4. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.2 (February 2026)
+Firebase Team Sync for real-time collaboration:
+
+**Team Sync Features:**
+- Firebase Realtime Database integration for team collaboration
+- URL-based config sharing (`?config=base64EncodedConfig`)
+- Google authentication per team project
+- Real-time sync across all connected team members
+- First-time sync prompt (push local data or start fresh)
+- Export Firebase config as downloadable JSON
+- Permanent sync indicator showing project name and status
+- Graceful offline fallback to localStorage
+
+**New Files:**
+- `firebase-adapter.js` - Firebase SDK, auth, and database operations
+- `storage-adapter.js` - Abstraction layer for storage switching
+
+**New Debug Flags:**
+- `firebaseVerbose` - Log all Firebase operations
+- `skipFirebaseAuth` - Anonymous access for testing
+- `forceOfflineMode` - Test offline fallback
+- `showSyncConflicts` - Log conflict resolution
+
+**Bug Fixes:**
+- Fixed null checks for `subItems` when loading from Firebase
+
+---
 
 ### v0.1 (February 2026)
 Initial public release with core functionality:
@@ -324,6 +367,10 @@ Debug.log('message', data)
 | Flag | Description |
 |------|-------------|
 | `allowMultipleBranches` | Allow multiple branch views open simultaneously for alignment checking |
+| `firebaseVerbose` | Log all Firebase read/write operations to console |
+| `skipFirebaseAuth` | Allow anonymous Firebase access for testing |
+| `forceOfflineMode` | Simulate offline to test localStorage fallback |
+| `showSyncConflicts` | Log when sync conflicts are detected/resolved |
 
 **Adding New Debug Flags:**
 1. Add flag to `Debug.flags` object in `app.js`
@@ -358,6 +405,8 @@ Debug.log('message', data)
 - D3.js (loaded from CDN)
 
 ## Privacy & Security
+
+**Default (localStorage only):**
 - ✓ No data sent to servers
 - ✓ No tracking or analytics
 - ✓ No cookies
@@ -365,6 +414,13 @@ Debug.log('message', data)
 - ✓ All data stored locally in browser
 - ⚠️ Users responsible for their own data backups
 - ⚠️ Clearing browser data will delete all content
+
+**With Team Sync (Firebase):**
+- Data synced to user's own Firebase project (not ours)
+- Google authentication required
+- Firebase config visible in shared URL (each team controls their own project)
+- Users must configure their own Firebase security rules
+- Recommended rule: `".read": "auth != null", ".write": "auth != null"`
 
 ## Contributing
 The project is currently in active development. Key areas for improvement:
@@ -383,6 +439,3 @@ Created by Ryan (ryanthegecko)
 Built with D3.js
 
 ---
-
-**Last Updated:** February 2026
-**Current Version:** v0.1

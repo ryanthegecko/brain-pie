@@ -566,6 +566,7 @@ const UI = {
     showSettings() {
         document.getElementById('settings-overlay').classList.add('active');
         this.loadCalendarProvider();
+        this.loadTeamSyncState();
     },
     
     closeSettings() {
@@ -676,7 +677,7 @@ const UI = {
                                        title="Change color"
                                        style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;"
                                        onchange="App.updateItemColor('${category.id}', '${item.id}', this.value)">
-                                <button style="margin-left: 5px;" onclick="UI.showMenuForSlice('${category.id}', '${item.id}')">Add Spoke</button>
+                                
                                 <button class="warn" style="margin-left: 5px;" onclick="App.removeItem('${category.id}', '${item.id}')">
                                     <img width="15" height="15" src="./assets/trash.svg" />
                                 </button>
@@ -692,7 +693,7 @@ const UI = {
                                        onchange="App.updateItemPercentage('${category.id}', '${item.id}', parseFloat(this.value))">
                                 <span>% of category</span>
                             </div>
-                            ${item.subItems.length > 0 
+                            ${item.subItems && item.subItems.length > 0
                                 ? `<ul
                                     class="spoke-list"
                                     style="position: relative;">${item.subItems.map((sub, idx) => {
@@ -815,7 +816,7 @@ const UI = {
                                style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
                     </div>
-                    <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">Add Slice</button>
+                    <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">New Slice</button>
                     <button class="warn" style="margin-left: 5px;" onclick="App.removeCategory('${category.id}')">
                         <img width="15" height="15" src="./assets/trash.svg" />
                     </button>
@@ -1561,8 +1562,328 @@ const UI = {
     showDisclaimer() {
         document.getElementById('disclaimer-overlay').classList.add('active');
     },
-    
+
     closeDisclaimer() {
         document.getElementById('disclaimer-overlay').classList.remove('active');
+    },
+
+    // ==========================================
+    // Team Sync / Firebase Methods
+    // ==========================================
+
+    /**
+     * Enable team sync - show expanded UI
+     */
+    enableTeamSync() {
+        document.getElementById('team-sync-collapsed').style.display = 'none';
+        document.getElementById('team-sync-expanded').style.display = 'block';
+
+        // Check for URL config parameter
+        const urlConfig = FirebaseAdapter.parseConfigFromURL();
+        if (urlConfig) {
+            document.getElementById('firebase-config-input').value = JSON.stringify(urlConfig, null, 2);
+            // Auto-connect if config found in URL
+            this.connectFirebase();
+        }
+    },
+
+    /**
+     * Disable team sync
+     */
+    async disableTeamSync() {
+        if (!confirm('Disable Team Sync? Your data will remain in localStorage.')) return;
+
+        await StorageAdapter.disableTeamSync();
+
+        document.getElementById('team-sync-collapsed').style.display = 'block';
+        document.getElementById('team-sync-expanded').style.display = 'none';
+
+        this.updateSyncStatus('offline', 'Disconnected');
+        this.updateMainSyncIndicator(null, null);
+    },
+
+    /**
+     * Connect to Firebase with config from textarea
+     */
+    async connectFirebase() {
+        let configText = document.getElementById('firebase-config-input').value.trim();
+
+        try {
+            // Handle JavaScript object syntax (unquoted keys) from Firebase console
+            // Convert {apiKey: "..."} to {"apiKey": "..."}
+            // Only match keys at start of line or after { or , (not URLs like https:)
+            configText = configText.replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":');
+
+            const config = JSON.parse(configText);
+
+            // Validate required fields
+            if (!config.apiKey || !config.authDomain || !config.databaseURL || !config.projectId) {
+                alert('Invalid Firebase config. Required fields: apiKey, authDomain, databaseURL, projectId');
+                return;
+            }
+
+            this.updateSyncStatus('connecting', 'Connecting...');
+
+            await FirebaseAdapter.init(config);
+            FirebaseAdapter.saveConfigToLocal(config);
+
+            // Set up auth change listener
+            FirebaseAdapter.onAuthStateChanged(() => {
+                this.updateAuthUI();
+            });
+
+            document.getElementById('firebase-config-form').style.display = 'none';
+            document.getElementById('firebase-auth-section').style.display = 'block';
+
+            this.generateShareURL();
+
+        } catch (e) {
+            console.error('Firebase connection error:', e);
+            alert('Invalid Firebase config. Please paste valid JSON.\n\nError: ' + e.message);
+            this.updateSyncStatus('error', 'Connection failed');
+        }
+    },
+
+    /**
+     * Sign in with Google
+     */
+    async signInWithGoogle() {
+        try {
+            this.updateSyncStatus('connecting', 'Signing in...');
+            await FirebaseAdapter.signInWithGoogle();
+            // Auth state change listener will call updateAuthUI
+        } catch (e) {
+            console.error('Sign in error:', e);
+            alert('Sign in failed: ' + e.message);
+            this.updateSyncStatus('error', 'Sign in failed');
+        }
+    },
+
+    /**
+     * Sign out of Firebase
+     */
+    async signOutFirebase() {
+        await FirebaseAdapter.signOut();
+        this.updateAuthUI();
+        this.updateMainSyncIndicator(null, null);
+    },
+
+    /**
+     * Update auth UI based on current user state
+     */
+    updateAuthUI() {
+        const user = FirebaseAdapter.user;
+
+        if (user) {
+            document.getElementById('firebase-signed-out').style.display = 'none';
+            document.getElementById('firebase-signed-in').style.display = 'block';
+
+            const photoEl = document.getElementById('firebase-user-photo');
+            const nameEl = document.getElementById('firebase-user-name');
+
+            if (photoEl) photoEl.src = user.photoURL || '';
+            if (nameEl) nameEl.textContent = user.displayName || user.email;
+
+            document.getElementById('share-url-section').style.display = 'block';
+
+            this.updateSyncStatus('online', 'Connected as ' + (user.displayName || user.email));
+
+            // Enable team sync mode in StorageAdapter
+            StorageAdapter.enableTeamSync(FirebaseAdapter.config);
+
+            // Update main UI indicator
+            this.updateMainSyncIndicator('synced', FirebaseAdapter.getProjectId());
+
+            // Reload data from Firebase
+            this.reloadDataFromFirebase();
+        } else {
+            document.getElementById('firebase-signed-out').style.display = 'block';
+            document.getElementById('firebase-signed-in').style.display = 'none';
+            document.getElementById('share-url-section').style.display = 'none';
+
+            this.updateSyncStatus('offline', 'Not signed in');
+            this.updateMainSyncIndicator(null, null);
+        }
+    },
+
+    /**
+     * Reload data from Firebase after sign-in
+     * Handles first-time sync: if Firebase is empty but local data exists, offer to push
+     */
+    async reloadDataFromFirebase() {
+        // First, try to load directly from Firebase (not through adapter)
+        const firebaseData = await FirebaseAdapter.load();
+        const localData = Storage.load();
+
+        if (firebaseData && firebaseData.categories && firebaseData.categories.length > 0) {
+            // Firebase has data - use it
+            DataModel.categories = firebaseData.categories;
+            DataModel.categoryPercentageOverrides = firebaseData.categoryPercentageOverrides || {};
+            App.render();
+            Storage.showStatus('Synced from team', 'success');
+        } else if (localData && localData.categories && localData.categories.length > 0) {
+            // Firebase is empty but we have local data - offer to push
+            const shouldPush = confirm(
+                'Firebase is empty but you have local data.\n\n' +
+                'Would you like to upload your existing data to share with your team?\n\n' +
+                'Click OK to upload, or Cancel to start fresh.'
+            );
+
+            if (shouldPush) {
+                // Push local data to Firebase
+                const success = await FirebaseAdapter.save({
+                    categories: localData.categories,
+                    categoryPercentageOverrides: localData.categoryPercentageOverrides || {},
+                    settings: localData.settings || {},
+                    lastModified: Date.now()
+                });
+
+                if (success) {
+                    Storage.showStatus('Local data uploaded to team', 'success');
+                } else {
+                    Storage.showStatus('Failed to upload data', 'error');
+                }
+            } else {
+                // User wants to start fresh - keep empty state
+                DataModel.categories = [];
+                DataModel.categoryPercentageOverrides = {};
+                App.render();
+                Storage.showStatus('Starting fresh', 'success');
+            }
+        }
+        // If both are empty, just continue with whatever DataModel has (example data)
+    },
+
+    /**
+     * Update sync status indicator in Settings
+     * @param {string} state - 'online', 'offline', 'connecting', 'syncing', 'error'
+     * @param {string} text - Status text to display
+     */
+    updateSyncStatus(state, text) {
+        const indicator = document.querySelector('#team-sync-status .sync-indicator');
+        const textEl = document.querySelector('#team-sync-status .sync-text');
+
+        if (indicator) {
+            indicator.className = 'sync-indicator ' + state;
+        }
+        if (textEl) {
+            textEl.textContent = text;
+        }
+    },
+
+    /**
+     * Generate shareable URL with encoded config
+     */
+    generateShareURL() {
+        const shareURL = FirebaseAdapter.generateShareURL();
+        const input = document.getElementById('team-share-url');
+        if (input && shareURL) {
+            input.value = shareURL;
+        }
+    },
+
+    /**
+     * Copy share URL to clipboard
+     */
+    copyShareURL() {
+        const input = document.getElementById('team-share-url');
+        if (input) {
+            input.select();
+            input.setSelectionRange(0, 99999); // For mobile
+            document.execCommand('copy');
+            Storage.showStatus('URL copied to clipboard', 'success');
+        }
+    },
+
+    /**
+     * Export Firebase config as JSON file
+     */
+    exportFirebaseConfig() {
+        const config = FirebaseAdapter.config;
+        if (!config) {
+            alert('No Firebase config to export');
+            return;
+        }
+
+        const json = JSON.stringify(config, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `firebase-config-${config.projectId}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        Storage.showStatus('Config exported', 'success');
+    },
+
+    /**
+     * Load team sync state when Settings opened
+     */
+    loadTeamSyncState() {
+        const teamSyncEnabled = localStorage.getItem('teamSyncEnabled') === 'true';
+
+        if (teamSyncEnabled && FirebaseAdapter.config) {
+            document.getElementById('team-sync-collapsed').style.display = 'none';
+            document.getElementById('team-sync-expanded').style.display = 'block';
+
+            // Hide config form if already connected
+            if (FirebaseAdapter.app) {
+                document.getElementById('firebase-config-form').style.display = 'none';
+                document.getElementById('firebase-auth-section').style.display = 'block';
+            }
+
+            this.updateAuthUI();
+            this.generateShareURL();
+        } else {
+            document.getElementById('team-sync-collapsed').style.display = 'block';
+            document.getElementById('team-sync-expanded').style.display = 'none';
+
+            // Check for URL config (for first-time setup)
+            const urlConfig = FirebaseAdapter.parseConfigFromURL();
+            if (urlConfig) {
+                // Pre-fill config and show expanded view
+                document.getElementById('team-sync-collapsed').style.display = 'none';
+                document.getElementById('team-sync-expanded').style.display = 'block';
+                document.getElementById('firebase-config-input').value = JSON.stringify(urlConfig, null, 2);
+            }
+        }
+    },
+
+    /**
+     * Update the main UI sync indicator in #storage-status area
+     * @param {string|null} state - 'synced', 'syncing', 'offline', or null to hide
+     * @param {string|null} projectName - Project ID to display, or null
+     */
+    updateMainSyncIndicator(state, projectName) {
+        const statusEl = document.getElementById('storage-status');
+        if (!statusEl) return;
+
+        if (!state || !projectName) {
+            // Clear the indicator (revert to normal status behavior)
+            const existingBadge = statusEl.querySelector('.team-sync-badge');
+            if (existingBadge) {
+                existingBadge.remove();
+            }
+            return;
+        }
+
+        // Create or update the badge
+        let badge = statusEl.querySelector('.team-sync-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'team-sync-badge';
+            statusEl.innerHTML = ''; // Clear any existing status
+            statusEl.appendChild(badge);
+        }
+
+        badge.className = 'team-sync-badge ' + state;
+        badge.innerHTML = `
+            <span class="sync-icon">🔄</span>
+            <span class="sync-project">${projectName}</span>
+        `;
     }
 };

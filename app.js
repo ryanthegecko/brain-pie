@@ -10,6 +10,11 @@ const Debug = {
     flags: {
         // Allow multiple branch views to be open simultaneously for alignment checking
         allowMultipleBranches: true,
+        // Firebase debug flags
+        firebaseVerbose: false,      // Log all Firebase read/write operations
+        skipFirebaseAuth: false,     // Allow anonymous access for testing
+        forceOfflineMode: false,     // Simulate offline to test localStorage fallback
+        showSyncConflicts: false,    // Log when sync conflicts are detected/resolved
     },
 
     // Check if a specific debug feature is active
@@ -71,13 +76,41 @@ const Controls = {
 };
 
 const App = {
-    init() {
-        DataModel.loadFromStorageOrExample();
+    async init() {
+        // Initialize StorageAdapter first (handles URL config parsing for Firebase)
+        if (typeof StorageAdapter !== 'undefined') {
+            await StorageAdapter.init();
+
+            // Subscribe to real-time updates from Firebase
+            StorageAdapter.subscribeToUpdates((data) => {
+                if (data && data.categories) {
+                    Debug.log('Received remote data update');
+                    DataModel.categories = data.categories;
+                    DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+                    this.render();
+                    Storage.showStatus('Synced from team', 'success');
+
+                    // Update main sync indicator
+                    if (typeof UI !== 'undefined' && UI.updateMainSyncIndicator) {
+                        UI.updateMainSyncIndicator('synced', StorageAdapter.getProjectId());
+                    }
+                }
+            });
+        }
+
+        // Load data (now async to support Firebase)
+        await DataModel.loadFromStorageOrExample();
+
         ChartRenderer.init('chart-container');
         UI.clearInputs();
         UI.clearCategoryInputs();
         this.render();
         Controls.init();
+
+        // Update main sync indicator if in Firebase mode
+        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            UI.updateMainSyncIndicator('synced', StorageAdapter.getProjectId());
+        }
 
         // Add resize listener
         let resizeTimeout;
@@ -387,6 +420,6 @@ const ExampleData = {
 }
 
 // Initialize app when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    App.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    await App.init();
 });
