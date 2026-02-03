@@ -18,9 +18,9 @@ The app uses a hierarchical structure with four layers:
 ## Technical Stack
 - **Frontend:** Vanilla JavaScript (no framework)
 - **Visualization:** D3.js v7.8.5
-- **Storage:** Browser localStorage (default) or Firebase Realtime Database (team sync)
+- **Storage:** Browser localStorage (default) or Firebase Realtime Database (cloud sync)
 - **Styling:** CSS with responsive design
-- **Optional:** Firebase for team collaboration (user-provided project)
+- **Optional:** Firebase for cloud sync/collaboration (user-provided project)
 
 ## File Structure
 
@@ -193,13 +193,13 @@ Spokes can have different types that affect their behavior:
 - **Auto-save** to localStorage
 - **Import/Export** JSON files
 - **Example data** loaded for new users
-- **Privacy by default** - localStorage only unless team sync enabled
+- **Privacy by default** - localStorage only unless cloud sync enabled
 
-### 7. Team Sync (Firebase)
-Optional real-time collaboration using Firebase Realtime Database:
-- **URL-based config** - Share `?config=base64...` URL with team members
-- **Google authentication** - Each team uses their own Firebase project
-- **Real-time sync** - Changes appear instantly across all connected users
+### 7. Cloud Sync (Firebase)
+Optional real-time sync using Firebase Realtime Database:
+- **URL-based config** - Share `?config=base64...` URL for easy setup
+- **Google authentication** - Each user/team uses their own Firebase project
+- **Real-time sync** - Changes appear instantly across all connected devices
 - **First-time sync prompt** - Option to push local data or start fresh
 - **Export Firebase config** - Download config as JSON for sharing
 - **Offline fallback** - Automatically uses localStorage when disconnected
@@ -256,13 +256,13 @@ Breakpoints:
 ## Changelog
 
 ### v0.2 (February 2026)
-Firebase Team Sync for real-time collaboration:
+Firebase Cloud Sync for real-time collaboration across devices:
 
-**Team Sync Features:**
-- Firebase Realtime Database integration for team collaboration
+**Cloud Sync Features:**
+- Firebase Realtime Database integration for syncing across devices
 - URL-based config sharing (`?config=base64EncodedConfig`)
-- Google authentication per team project
-- Real-time sync across all connected team members
+- Google authentication per Firebase project
+- Real-time sync across all connected devices
 - First-time sync prompt (push local data or start fresh)
 - Export Firebase config as downloadable JSON
 - Permanent sync indicator showing project name and status
@@ -415,10 +415,10 @@ Debug.log('message', data)
 - ⚠️ Users responsible for their own data backups
 - ⚠️ Clearing browser data will delete all content
 
-**With Team Sync (Firebase):**
+**With Cloud Sync (Firebase):**
 - Data synced to user's own Firebase project (not ours)
 - Google authentication required
-- Firebase config visible in shared URL (each team controls their own project)
+- Firebase config visible in shared URL (user controls their own project)
 - Users must configure their own Firebase security rules
 - Recommended rule: `".read": "auth != null", ".write": "auth != null"`
 

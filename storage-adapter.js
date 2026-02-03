@@ -32,10 +32,10 @@ const StorageAdapter = {
 
         Debug.log('StorageAdapter initializing...');
 
-        // Check if team sync is enabled
-        const teamSyncEnabled = localStorage.getItem('teamSyncEnabled') === 'true';
+        // Check if cloud sync is enabled
+        const cloudSyncEnabled = localStorage.getItem('cloudSyncEnabled') === 'true';
 
-        if (teamSyncEnabled) {
+        if (cloudSyncEnabled) {
             // Try to load config from URL first, then localStorage
             let config = FirebaseAdapter.parseConfigFromURL();
 
@@ -79,7 +79,7 @@ const StorageAdapter = {
             }
 
             this.currentMode = 'local';
-            Debug.log('StorageAdapter: Team sync not enabled, using local');
+            Debug.log('StorageAdapter: Cloud sync not enabled, using local');
         }
 
         this.initialized = true;
@@ -112,11 +112,11 @@ const StorageAdapter = {
     },
 
     /**
-     * Enable team sync with Firebase
+     * Enable cloud sync with Firebase
      * @param {Object} config - Firebase config object
      * @returns {Promise}
      */
-    async enableTeamSync(config) {
+    async enableCloudSync(config) {
         try {
             // Initialize Firebase if not already
             if (!FirebaseAdapter.app) {
@@ -125,22 +125,22 @@ const StorageAdapter = {
 
             // Save config for future sessions
             FirebaseAdapter.saveConfigToLocal(config);
-            localStorage.setItem('teamSyncEnabled', 'true');
+            localStorage.setItem('cloudSyncEnabled', 'true');
 
             // Mode will switch to 'firebase' when user signs in
-            Debug.log('StorageAdapter: Team sync enabled');
+            Debug.log('StorageAdapter: Cloud sync enabled');
 
             return true;
         } catch (e) {
-            Debug.log('StorageAdapter: Failed to enable team sync:', e.message);
+            Debug.log('StorageAdapter: Failed to enable cloud sync:', e.message);
             return false;
         }
     },
 
     /**
-     * Disable team sync
+     * Disable cloud sync
      */
-    async disableTeamSync() {
+    async disableCloudSync() {
         // Sign out of Firebase
         await FirebaseAdapter.signOut();
 
@@ -150,7 +150,7 @@ const StorageAdapter = {
         // Switch to local mode
         this.currentMode = 'local';
 
-        Debug.log('StorageAdapter: Team sync disabled');
+        Debug.log('StorageAdapter: Cloud sync disabled');
     },
 
     /**

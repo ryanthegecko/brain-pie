@@ -90,7 +90,7 @@ const App = {
                     DataModel.categories = cleanData.categories;
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
                     this.render();
-                    Storage.showStatus('Synced from team', 'success');
+                    Storage.showStatus('Synced from cloud', 'success');
 
                     // Update main sync indicator
                     if (typeof UI !== 'undefined' && UI.updateMainSyncIndicator) {

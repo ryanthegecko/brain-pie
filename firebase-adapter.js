@@ -97,7 +97,7 @@ const FirebaseAdapter = {
      */
     clearConfig() {
         localStorage.removeItem(this.CONFIG_KEY);
-        localStorage.removeItem('teamSyncEnabled');
+        localStorage.removeItem('cloudSyncEnabled');
         this.config = null;
         Debug.log('Firebase config cleared');
     },
