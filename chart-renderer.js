@@ -340,8 +340,8 @@ const ChartRenderer = {
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
                 const subItems = d.data.subItems;
-                
-                if (subItems.length === 0) return;
+
+                if (!subItems || subItems.length === 0) return;
                 
                 const startAngle = d.startAngle;
                 const endAngle = d.endAngle;

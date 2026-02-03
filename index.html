@@ -32,7 +32,7 @@
             </div>
             <div class="top-bar-right">
                 <div>
-                    <button onclick="UI.showMenu()">➕ Add</button>
+                    <button style="width: 100%;" onclick="UI.showMenu()"><span style="font-size: 20px;">+</span> Add</button>
                 </div>
                 <hr>
                 <div>
@@ -43,7 +43,7 @@
             </div>
             <div class="top-bar-right-mobile">
                 <div>
-                    <button onclick="UI.showMenu()">➕</button>
+                    <button onclick="UI.showMenu()"><span style="font-size: 24px;">+</span></button>
                     <button class="secondary" onclick="UI.showSettings()">⚙️</button>
                 </div>
                 <div>
@@ -250,6 +250,81 @@
                 </label>
             </div>
 
+            <div class="settings-section" id="team-sync-section">
+                <h3>Team Sync</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                    Sync your Brain Pie with team members using Firebase
+                </p>
+
+                <!-- Collapsed state: just the enable button -->
+                <div id="team-sync-collapsed">
+                    <button class="tertiary" onclick="UI.enableTeamSync()">
+                        🔄 Enable Team Sync
+                    </button>
+                </div>
+
+                <!-- Expanded state: Firebase config and auth -->
+                <div id="team-sync-expanded" style="display: none;">
+                    <!-- Status indicator -->
+                    <div id="team-sync-status" class="sync-status">
+                        <span class="sync-indicator offline"></span>
+                        <span class="sync-text">Not connected</span>
+                    </div>
+
+                    <!-- Firebase Config Input -->
+                    <div id="firebase-config-form" style="margin-top: 15px;">
+                        <div class="input-group">
+                            <label for="firebase-config-input">Firebase Config (paste JSON)</label>
+                            <textarea id="firebase-config-input"
+                                      placeholder='Paste your Firebase config here (from Firebase console)'
+                                      rows="4"
+                                      style="width: 100%; font-family: monospace; font-size: 11px;"></textarea>
+                        </div>
+                        <button class="secondary" onclick="UI.connectFirebase()" style="margin-top: 10px;">
+                            Connect to Firebase
+                        </button>
+                    </div>
+
+                    <!-- Auth Section (shown after Firebase connected) -->
+                    <div id="firebase-auth-section" style="display: none; margin-top: 15px;">
+                        <div id="firebase-signed-out">
+                            <button onclick="UI.signInWithGoogle()">
+                                🔐 Sign in with Google
+                            </button>
+                        </div>
+                        <div id="firebase-signed-in" style="display: none;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <img id="firebase-user-photo" style="width: 32px; height: 32px; border-radius: 50%;" src="" alt="" />
+                                <span id="firebase-user-name" style="font-weight: 500;"></span>
+                            </div>
+                            <button class="secondary" onclick="UI.signOutFirebase()">Sign Out</button>
+                        </div>
+                    </div>
+
+                    <!-- Share URL -->
+                    <div id="share-url-section" style="display: none; margin-top: 20px;">
+                        <div class="input-group">
+                            <label for="team-share-url">Share this URL with your team:</label>
+                            <input type="text" id="team-share-url" readonly
+                                   style="font-size: 11px; background: #f5f5f5; font-family: monospace;" />
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <button class="small secondary" onclick="UI.copyShareURL()">
+                                📋 Copy URL
+                            </button>
+                            <button class="small secondary" onclick="UI.exportFirebaseConfig()">
+                                📥 Export Config
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Disable button -->
+                    <button class="warn" onclick="UI.disableTeamSync()" style="margin-top: 20px;">
+                        Disable Team Sync
+                    </button>
+                </div>
+            </div>
+
             <div class="settings-section button-section">
                 <button class="tertiary" onclick="App.exportData()">📥 Export Data & Settings to JSON</button>
                 <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
@@ -262,7 +337,7 @@
             <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
 
             <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                Version 0.1
+                Version 0.2
             </div>
         </div>
     </div>
@@ -474,6 +549,8 @@
     </div>
 
     <script src="storage.js"></script>
+    <script src="firebase-adapter.js"></script>
+    <script src="storage-adapter.js"></script>
     <script src="data-model.js"></script>
     <script src="chart-renderer.js"></script>
     <script src="ui-controller.js"></script>

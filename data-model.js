@@ -4,8 +4,15 @@ const DataModel = {
     // Manual category percentages (when user overrides)
     categoryPercentageOverrides: {},
 
-    loadFromStorageOrExample() {
-        const data = Storage.load();
+    async loadFromStorageOrExample() {
+        let data;
+
+        // Use StorageAdapter if available (supports Firebase)
+        if (typeof StorageAdapter !== 'undefined') {
+            data = await StorageAdapter.load();
+        } else {
+            data = Storage.load();
+        }
 
         if (data && data.categories) {
             // Returning user: use stored data
@@ -26,22 +33,27 @@ const DataModel = {
         this.categoryPercentageOverrides = example.categoryPercentageOverrides || {};
 
         // Persist it so next visit is treated as "returning"
-        Storage.save({
-            categories: this.categories,
-            categoryPercentageOverrides: this.categoryPercentageOverrides
-        });
+        this.saveToStorage();
     },
 
     saveToStorage() {
         const calendarProvider = localStorage.getItem('calendarProvider') || 'google';
 
-        Storage.save({
+        const data = {
             categories: this.categories,
             categoryPercentageOverrides: this.categoryPercentageOverrides,
             settings: {
                 calendarProvider: calendarProvider
-            }
-        });
+            },
+            lastModified: Date.now()  // For sync conflict resolution
+        };
+
+        // Use StorageAdapter if available (supports Firebase)
+        if (typeof StorageAdapter !== 'undefined') {
+            StorageAdapter.save(data);
+        } else {
+            Storage.save(data);
+        }
     },
 
     addCategory(name, color) {
