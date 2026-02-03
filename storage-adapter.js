@@ -19,8 +19,8 @@ const StorageAdapter = {
     // Track if we're currently saving (prevent feedback loops)
     isSaving: false,
 
-    // Last saved timestamp to detect external changes
-    lastSavedTimestamp: 0,
+    // Unique ID for each save to identify our own updates
+    lastSaveId: null,
 
     /**
      * Initialize the storage adapter
@@ -93,17 +93,17 @@ const StorageAdapter = {
         FirebaseAdapter.subscribeToChanges((data) => {
             // Skip if we just saved this data (prevent feedback loop)
             if (this.isSaving) {
-                Debug.log('StorageAdapter: Skipping update (we are saving)');
+                Debug.log('StorageAdapter: Skipping update (currently saving)');
                 return;
             }
 
-            // Check if this is actually a new update
-            if (data.lastModified && data.lastModified <= this.lastSavedTimestamp) {
-                Debug.log('StorageAdapter: Skipping update (older than last save)');
+            // Skip if this is our own save coming back (check saveId)
+            if (data._saveId && data._saveId === this.lastSaveId) {
+                Debug.log('StorageAdapter: Skipping update (our own save)');
                 return;
             }
 
-            Debug.log('StorageAdapter: Received remote update');
+            Debug.log('StorageAdapter: Received remote update from', data._savedBy || 'unknown');
 
             if (this.updateCallback) {
                 this.updateCallback(data);
@@ -161,15 +161,24 @@ const StorageAdapter = {
      */
     async save(data) {
         this.isSaving = true;
-        this.lastSavedTimestamp = Date.now();
+
+        // Generate unique save ID to identify our own updates
+        this.lastSaveId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         try {
             if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-                const success = await FirebaseAdapter.save(data);
+                // Add save ID to data so we can identify our own updates
+                const dataWithSaveId = {
+                    ...data,
+                    _saveId: this.lastSaveId,
+                    _savedBy: FirebaseAdapter.user?.uid
+                };
+
+                const success = await FirebaseAdapter.save(dataWithSaveId);
 
                 if (success) {
-                    Debug.log('StorageAdapter: Saved to Firebase');
-                    // Also save to localStorage as backup
+                    Debug.log('StorageAdapter: Saved to Firebase with saveId:', this.lastSaveId);
+                    // Also save to localStorage as backup (without the _saveId)
                     Storage.save(data);
                     return true;
                 } else {
@@ -188,7 +197,7 @@ const StorageAdapter = {
             // Small delay before allowing updates again
             setTimeout(() => {
                 this.isSaving = false;
-            }, 500);
+            }, 1000);
         }
     },
 
@@ -203,7 +212,9 @@ const StorageAdapter = {
 
             if (firebaseData) {
                 Debug.log('StorageAdapter: Loaded from Firebase');
-                return firebaseData;
+                // Clean internal metadata before returning
+                const { _saveId, _savedBy, ...cleanData } = firebaseData;
+                return cleanData;
             }
 
             // Fallback to localStorage if Firebase is empty
