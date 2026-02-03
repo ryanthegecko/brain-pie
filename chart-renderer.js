@@ -83,17 +83,6 @@ const ChartRenderer = {
             // Show branch expansion for spokes with children
             const angle = sliceData.startAngle + ((sliceData.endAngle - sliceData.startAngle) / sliceData.data.subItems.length) * (spokeIndex + 0.5);
             ChartRenderer.expandBranch(subItem, catData, sliceData, angle, categoryId, itemId, spokeIndex);
-        } else if (spokeType === 'action') {
-            // Collapse any expanded branch first
-            this.collapseIfBranchExpanded();
-            // For action spokes without children, show calendar picker
-            const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
-            UI.showDateTimePicker(
-                spokeName,
-                spokeName,
-                sliceData.data.name,
-                catData.data.name
-            );
         } else {
             // Collapse any expanded branch first
             this.collapseIfBranchExpanded();
