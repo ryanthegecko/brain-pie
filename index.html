@@ -670,6 +670,100 @@
         </div>
     </div>
 
+    <!-- Export Selection Overlay -->
+    <div class="export-overlay" id="export-overlay" onclick="UI.closeExportPreview()">
+        <div class="export-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeExportPreview()">✕</button>
+
+            <h2>Export Data</h2>
+            <p style="color: #666; margin-bottom: 15px;">
+                Select which items to include in the export file.
+            </p>
+
+            <div class="export-selection-controls">
+                <button class="small secondary" onclick="UI.exportSelectAll()">Select All</button>
+                <button class="small secondary" onclick="UI.exportDeselectAll()">Deselect All</button>
+                <label class="export-actions-toggle">
+                    <input type="checkbox" id="export-include-actions" checked onchange="UI.renderExportTree()">
+                    <span>Include actions</span>
+                </label>
+            </div>
+
+            <div id="export-selection-tree" class="import-tree selectable">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div id="export-summary" class="export-summary">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div class="import-actions">
+                <button class="secondary" onclick="UI.closeExportPreview()">Cancel</button>
+                <button onclick="UI.executeExport()" id="export-execute-btn">
+                    📥 Export Selected
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Overlay -->
+    <div class="import-overlay" id="import-overlay" onclick="UI.closeImportPreview()">
+        <div class="import-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeImportPreview()">✕</button>
+
+            <!-- Step indicators -->
+            <div class="import-steps">
+                <div class="import-step active" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Select</span>
+                </div>
+                <div class="import-step" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Confirm</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Select -->
+            <div class="import-step-content active" id="import-step-1">
+                <h2>Select Items to Import</h2>
+                <p style="color: #666; margin-bottom: 15px;">
+                    Choose which items to import. Items marked with 🔗 will merge with existing data.
+                </p>
+
+                <div class="import-selection-controls">
+                    <button class="small secondary" onclick="ImportManager.selectAll(); UI.renderImportSelectionTree();">Select All</button>
+                    <button class="small secondary" onclick="ImportManager.deselectAll(); UI.renderImportSelectionTree();">Deselect All</button>
+                    <button class="small" onclick="UI.importQuickReplace()" title="Replace all existing data with imported data">⚡ Replace All</button>
+                </div>
+
+                <div id="import-selection-tree" class="import-tree selectable">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="import-actions">
+                    <button class="secondary" onclick="UI.closeImportPreview()">Cancel</button>
+                    <button onclick="UI.importNextStep()" id="import-continue-btn">Review Import →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Confirm -->
+            <div class="import-step-content" id="import-step-2">
+                <h2>Confirm Import</h2>
+
+                <div id="import-summary" class="import-summary">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="import-actions">
+                    <button class="secondary" onclick="UI.importPrevStep()">← Back</button>
+                    <button onclick="UI.executeImport()" id="import-execute-btn">
+                        ✓ Import Selected Items
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Spoke Configuration Overlay -->
     <div class="spoke-config-overlay" id="spoke-config-overlay" onclick="UI.closeSpokeConfig()">
         <div class="spoke-config-content" onclick="event.stopPropagation()">
@@ -790,6 +884,7 @@
     <script src="calendar-adapter.js"></script>
     <script src="storage-adapter.js"></script>
     <script src="data-model.js"></script>
+    <script src="import-manager.js"></script>
     <script src="chart-renderer.js"></script>
     <script src="ui-controller.js"></script>
     <script src="app.js"></script>

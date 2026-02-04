@@ -461,5 +461,283 @@ const DataModel = {
         this.categories = categories;
         this.categoryPercentageOverrides = {};
         this.saveToStorage();
+    },
+
+    // ==========================================
+    // Merge utilities for granular import
+    // ==========================================
+
+    /**
+     * Find a category by name (case-insensitive)
+     */
+    findCategoryByName(name) {
+        const normalizedName = name.toLowerCase().trim();
+        return this.categories.find(cat =>
+            cat.name.toLowerCase().trim() === normalizedName
+        );
+    },
+
+    /**
+     * Find an item (slice) by name within a category (case-insensitive)
+     */
+    findItemByName(categoryId, name) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return null;
+
+        const normalizedName = name.toLowerCase().trim();
+        return category.items.find(item =>
+            item.name.toLowerCase().trim() === normalizedName
+        );
+    },
+
+    /**
+     * Find a spoke by text within an item (case-insensitive)
+     */
+    findSpokeByText(categoryId, itemId, text) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return null;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems) return null;
+
+        const normalizedText = text.toLowerCase().trim();
+        const index = item.subItems.findIndex(spoke => {
+            const spokeText = typeof spoke === 'string' ? spoke : spoke.text;
+            return spokeText.toLowerCase().trim() === normalizedText;
+        });
+
+        return index >= 0 ? { spoke: item.subItems[index], index } : null;
+    },
+
+    /**
+     * Generate a unique category ID
+     */
+    generateCategoryId(name) {
+        return name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
+    },
+
+    /**
+     * Generate a unique item ID
+     */
+    generateItemId() {
+        return Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
+    },
+
+    /**
+     * Normalize a spoke to object format (handles legacy string format)
+     */
+    normalizeSpoke(spoke) {
+        if (typeof spoke === 'string') {
+            return {
+                text: spoke,
+                type: 'static',
+                children: [],
+                metadata: {
+                    condition: null,
+                    calendarEventId: null,
+                    nextState: null,
+                    recurrence: null
+                }
+            };
+        }
+        // Ensure all expected fields exist
+        return {
+            text: spoke.text || '',
+            type: spoke.type || 'static',
+            children: spoke.children || [],
+            metadata: {
+                condition: spoke.metadata?.condition || null,
+                calendarEventId: spoke.metadata?.calendarEventId || null,
+                nextState: spoke.metadata?.nextState || null,
+                recurrence: spoke.metadata?.recurrence || null
+            }
+        };
+    },
+
+    /**
+     * Add or merge a category from import data
+     * Returns: { action: 'added'|'merged', categoryId: string }
+     */
+    addOrMergeCategory(importedCategory, skipSave = false) {
+        const existing = this.findCategoryByName(importedCategory.name);
+
+        if (existing) {
+            // Merge: add imported slices to existing category
+            if (importedCategory.items && importedCategory.items.length > 0) {
+                for (const importedItem of importedCategory.items) {
+                    this.addOrMergeItem(existing.id, importedItem, true);
+                }
+            }
+            if (!skipSave) this.saveToStorage();
+            return { action: 'merged', categoryId: existing.id };
+        }
+
+        // Add new category with regenerated ID
+        const newId = this.generateCategoryId(importedCategory.name);
+        const newCategory = {
+            id: newId,
+            name: importedCategory.name,
+            color: importedCategory.color || '#4CAF50',
+            items: []
+        };
+        this.categories.push(newCategory);
+
+        // Add all items
+        if (importedCategory.items && importedCategory.items.length > 0) {
+            for (const importedItem of importedCategory.items) {
+                this.addOrMergeItem(newId, importedItem, true);
+            }
+        }
+
+        if (!skipSave) this.saveToStorage();
+        return { action: 'added', categoryId: newId };
+    },
+
+    /**
+     * Add or merge an item (slice) from import data
+     * Returns: { action: 'added'|'merged', itemId: string }
+     */
+    addOrMergeItem(categoryId, importedItem, skipSave = false) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return null;
+
+        const existing = this.findItemByName(categoryId, importedItem.name);
+
+        if (existing) {
+            // Merge: add imported spokes to existing item
+            if (importedItem.subItems && importedItem.subItems.length > 0) {
+                for (const importedSpoke of importedItem.subItems) {
+                    this.addOrMergeSpoke(categoryId, existing.id, importedSpoke, true);
+                }
+            }
+            // Normalize percentages
+            this.normalizeItemsInCategory(categoryId);
+            if (!skipSave) this.saveToStorage();
+            return { action: 'merged', itemId: existing.id };
+        }
+
+        // Add new item with regenerated ID
+        const newId = this.generateItemId();
+        const newItem = {
+            id: newId,
+            name: importedItem.name,
+            percentage: importedItem.percentage || 20,
+            color: importedItem.color || '#2196F3',
+            subItems: []
+        };
+        category.items.push(newItem);
+
+        // Add all spokes
+        if (importedItem.subItems && importedItem.subItems.length > 0) {
+            for (const importedSpoke of importedItem.subItems) {
+                this.addOrMergeSpoke(categoryId, newId, importedSpoke, true);
+            }
+        }
+
+        // Normalize percentages
+        this.normalizeItemsInCategory(categoryId);
+        if (!skipSave) this.saveToStorage();
+        return { action: 'added', itemId: newId };
+    },
+
+    /**
+     * Add or merge a spoke from import data
+     * Returns: { action: 'added'|'merged'|'skipped' }
+     */
+    addOrMergeSpoke(categoryId, itemId, importedSpoke, skipSave = false) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return null;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return null;
+
+        // Ensure subItems array exists
+        if (!item.subItems) item.subItems = [];
+
+        const normalizedImported = this.normalizeSpoke(importedSpoke);
+        const existing = this.findSpokeByText(categoryId, itemId, normalizedImported.text);
+
+        if (existing) {
+            // Merge: add new actions to existing spoke (avoid duplicates)
+            const existingSpoke = this.normalizeSpoke(existing.spoke);
+
+            // Update to object format if it was a string
+            if (typeof item.subItems[existing.index] === 'string') {
+                item.subItems[existing.index] = existingSpoke;
+            }
+
+            // Merge children (actions)
+            if (normalizedImported.children && normalizedImported.children.length > 0) {
+                for (const importedAction of normalizedImported.children) {
+                    const actionText = typeof importedAction === 'string'
+                        ? importedAction
+                        : importedAction.text;
+
+                    // Check for existing action with same text
+                    const existingActionIndex = item.subItems[existing.index].children.findIndex(a => {
+                        const aText = typeof a === 'string' ? a : a.text;
+                        return aText.toLowerCase().trim() === actionText.toLowerCase().trim();
+                    });
+
+                    if (existingActionIndex >= 0) {
+                        // Update existing action's scheduled data if imported has it
+                        if (typeof importedAction === 'object' && importedAction.scheduled) {
+                            const existingAction = item.subItems[existing.index].children[existingActionIndex];
+                            // Convert to object if it was a string
+                            if (typeof existingAction === 'string') {
+                                item.subItems[existing.index].children[existingActionIndex] = {
+                                    text: existingAction,
+                                    children: [],
+                                    scheduled: { ...importedAction.scheduled, calendarEventId: null }
+                                };
+                            } else {
+                                // Update scheduled data (clear calendar event ID so it can be recreated)
+                                item.subItems[existing.index].children[existingActionIndex].scheduled = {
+                                    ...importedAction.scheduled,
+                                    calendarEventId: null
+                                };
+                            }
+                        }
+                    } else {
+                        // Add new action (preserve scheduling info but clear calendar event ID)
+                        const newAction = typeof importedAction === 'string'
+                            ? { text: importedAction, children: [] }
+                            : {
+                                text: importedAction.text,
+                                children: importedAction.children || [],
+                                scheduled: importedAction.scheduled
+                                    ? { ...importedAction.scheduled, calendarEventId: null }
+                                    : undefined
+                            };
+                        item.subItems[existing.index].children.push(newAction);
+                    }
+                }
+            }
+
+            if (!skipSave) this.saveToStorage();
+            return { action: 'merged' };
+        }
+
+        // Add new spoke (clear calendar event IDs to avoid conflicts)
+        const newSpoke = {
+            ...normalizedImported,
+            metadata: {
+                ...normalizedImported.metadata,
+                calendarEventId: null
+            },
+            children: normalizedImported.children.map(child => {
+                if (typeof child === 'string') return { text: child, children: [] };
+                return {
+                    ...child,
+                    scheduled: child.scheduled
+                        ? { ...child.scheduled, calendarEventId: null }
+                        : undefined
+                };
+            })
+        };
+
+        item.subItems.push(newSpoke);
+        if (!skipSave) this.saveToStorage();
+        return { action: 'added' };
     }
 };
