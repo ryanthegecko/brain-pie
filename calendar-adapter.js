@@ -151,10 +151,13 @@ const CalendarAdapter = {
             });
 
             if (!response.ok) {
+                Debug.log('CalendarAdapter: getEvent response not ok:', response.status);
                 return null;
             }
 
-            return await response.json();
+            const event = await response.json();
+            Debug.log('CalendarAdapter: getEvent result:', event.id, 'status:', event.status);
+            return event;
 
         } catch (e) {
             Debug.log('CalendarAdapter: Get event error:', e.message);
@@ -288,7 +291,7 @@ const CalendarAdapter = {
                         try {
                             const event = await this.getEvent(eventId);
 
-                            if (!event) {
+                            if (!event || event.status === 'cancelled') {
                                 // Event was deleted from calendar - remove scheduled data
                                 Debug.log('CalendarAdapter: Event deleted from calendar:', eventId);
                                 delete action.scheduled;
