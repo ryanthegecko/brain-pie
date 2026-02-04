@@ -566,6 +566,7 @@ const UI = {
     showSettings() {
         document.getElementById('settings-overlay').classList.add('active');
         this.loadCalendarProvider();
+        this.loadCalendarSyncState();
         this.loadCloudSyncState();
     },
     
@@ -587,6 +588,88 @@ const UI = {
     
     getCalendarProvider() {
         return localStorage.getItem('calendarProvider') || 'google';
+    },
+
+    // ==========================================
+    // Calendar Sync (Standalone Google Sign-In)
+    // ==========================================
+
+    /**
+     * Load calendar sync state when Settings opened
+     */
+    loadCalendarSyncState() {
+        const section = document.getElementById('calendar-sync-section');
+        if (!section) return;
+
+        // Hide if Firebase cloud sync is active (Firebase handles calendar auth)
+        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        this.updateCalendarSyncUI();
+    },
+
+    /**
+     * Update calendar sync UI based on sign-in state
+     */
+    updateCalendarSyncUI() {
+        const signedOutEl = document.getElementById('calendar-sync-signed-out');
+        const signedInEl = document.getElementById('calendar-sync-signed-in');
+
+        if (typeof GoogleAuthAdapter !== 'undefined' && GoogleAuthAdapter.isSignedIn()) {
+            signedOutEl.style.display = 'none';
+            signedInEl.style.display = 'block';
+
+            const photoEl = document.getElementById('calendar-user-photo');
+            const nameEl = document.getElementById('calendar-user-name');
+
+            if (GoogleAuthAdapter.userInfo) {
+                if (photoEl) photoEl.src = GoogleAuthAdapter.userInfo.picture || '';
+                if (nameEl) nameEl.textContent = GoogleAuthAdapter.userInfo.name || GoogleAuthAdapter.userInfo.email;
+            }
+        } else {
+            signedOutEl.style.display = 'block';
+            signedInEl.style.display = 'none';
+        }
+    },
+
+    /**
+     * Sign in with Google for Calendar access only
+     */
+    async signInForCalendar() {
+        try {
+            if (typeof GoogleAuthAdapter === 'undefined') {
+                alert('Google Auth not available');
+                return;
+            }
+
+            await GoogleAuthAdapter.init();
+            await GoogleAuthAdapter.signIn();
+
+            this.updateCalendarSyncUI();
+            Storage.showStatus('Calendar sync enabled', 'success');
+
+            // Sync calendar events
+            if (typeof App !== 'undefined' && App.syncCalendarEvents) {
+                App.syncCalendarEvents();
+            }
+        } catch (e) {
+            console.error('Calendar sign-in error:', e);
+            alert('Sign in failed: ' + e.message);
+        }
+    },
+
+    /**
+     * Sign out of Calendar-only Google auth
+     */
+    signOutCalendar() {
+        if (typeof GoogleAuthAdapter !== 'undefined') {
+            GoogleAuthAdapter.signOut();
+        }
+        this.updateCalendarSyncUI();
+        Storage.showStatus('Calendar sync disabled', 'success');
     },
     
     // Helper to determine if a color is dark
@@ -1163,7 +1246,7 @@ const UI = {
         }
     },
 
-    createCalendarEvent() {
+    async createCalendarEvent() {
         if (!this.pendingCalendarEvent) return;
 
         const { actionText, spokeText, sliceName, categoryName, dataLocation } = this.pendingCalendarEvent;
@@ -1180,6 +1263,86 @@ const UI = {
             return;
         }
 
+        // Check for existing scheduled data (for reschedule case)
+        let existingEventId = null;
+        if (dataLocation) {
+            const category = DataModel.categories.find(c => c.id === dataLocation.categoryId);
+            if (category) {
+                const item = category.items.find(i => i.id === dataLocation.itemId);
+                if (item && item.subItems[dataLocation.spokeIndex]) {
+                    const spoke = item.subItems[dataLocation.spokeIndex];
+                    if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
+                        const existingScheduled = spoke.children[dataLocation.childIndex].scheduled;
+                        if (existingScheduled && existingScheduled.calendarEventId) {
+                            existingEventId = existingScheduled.calendarEventId;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Prepare scheduled data (will add calendarEventId if API succeeds)
+        const scheduledData = {
+            date: dateStr,
+            time: timeStr,
+            duration: duration
+        };
+
+        const provider = this.getCalendarProvider();
+
+        // For Google, try API first, fall back to URL redirect
+        if (provider === 'google' && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+            const eventData = {
+                title: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+                date: dateStr,
+                time: timeStr,
+                duration: duration,
+                description: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`
+            };
+
+            let event;
+            if (existingEventId) {
+                // Update existing event
+                event = await CalendarAdapter.updateEvent(existingEventId, eventData);
+                if (event && event.id) {
+                    scheduledData.calendarEventId = event.id;
+                    Storage.showStatus('Calendar event updated', 'success');
+                } else {
+                    // Update failed, try creating new
+                    Debug.log('Calendar update failed, creating new event');
+                    event = await CalendarAdapter.createEvent(eventData);
+                    if (event && event.id) {
+                        scheduledData.calendarEventId = event.id;
+                        Storage.showStatus('Added to Google Calendar', 'success');
+                    }
+                }
+            } else {
+                // Create new event
+                event = await CalendarAdapter.createEvent(eventData);
+                if (event && event.id) {
+                    scheduledData.calendarEventId = event.id;
+                    Storage.showStatus('Added to Google Calendar', 'success');
+                }
+            }
+
+            if (!event || !event.id) {
+                // API failed, fall back to URL redirect
+                Debug.log('Calendar API failed, falling back to URL redirect');
+                const startDate = new Date(`${dateStr}T${timeStr}`);
+                const endDate = new Date(startDate.getTime() + duration * 60000);
+                this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+            }
+        } else if (provider === 'apple') {
+            const startDate = new Date(`${dateStr}T${timeStr}`);
+            const endDate = new Date(startDate.getTime() + duration * 60000);
+            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+        } else {
+            // Google without API access - use URL redirect
+            const startDate = new Date(`${dateStr}T${timeStr}`);
+            const endDate = new Date(startDate.getTime() + duration * 60000);
+            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+        }
+
         // Save scheduled time to the action data
         if (dataLocation) {
             const category = DataModel.categories.find(c => c.id === dataLocation.categoryId);
@@ -1188,27 +1351,11 @@ const UI = {
                 if (item && item.subItems[dataLocation.spokeIndex]) {
                     const spoke = item.subItems[dataLocation.spokeIndex];
                     if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
-                        spoke.children[dataLocation.childIndex].scheduled = {
-                            date: dateStr,
-                            time: timeStr,
-                            duration: duration
-                        };
+                        spoke.children[dataLocation.childIndex].scheduled = scheduledData;
                         DataModel.saveToStorage();
                     }
                 }
             }
-        }
-
-        // Combine date and time
-        const startDate = new Date(`${dateStr}T${timeStr}`);
-        const endDate = new Date(startDate.getTime() + duration * 60000);
-
-        const provider = this.getCalendarProvider();
-
-        if (provider === 'apple') {
-            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
-        } else {
-            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
         }
 
         // Close and return to spoke config if needed
@@ -1508,7 +1655,7 @@ const UI = {
         this.showDateTimePicker(actionText, spokeName, sliceName, categoryName, dataLocation);
     },
 
-    removeAction(childIndex) {
+    async removeAction(childIndex) {
         if (!this.pendingSpokeConfig) return;
 
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
@@ -1521,6 +1668,17 @@ const UI = {
 
         const spoke = item.subItems[spokeIndex];
         if (typeof spoke !== 'object' || !spoke.children) return;
+
+        // Check if action has a calendar event to delete
+        const action = spoke.children[childIndex];
+        if (action && action.scheduled && action.scheduled.calendarEventId) {
+            if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                const deleted = await CalendarAdapter.deleteEvent(action.scheduled.calendarEventId);
+                if (deleted) {
+                    Storage.showStatus('Calendar event deleted', 'success');
+                }
+            }
+        }
 
         spoke.children.splice(childIndex, 1);
         DataModel.saveToStorage();
@@ -1651,7 +1809,8 @@ const UI = {
         try {
             this.updateSyncStatus('connecting', 'Signing in...');
             await FirebaseAdapter.signInWithGoogle();
-            // Auth state change listener will call updateAuthUI
+            // Explicitly update UI after sign-in completes
+            this.updateAuthUI();
         } catch (e) {
             console.error('Sign in error:', e);
             alert('Sign in failed: ' + e.message);
@@ -1696,6 +1855,11 @@ const UI = {
 
             // Reload data from Firebase
             this.reloadDataFromFirebase();
+
+            // Sync calendar events (now that we have a fresh token)
+            if (typeof App !== 'undefined' && App.syncCalendarEvents) {
+                App.syncCalendarEvents();
+            }
         } else {
             document.getElementById('firebase-signed-out').style.display = 'block';
             document.getElementById('firebase-signed-in').style.display = 'none';

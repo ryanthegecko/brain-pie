@@ -25,12 +25,17 @@ const FirebaseAdapter = {
     // Connection state
     connected: false,
 
+    // Google OAuth access token (for Calendar API)
+    accessToken: null,
+    accessTokenExpiry: null,
+
     // Callbacks
     onDataChangeCallback: null,
     onAuthChangeCallback: null,
 
     // localStorage keys
     CONFIG_KEY: 'brainPieFirebaseConfig',
+    TOKEN_KEY: 'brainPieCalendarToken',
 
     /**
      * Parse Firebase config from URL parameter
@@ -97,9 +102,58 @@ const FirebaseAdapter = {
      */
     clearConfig() {
         localStorage.removeItem(this.CONFIG_KEY);
+        localStorage.removeItem(this.TOKEN_KEY);
         localStorage.removeItem('cloudSyncEnabled');
         this.config = null;
+        this.accessToken = null;
+        this.accessTokenExpiry = null;
         Debug.log('Firebase config cleared');
+    },
+
+    /**
+     * Save Calendar access token to localStorage
+     */
+    saveTokenToLocal() {
+        if (this.accessToken && this.accessTokenExpiry) {
+            try {
+                localStorage.setItem(this.TOKEN_KEY, JSON.stringify({
+                    token: this.accessToken,
+                    expiry: this.accessTokenExpiry
+                }));
+                Debug.log('Calendar token saved to localStorage');
+            } catch (e) {
+                Debug.log('Failed to save token:', e.message);
+            }
+        }
+    },
+
+    /**
+     * Load Calendar access token from localStorage
+     * @returns {boolean} True if valid token was loaded
+     */
+    loadTokenFromLocal() {
+        try {
+            const stored = localStorage.getItem(this.TOKEN_KEY);
+            if (!stored) return false;
+
+            const { token, expiry } = JSON.parse(stored);
+
+            // Check if token is still valid (with 5 min buffer)
+            if (expiry && Date.now() < expiry - (5 * 60 * 1000)) {
+                this.accessToken = token;
+                this.accessTokenExpiry = expiry;
+                Debug.log('Calendar token loaded from localStorage');
+                return true;
+            } else {
+                // Token expired, clean up
+                localStorage.removeItem(this.TOKEN_KEY);
+                Debug.log('Stored calendar token expired');
+                return false;
+            }
+        } catch (e) {
+            Debug.log('Failed to load token:', e.message);
+            return false;
+        }
     },
 
     /**
@@ -180,6 +234,8 @@ const FirebaseAdapter = {
 
             if (user) {
                 Debug.log('Firebase auth: signed in as', user.displayName || user.email);
+                // Try to load calendar token from localStorage (for page refreshes)
+                this.loadTokenFromLocal();
                 // Start listening for data changes
                 this.subscribeToChanges(this.onDataChangeCallback);
             } else {
@@ -197,6 +253,7 @@ const FirebaseAdapter = {
 
     /**
      * Sign in with Google
+     * Requests Calendar API scope for 2-way calendar sync
      * @returns {Promise<Object>} User object
      */
     async signInWithGoogle() {
@@ -213,14 +270,89 @@ const FirebaseAdapter = {
 
         const provider = new firebase.auth.GoogleAuthProvider();
 
+        // Request Calendar API scope for 2-way calendar sync
+        provider.addScope('https://www.googleapis.com/auth/calendar.events');
+
         try {
             const result = await this.auth.signInWithPopup(provider);
-            Debug.log('Google sign-in successful:', result.user.displayName);
+
+            // Capture OAuth access token for Calendar API
+            if (result.credential) {
+                this.accessToken = result.credential.accessToken;
+                // Token expires in ~1 hour, store expiry time
+                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000); // 55 minutes
+                // Persist token to localStorage for page refreshes
+                this.saveTokenToLocal();
+                Debug.log('Google sign-in successful, calendar access granted:', result.user.displayName);
+            } else {
+                Debug.log('Google sign-in successful (no credential):', result.user.displayName);
+            }
+
             return result.user;
         } catch (e) {
             Debug.log('Google sign-in failed:', e.message);
             throw e;
         }
+    },
+
+    /**
+     * Get a valid access token for Calendar API
+     * Tries: memory → localStorage → re-auth popup (last resort)
+     * @returns {Promise<string|null>} Access token or null
+     */
+    async getAccessToken() {
+        // Check if token exists in memory and is still valid
+        if (this.accessToken && this.accessTokenExpiry && Date.now() < this.accessTokenExpiry) {
+            return this.accessToken;
+        }
+
+        // Try loading from localStorage
+        if (this.loadTokenFromLocal()) {
+            return this.accessToken;
+        }
+
+        // Token expired or missing - need to re-authenticate
+        if (!this.user) {
+            Debug.log('Cannot refresh token: not signed in');
+            return null;
+        }
+
+        // Note: This will show a popup - not truly silent
+        // But it's the only way to get a fresh token for Calendar API
+        try {
+            Debug.log('Token expired, re-authenticating...');
+
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.addScope('https://www.googleapis.com/auth/calendar.events');
+
+            // Re-authenticate to get fresh token
+            const result = await this.user.reauthenticateWithPopup(provider);
+
+            if (result.credential) {
+                this.accessToken = result.credential.accessToken;
+                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000);
+                this.saveTokenToLocal();
+                Debug.log('Access token refreshed');
+                return this.accessToken;
+            }
+        } catch (e) {
+            Debug.log('Failed to refresh access token:', e.message);
+        }
+
+        return null;
+    },
+
+    /**
+     * Check if Calendar API access is available
+     * @returns {boolean}
+     */
+    hasCalendarAccess() {
+        // Check memory first
+        if (this.accessToken && this.accessTokenExpiry && Date.now() < this.accessTokenExpiry) {
+            return true;
+        }
+        // Try loading from localStorage
+        return this.loadTokenFromLocal();
     },
 
     /**
@@ -234,6 +366,9 @@ const FirebaseAdapter = {
         await this.auth.signOut();
         this.user = null;
         this.connected = false;
+        this.accessToken = null;
+        this.accessTokenExpiry = null;
+        localStorage.removeItem(this.TOKEN_KEY);
         Debug.log('Signed out of Firebase');
     },
 

@@ -250,6 +250,31 @@
                 </label>
             </div>
 
+            <!-- Calendar Sync (standalone, without Firebase) -->
+            <div class="settings-section" id="calendar-sync-section">
+                <h3>Calendar Sync</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                    Sign in with Google to enable 2-way calendar sync (create, update, delete events)
+                </p>
+
+                <div id="calendar-sync-signed-out">
+                    <button onclick="UI.signInForCalendar()">
+                        📅 Sign in with Google
+                    </button>
+                </div>
+
+                <div id="calendar-sync-signed-in" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <img id="calendar-user-photo" style="width: 32px; height: 32px; border-radius: 50%;" src="" alt="" />
+                        <span id="calendar-user-name" style="font-weight: 500;"></span>
+                    </div>
+                    <p style="color: #4CAF50; font-size: 13px; margin-bottom: 10px;">
+                        ✓ Calendar sync enabled
+                    </p>
+                    <button class="secondary small" onclick="UI.signOutCalendar()">Sign Out</button>
+                </div>
+            </div>
+
             <div class="settings-section" id="cloud-sync-section">
                 <h3>Cloud Sync</h3>
                 <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
@@ -550,6 +575,8 @@
 
     <script src="storage.js"></script>
     <script src="firebase-adapter.js"></script>
+    <script src="google-auth-adapter.js"></script>
+    <script src="calendar-adapter.js"></script>
     <script src="storage-adapter.js"></script>
     <script src="data-model.js"></script>
     <script src="chart-renderer.js"></script>
