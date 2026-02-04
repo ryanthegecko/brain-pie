@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.5
+**Current Version:** v0.6
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -34,6 +34,7 @@ brain-pie/
 ├── ui-controller.js        # UI state, overlays, and user interactions
 ├── storage.js              # localStorage persistence and import/export
 ├── import-manager.js       # Granular import/merge orchestration
+├── tutorial-manager.js     # First-time user tutorial system
 ├── firebase-adapter.js     # Firebase Realtime Database integration
 ├── google-auth-adapter.js  # Standalone Google OAuth for calendar-only users
 ├── calendar-adapter.js     # Google Calendar API wrapper
@@ -260,6 +261,23 @@ Breakpoints:
 4. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.6 (February 2026)
+First-time user tutorial:
+
+**Tutorial System:**
+- Interactive guided walkthrough for new users
+- Spotlight highlighting with tooltip guidance
+- Modal dialogs for welcome and completion
+- Step-by-step flow: Open menu → Create slice → Add spoke → Add action → Schedule → Calendar sync
+- Detects first-time users automatically (separate from example data)
+- Progress saved to localStorage (resumes if interrupted)
+- "Restart Tutorial" button in Settings
+
+**New Files:**
+- `tutorial-manager.js` - Tutorial state machine, spotlight/modal rendering
+
+---
 
 ### v0.5 (February 2026)
 Granular import/export with smart merge:

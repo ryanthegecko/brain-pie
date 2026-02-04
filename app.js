@@ -113,6 +113,11 @@ const App = {
         this.render();
         Controls.init();
 
+        // Check if tutorial should start for first-time users
+        if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
+            setTimeout(() => TutorialManager.start(), 500);
+        }
+
         // Update main sync indicator if in Firebase mode
         if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
             UI.updateMainSyncIndicator('synced', StorageAdapter.getProjectId());
@@ -236,6 +241,11 @@ const App = {
         DataModel.addSubItem(categoryId, itemId, text);
         input.value = '';
         this.render();
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('spoke-added');
+        }
     },
 
     moveSubItem(fromCategoryId, fromItemId, fromIndex, toCategoryId, toItemId, toIndex) {
@@ -253,6 +263,11 @@ const App = {
         if (text && text.trim()) {
             DataModel.addSpokeChild(categoryId, itemId, spokeIndex, text.trim());
             this.render();
+
+            // Notify tutorial
+            if (typeof TutorialManager !== 'undefined') {
+                TutorialManager.notifyEvent('action-added');
+            }
         }
     },
 
