@@ -805,7 +805,7 @@ const UI = {
                                             </div>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
-                                                <button class="" onclick="UI.showSpokeConfig('${category.id}', '${item.id}', ${idx}, '${subText.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}')" title="Configure spoke">+</button>
+                                                <button class="" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
                                                 <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">
                                                     <img width="15" height="15" src="./assets/trash.svg" />
                                                 </button>
@@ -1146,11 +1146,111 @@ const UI = {
     submitAddAction(categoryId, itemId, spokeIndex) {
         const input = document.getElementById(`action-input-${categoryId}-${itemId}-${spokeIndex}`);
         const text = input.value.trim();
-        
+
         if (text) {
-            App.addSpokeChild(categoryId, itemId, spokeIndex, text);
-            // this.hideAddActionInput(categoryId, itemId, spokeIndex);
+            // Store pending action details and show type picker
+            this.pendingActionAdd = {
+                categoryId,
+                itemId,
+                spokeIndex,
+                actionName: text
+            };
+            this.showActionTypePicker(text);
             this.hideAllAddActionInputs();
+        }
+    },
+
+    // Action Type Picker
+    pendingActionAdd: null,
+
+    showActionTypePicker(actionName) {
+        document.getElementById('action-type-action-name').textContent = actionName;
+        document.getElementById('action-type-overlay').classList.add('active');
+    },
+
+    closeActionTypePicker() {
+        document.getElementById('action-type-overlay').classList.remove('active');
+        this.pendingActionAdd = null;
+    },
+
+    selectActionType(type) {
+        if (!this.pendingActionAdd) return;
+
+        const { categoryId, itemId, spokeIndex, actionName } = this.pendingActionAdd;
+
+        // Get spoke and slice info for calendar
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        const item = category ? category.items.find(i => i.id === itemId) : null;
+        const spoke = item ? item.subItems[spokeIndex] : null;
+        const spokeText = spoke ? (typeof spoke === 'string' ? spoke : spoke.text) : '';
+
+        if (type === 'static') {
+            // Just add the action, no calendar
+            App.addSpokeChild(categoryId, itemId, spokeIndex, actionName);
+            this.closeActionTypePicker();
+        } else if (type === 'onetime') {
+            // Add action then show date/time picker
+            App.addSpokeChild(categoryId, itemId, spokeIndex, actionName);
+            this.closeActionTypePicker();
+
+            // Get the index of the newly added action
+            const updatedSpoke = DataModel.categories
+                .find(c => c.id === categoryId)?.items
+                .find(i => i.id === itemId)?.subItems[spokeIndex];
+            const childIndex = updatedSpoke?.children ? updatedSpoke.children.length - 1 : 0;
+
+            // Show date picker
+            const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
+            this.showDateTimePicker(actionName, spokeText, item?.name || '', category?.name || '', dataLocation);
+        } else if (type === 'repeating') {
+            // Show recurrence picker, then add with recurrence
+            this.closeActionTypePicker();
+            this.showRecurrencePicker(async (recurrence) => {
+                // Add action with recurrence metadata
+                App.addSpokeChild(categoryId, itemId, spokeIndex, actionName);
+
+                // Get the newly added action and set its recurrence
+                const updatedCategory = DataModel.categories.find(c => c.id === categoryId);
+                const updatedItem = updatedCategory?.items.find(i => i.id === itemId);
+                const updatedSpoke = updatedItem?.subItems[spokeIndex];
+
+                if (updatedSpoke && typeof updatedSpoke === 'object' && updatedSpoke.children) {
+                    const childIndex = updatedSpoke.children.length - 1;
+                    const action = updatedSpoke.children[childIndex];
+
+                    if (action) {
+                        // Store recurrence in action
+                        action.recurrence = recurrence;
+
+                        // Create calendar event if available
+                        if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                            const rrule = CalendarAdapter.buildRRule(recurrence);
+                            const eventData = {
+                                title: `${actionName} (${spokeText}/${item?.name}/${category?.name})`,
+                                date: new Date().toISOString().split('T')[0],
+                                description: `Repeating action: ${actionName}\nSpoke: ${spokeText}\nSlice: ${item?.name}\nCategory: ${category?.name}\nCreated from Brain Pie`,
+                                rrule: rrule
+                            };
+
+                            if (recurrence.allDay) {
+                                eventData.allDay = true;
+                            } else {
+                                eventData.time = recurrence.time || '09:00';
+                                eventData.duration = recurrence.duration || 60;
+                            }
+
+                            const event = await CalendarAdapter.createEvent(eventData);
+                            if (event && event.id) {
+                                action.calendarEventId = event.id;
+                                Storage.showStatus('Recurring event added to calendar', 'success');
+                            }
+                        }
+
+                        DataModel.saveToStorage();
+                        App.render();
+                    }
+                }
+            });
         }
     },
 
