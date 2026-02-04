@@ -1647,3 +1647,438 @@ select:focus {
     background: #e8f5e9;
     border-radius: 8px;
 }
+
+/* Import Preview Overlay */
+.import-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2005;
+}
+
+.import-overlay.active {
+    display: flex;
+}
+
+.import-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 700px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+@media (max-width: 1024px) {
+    .import-content {
+        width: 98vw;
+        padding: 20px;
+        max-height: 95vh;
+    }
+}
+
+.import-content h2 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 22px;
+}
+
+/* Import Steps */
+.import-steps {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.import-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.import-step.active {
+    opacity: 1;
+}
+
+.import-step.completed {
+    opacity: 0.7;
+}
+
+.import-step .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #666;
+}
+
+.import-step.active .step-number {
+    background: #4CAF50;
+    color: white;
+}
+
+.import-step.completed .step-number {
+    background: #81C784;
+    color: white;
+}
+
+.import-step .step-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+}
+
+.import-step.active .step-label {
+    color: #4CAF50;
+}
+
+.import-step-content {
+    display: none;
+}
+
+.import-step-content.active {
+    display: block;
+}
+
+/* Import Tree */
+.import-tree {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+@media (max-width: 1024px) {
+    .import-tree {
+        max-height: 45vh;
+    }
+}
+
+.import-tree-category {
+    margin-bottom: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    overflow: hidden;
+}
+
+.import-tree-category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.import-tree-category-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.import-tree-category-name {
+    font-weight: 600;
+    flex: 1;
+}
+
+.import-tree-category-count {
+    font-size: 12px;
+    color: #666;
+}
+
+.import-tree-merge-badge {
+    background: #FFF3E0;
+    color: #E65100;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.import-tree-items {
+    padding: 10px 15px;
+}
+
+.import-tree-item {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    background: #fafafa;
+    border-left: 3px solid #2196F3;
+}
+
+.import-tree-item:last-child {
+    margin-bottom: 0;
+}
+
+.import-tree-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.import-tree-item-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.import-tree-item-name {
+    font-weight: 500;
+    flex: 1;
+}
+
+.import-tree-item-percentage {
+    font-size: 11px;
+    color: #666;
+}
+
+.import-tree-spokes {
+    margin-top: 8px;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #666;
+}
+
+.import-tree-spoke {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.import-tree-spoke-text {
+    flex: 1;
+}
+
+.import-tree-spoke-actions {
+    font-size: 11px;
+    color: #4285F4;
+    font-weight: 500;
+}
+
+/* Import Selection Tree */
+.import-tree.selectable .import-tree-category-header,
+.import-tree.selectable .import-tree-item-header,
+.import-tree.selectable .import-tree-spoke {
+    cursor: pointer;
+}
+
+.import-tree.selectable .import-tree-category-header:hover,
+.import-tree.selectable .import-tree-item-header:hover,
+.import-tree.selectable .import-tree-spoke:hover {
+    background: #e3f2fd;
+}
+
+.import-tree-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Apply opacity only to headers, not the whole container (so children can override) */
+.import-tree-category.deselected > .import-tree-category-header,
+.import-tree-item.deselected > .import-tree-item-header,
+.import-tree-spoke.deselected {
+    opacity: 0.4;
+}
+
+/* Ensure selected items inside deselected parents remain fully visible */
+.import-tree-category.deselected .import-tree-item:not(.deselected),
+.import-tree-category.deselected .import-tree-item:not(.deselected) .import-tree-item-header,
+.import-tree-item.deselected .import-tree-spoke:not(.deselected) {
+    opacity: 1;
+}
+
+/* Import Selection Controls */
+.import-selection-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+/* Import Actions */
+.import-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.import-actions button {
+    min-width: 140px;
+}
+
+/* Import Summary */
+.import-summary {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.import-summary-section {
+    margin-bottom: 15px;
+}
+
+.import-summary-section:last-child {
+    margin-bottom: 0;
+}
+
+.import-summary-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.import-summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.import-summary-row.add {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.import-summary-row.merge {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.import-summary-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: #e3f2fd;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+.import-empty-message {
+    text-align: center;
+    padding: 30px;
+    color: #999;
+    font-style: italic;
+}
+
+/* Export Selection Overlay */
+.export-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2006;
+}
+
+.export-overlay.active {
+    display: flex;
+}
+
+.export-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 600px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+@media (max-width: 1024px) {
+    .export-content {
+        width: 98vw;
+        padding: 20px;
+        max-height: 95vh;
+    }
+}
+
+.export-content h2 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 22px;
+}
+
+.export-selection-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.export-actions-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+}
+
+.export-actions-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.export-summary {
+    background: #f0f7ff;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #1565c0;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.export-summary-item {
+    display: flex;
+    gap: 5px;
+}
+
+.export-summary-count {
+    font-weight: 600;
+}
