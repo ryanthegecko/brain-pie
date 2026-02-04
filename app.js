@@ -285,8 +285,8 @@ const App = {
     },
 
     exportData() {
-        const data = { categories: DataModel.getCategories() };
-        Storage.exportToFile(data);
+        // Show export selection overlay
+        UI.showExportPreview();
     },
 
     removeAllData() {
@@ -308,8 +308,8 @@ const App = {
 
         Storage.importFromFile(file, (data) => {
             if (data.categories) {
-                DataModel.setCategories(data.categories);
-                this.render();
+                // Show import preview instead of direct replace
+                UI.showImportPreview(data);
             }
         });
 
