@@ -25,6 +25,10 @@ const FirebaseAdapter = {
     // Connection state
     connected: false,
 
+    // Google OAuth access token (for Calendar API)
+    accessToken: null,
+    accessTokenExpiry: null,
+
     // Callbacks
     onDataChangeCallback: null,
     onAuthChangeCallback: null,
@@ -197,6 +201,7 @@ const FirebaseAdapter = {
 
     /**
      * Sign in with Google
+     * Requests Calendar API scope for 2-way calendar sync
      * @returns {Promise<Object>} User object
      */
     async signInWithGoogle() {
@@ -213,14 +218,74 @@ const FirebaseAdapter = {
 
         const provider = new firebase.auth.GoogleAuthProvider();
 
+        // Request Calendar API scope for 2-way calendar sync
+        provider.addScope('https://www.googleapis.com/auth/calendar.events');
+
         try {
             const result = await this.auth.signInWithPopup(provider);
-            Debug.log('Google sign-in successful:', result.user.displayName);
+
+            // Capture OAuth access token for Calendar API
+            if (result.credential) {
+                this.accessToken = result.credential.accessToken;
+                // Token expires in ~1 hour, store expiry time
+                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000); // 55 minutes
+                Debug.log('Google sign-in successful, calendar access granted:', result.user.displayName);
+            } else {
+                Debug.log('Google sign-in successful (no credential):', result.user.displayName);
+            }
+
             return result.user;
         } catch (e) {
             Debug.log('Google sign-in failed:', e.message);
             throw e;
         }
+    },
+
+    /**
+     * Get a valid access token for Calendar API
+     * Refreshes if expired by re-authenticating
+     * @returns {Promise<string|null>} Access token or null
+     */
+    async getAccessToken() {
+        // Check if token exists and is still valid
+        if (this.accessToken && this.accessTokenExpiry && Date.now() < this.accessTokenExpiry) {
+            return this.accessToken;
+        }
+
+        // Token expired or missing - need to refresh
+        if (!this.user) {
+            Debug.log('Cannot refresh token: not signed in');
+            return null;
+        }
+
+        try {
+            Debug.log('Refreshing access token...');
+
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.addScope('https://www.googleapis.com/auth/calendar.events');
+
+            // Re-authenticate to get fresh token
+            const result = await this.user.reauthenticateWithPopup(provider);
+
+            if (result.credential) {
+                this.accessToken = result.credential.accessToken;
+                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000);
+                Debug.log('Access token refreshed');
+                return this.accessToken;
+            }
+        } catch (e) {
+            Debug.log('Failed to refresh access token:', e.message);
+        }
+
+        return null;
+    },
+
+    /**
+     * Check if Calendar API access is available
+     * @returns {boolean}
+     */
+    hasCalendarAccess() {
+        return !!this.accessToken;
     },
 
     /**
@@ -234,6 +299,8 @@ const FirebaseAdapter = {
         await this.auth.signOut();
         this.user = null;
         this.connected = false;
+        this.accessToken = null;
+        this.accessTokenExpiry = null;
         Debug.log('Signed out of Firebase');
     },
 

@@ -1163,7 +1163,7 @@ const UI = {
         }
     },
 
-    createCalendarEvent() {
+    async createCalendarEvent() {
         if (!this.pendingCalendarEvent) return;
 
         const { actionText, spokeText, sliceName, categoryName, dataLocation } = this.pendingCalendarEvent;
@@ -1180,6 +1180,86 @@ const UI = {
             return;
         }
 
+        // Check for existing scheduled data (for reschedule case)
+        let existingEventId = null;
+        if (dataLocation) {
+            const category = DataModel.categories.find(c => c.id === dataLocation.categoryId);
+            if (category) {
+                const item = category.items.find(i => i.id === dataLocation.itemId);
+                if (item && item.subItems[dataLocation.spokeIndex]) {
+                    const spoke = item.subItems[dataLocation.spokeIndex];
+                    if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
+                        const existingScheduled = spoke.children[dataLocation.childIndex].scheduled;
+                        if (existingScheduled && existingScheduled.calendarEventId) {
+                            existingEventId = existingScheduled.calendarEventId;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Prepare scheduled data (will add calendarEventId if API succeeds)
+        const scheduledData = {
+            date: dateStr,
+            time: timeStr,
+            duration: duration
+        };
+
+        const provider = this.getCalendarProvider();
+
+        // For Google, try API first, fall back to URL redirect
+        if (provider === 'google' && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+            const eventData = {
+                title: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+                date: dateStr,
+                time: timeStr,
+                duration: duration,
+                description: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`
+            };
+
+            let event;
+            if (existingEventId) {
+                // Update existing event
+                event = await CalendarAdapter.updateEvent(existingEventId, eventData);
+                if (event && event.id) {
+                    scheduledData.calendarEventId = event.id;
+                    Storage.showStatus('Calendar event updated', 'success');
+                } else {
+                    // Update failed, try creating new
+                    Debug.log('Calendar update failed, creating new event');
+                    event = await CalendarAdapter.createEvent(eventData);
+                    if (event && event.id) {
+                        scheduledData.calendarEventId = event.id;
+                        Storage.showStatus('Added to Google Calendar', 'success');
+                    }
+                }
+            } else {
+                // Create new event
+                event = await CalendarAdapter.createEvent(eventData);
+                if (event && event.id) {
+                    scheduledData.calendarEventId = event.id;
+                    Storage.showStatus('Added to Google Calendar', 'success');
+                }
+            }
+
+            if (!event || !event.id) {
+                // API failed, fall back to URL redirect
+                Debug.log('Calendar API failed, falling back to URL redirect');
+                const startDate = new Date(`${dateStr}T${timeStr}`);
+                const endDate = new Date(startDate.getTime() + duration * 60000);
+                this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+            }
+        } else if (provider === 'apple') {
+            const startDate = new Date(`${dateStr}T${timeStr}`);
+            const endDate = new Date(startDate.getTime() + duration * 60000);
+            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+        } else {
+            // Google without API access - use URL redirect
+            const startDate = new Date(`${dateStr}T${timeStr}`);
+            const endDate = new Date(startDate.getTime() + duration * 60000);
+            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+        }
+
         // Save scheduled time to the action data
         if (dataLocation) {
             const category = DataModel.categories.find(c => c.id === dataLocation.categoryId);
@@ -1188,27 +1268,11 @@ const UI = {
                 if (item && item.subItems[dataLocation.spokeIndex]) {
                     const spoke = item.subItems[dataLocation.spokeIndex];
                     if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
-                        spoke.children[dataLocation.childIndex].scheduled = {
-                            date: dateStr,
-                            time: timeStr,
-                            duration: duration
-                        };
+                        spoke.children[dataLocation.childIndex].scheduled = scheduledData;
                         DataModel.saveToStorage();
                     }
                 }
             }
-        }
-
-        // Combine date and time
-        const startDate = new Date(`${dateStr}T${timeStr}`);
-        const endDate = new Date(startDate.getTime() + duration * 60000);
-
-        const provider = this.getCalendarProvider();
-
-        if (provider === 'apple') {
-            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
-        } else {
-            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
         }
 
         // Close and return to spoke config if needed
@@ -1508,7 +1572,7 @@ const UI = {
         this.showDateTimePicker(actionText, spokeName, sliceName, categoryName, dataLocation);
     },
 
-    removeAction(childIndex) {
+    async removeAction(childIndex) {
         if (!this.pendingSpokeConfig) return;
 
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
@@ -1521,6 +1585,17 @@ const UI = {
 
         const spoke = item.subItems[spokeIndex];
         if (typeof spoke !== 'object' || !spoke.children) return;
+
+        // Check if action has a calendar event to delete
+        const action = spoke.children[childIndex];
+        if (action && action.scheduled && action.scheduled.calendarEventId) {
+            if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                const deleted = await CalendarAdapter.deleteEvent(action.scheduled.calendarEventId);
+                if (deleted) {
+                    Storage.showStatus('Calendar event deleted', 'success');
+                }
+            }
+        }
 
         spoke.children.splice(childIndex, 1);
         DataModel.saveToStorage();
