@@ -171,29 +171,32 @@ const CalendarAdapter = {
      * @returns {Object} Google Calendar API event object
      */
     buildEventPayload(eventData) {
-        const { title, date, time, duration, description, rrule } = eventData;
-
-        // Build start datetime
-        const startDateTime = new Date(`${date}T${time}:00`);
-
-        // Build end datetime (start + duration)
-        const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 1000);
-
-        // Get timezone
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const { title, date, time, duration, description, rrule, allDay } = eventData;
 
         const payload = {
             summary: title,
-            description: description || `Created by Brain Pie`,
-            start: {
+            description: description || `Created by Brain Pie`
+        };
+
+        if (allDay) {
+            // All-day event uses date (not dateTime)
+            payload.start = { date: date };
+            payload.end = { date: date };
+        } else {
+            // Timed event
+            const startDateTime = new Date(`${date}T${time}:00`);
+            const endDateTime = new Date(startDateTime.getTime() + (duration || 60) * 60 * 1000);
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            payload.start = {
                 dateTime: startDateTime.toISOString(),
                 timeZone: timeZone
-            },
-            end: {
+            };
+            payload.end = {
                 dateTime: endDateTime.toISOString(),
                 timeZone: timeZone
-            }
-        };
+            };
+        }
 
         // Add recurrence if provided
         if (rrule) {
