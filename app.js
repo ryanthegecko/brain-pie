@@ -251,8 +251,29 @@ const App = {
     },
 
     
-    removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
+    async removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
         if (!confirm('Remove this action?')) return;
+
+        // Check if action has a calendar event to delete
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (category) {
+            const item = category.items.find(i => i.id === itemId);
+            if (item && item.subItems[spokeIndex]) {
+                const spoke = item.subItems[spokeIndex];
+                if (typeof spoke === 'object' && spoke.children && spoke.children[childIndex]) {
+                    const action = spoke.children[childIndex];
+                    if (action && action.scheduled && action.scheduled.calendarEventId) {
+                        if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                            const deleted = await CalendarAdapter.deleteEvent(action.scheduled.calendarEventId);
+                            if (deleted) {
+                                Storage.showStatus('Calendar event deleted', 'success');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         DataModel.removeSpokeChild(categoryId, itemId, spokeIndex, childIndex);
         this.render();
     },
