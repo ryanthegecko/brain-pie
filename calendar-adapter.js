@@ -292,9 +292,12 @@ const CalendarAdapter = {
                             const event = await this.getEvent(eventId);
 
                             if (!event || event.status === 'cancelled') {
-                                // Event was deleted from calendar - remove scheduled data
-                                Debug.log('CalendarAdapter: Event deleted from calendar:', eventId);
-                                delete action.scheduled;
+                                // Event was deleted from calendar
+                                // For non-recurring actions, delete the entire action
+                                // (Recurring events will be handled differently in Phase 2)
+                                Debug.log('CalendarAdapter: Event deleted from calendar, removing action:', eventId);
+                                spoke.children.splice(childIndex, 1);
+                                childIndex--; // Adjust index since we removed an item
                                 results.deleted++;
                                 hasChanges = true;
                             } else if (event.start && event.start.dateTime) {
