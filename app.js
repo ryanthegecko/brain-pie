@@ -119,8 +119,9 @@ const App = {
         }
 
         // Sync calendar events on load (if calendar access available)
+        // Delay to let Firebase data settle first
         if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
-            this.syncCalendarEvents();
+            setTimeout(() => this.syncCalendarEvents(), 2000);
         }
 
         // Add resize listener
