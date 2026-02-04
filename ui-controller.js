@@ -566,6 +566,7 @@ const UI = {
     showSettings() {
         document.getElementById('settings-overlay').classList.add('active');
         this.loadCalendarProvider();
+        this.loadCalendarSyncState();
         this.loadCloudSyncState();
     },
     
@@ -587,6 +588,88 @@ const UI = {
     
     getCalendarProvider() {
         return localStorage.getItem('calendarProvider') || 'google';
+    },
+
+    // ==========================================
+    // Calendar Sync (Standalone Google Sign-In)
+    // ==========================================
+
+    /**
+     * Load calendar sync state when Settings opened
+     */
+    loadCalendarSyncState() {
+        const section = document.getElementById('calendar-sync-section');
+        if (!section) return;
+
+        // Hide if Firebase cloud sync is active (Firebase handles calendar auth)
+        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        this.updateCalendarSyncUI();
+    },
+
+    /**
+     * Update calendar sync UI based on sign-in state
+     */
+    updateCalendarSyncUI() {
+        const signedOutEl = document.getElementById('calendar-sync-signed-out');
+        const signedInEl = document.getElementById('calendar-sync-signed-in');
+
+        if (typeof GoogleAuthAdapter !== 'undefined' && GoogleAuthAdapter.isSignedIn()) {
+            signedOutEl.style.display = 'none';
+            signedInEl.style.display = 'block';
+
+            const photoEl = document.getElementById('calendar-user-photo');
+            const nameEl = document.getElementById('calendar-user-name');
+
+            if (GoogleAuthAdapter.userInfo) {
+                if (photoEl) photoEl.src = GoogleAuthAdapter.userInfo.picture || '';
+                if (nameEl) nameEl.textContent = GoogleAuthAdapter.userInfo.name || GoogleAuthAdapter.userInfo.email;
+            }
+        } else {
+            signedOutEl.style.display = 'block';
+            signedInEl.style.display = 'none';
+        }
+    },
+
+    /**
+     * Sign in with Google for Calendar access only
+     */
+    async signInForCalendar() {
+        try {
+            if (typeof GoogleAuthAdapter === 'undefined') {
+                alert('Google Auth not available');
+                return;
+            }
+
+            await GoogleAuthAdapter.init();
+            await GoogleAuthAdapter.signIn();
+
+            this.updateCalendarSyncUI();
+            Storage.showStatus('Calendar sync enabled', 'success');
+
+            // Sync calendar events
+            if (typeof App !== 'undefined' && App.syncCalendarEvents) {
+                App.syncCalendarEvents();
+            }
+        } catch (e) {
+            console.error('Calendar sign-in error:', e);
+            alert('Sign in failed: ' + e.message);
+        }
+    },
+
+    /**
+     * Sign out of Calendar-only Google auth
+     */
+    signOutCalendar() {
+        if (typeof GoogleAuthAdapter !== 'undefined') {
+            GoogleAuthAdapter.signOut();
+        }
+        this.updateCalendarSyncUI();
+        Storage.showStatus('Calendar sync disabled', 'success');
     },
     
     // Helper to determine if a color is dark

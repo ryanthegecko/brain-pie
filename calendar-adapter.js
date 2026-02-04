@@ -239,14 +239,21 @@ const CalendarAdapter = {
     },
 
     /**
-     * Get access token from FirebaseAdapter
+     * Get access token from FirebaseAdapter or GoogleAuthAdapter
      * Handles token refresh if needed
      * @returns {Promise<string|null>}
      */
     async getToken() {
-        if (typeof FirebaseAdapter !== 'undefined') {
+        // Try FirebaseAdapter first (for Firebase users)
+        if (typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.hasCalendarAccess()) {
             return await FirebaseAdapter.getAccessToken();
         }
+
+        // Fall back to GoogleAuthAdapter (standalone calendar users)
+        if (typeof GoogleAuthAdapter !== 'undefined' && GoogleAuthAdapter.hasCalendarAccess()) {
+            return await GoogleAuthAdapter.getAccessToken();
+        }
+
         return null;
     },
 
@@ -255,7 +262,17 @@ const CalendarAdapter = {
      * @returns {boolean}
      */
     isAvailable() {
-        return typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.hasCalendarAccess();
+        // Check FirebaseAdapter
+        if (typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.hasCalendarAccess()) {
+            return true;
+        }
+
+        // Check GoogleAuthAdapter
+        if (typeof GoogleAuthAdapter !== 'undefined' && GoogleAuthAdapter.hasCalendarAccess()) {
+            return true;
+        }
+
+        return false;
     },
 
     /**
