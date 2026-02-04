@@ -118,6 +118,12 @@ const App = {
             UI.updateMainSyncIndicator('synced', StorageAdapter.getProjectId());
         }
 
+        // Sync calendar events on load (if calendar access available)
+        // Delay to let Firebase data settle first
+        if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+            setTimeout(() => this.syncCalendarEvents(), 2000);
+        }
+
         // Add resize listener
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -251,8 +257,29 @@ const App = {
     },
 
     
-    removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
+    async removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
         if (!confirm('Remove this action?')) return;
+
+        // Check if action has a calendar event to delete
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (category) {
+            const item = category.items.find(i => i.id === itemId);
+            if (item && item.subItems[spokeIndex]) {
+                const spoke = item.subItems[spokeIndex];
+                if (typeof spoke === 'object' && spoke.children && spoke.children[childIndex]) {
+                    const action = spoke.children[childIndex];
+                    if (action && action.scheduled && action.scheduled.calendarEventId) {
+                        if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                            const deleted = await CalendarAdapter.deleteEvent(action.scheduled.calendarEventId);
+                            if (deleted) {
+                                Storage.showStatus('Calendar event deleted', 'success');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         DataModel.removeSpokeChild(categoryId, itemId, spokeIndex, childIndex);
         this.render();
     },
@@ -294,6 +321,27 @@ const App = {
         const categories = DataModel.getCategories();
         ChartRenderer.render(categories);
         UI.renderCategoriesList(categories);
+    },
+
+    /**
+     * Sync calendar events from Google Calendar
+     * Updates local data if events were moved or deleted
+     */
+    async syncCalendarEvents() {
+        if (typeof CalendarAdapter === 'undefined' || !CalendarAdapter.isAvailable()) {
+            return;
+        }
+
+        Debug.log('Syncing calendar events...');
+        const results = await CalendarAdapter.syncFromCalendar();
+
+        if (results.updated > 0 || results.deleted > 0) {
+            this.render();
+            const msg = [];
+            if (results.updated > 0) msg.push(`${results.updated} updated`);
+            if (results.deleted > 0) msg.push(`${results.deleted} removed`);
+            Storage.showStatus(`Calendar: ${msg.join(', ')}`, 'success');
+        }
     }
 };
 
