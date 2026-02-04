@@ -1444,7 +1444,9 @@ const UI = {
         document.getElementById('recurrence-interval').value = 1;
         document.getElementById('recurrence-frequency').value = 'WEEKLY';
 
-        // Reset time to 9:00 AM
+        // Reset time to all-day (default)
+        document.getElementById('recurrence-all-day').checked = true;
+        document.getElementById('recurrence-time-picker').style.display = 'none';
         document.getElementById('recurrence-hour').value = '09';
         document.getElementById('recurrence-minute').value = '00';
 
@@ -1481,6 +1483,12 @@ const UI = {
         monthlyOptions.style.display = freq === 'MONTHLY' ? 'block' : 'none';
     },
 
+    toggleRecurrenceTime() {
+        const allDay = document.getElementById('recurrence-all-day').checked;
+        const timePicker = document.getElementById('recurrence-time-picker');
+        timePicker.style.display = allDay ? 'none' : 'block';
+    },
+
     updateRecurrenceEndOptions() {
         const endType = document.querySelector('input[name="recurrence-end"]:checked').value;
         const dateInput = document.getElementById('recurrence-end-date');
@@ -1500,14 +1508,20 @@ const UI = {
     saveRecurrence() {
         const frequency = document.getElementById('recurrence-frequency').value;
         const interval = parseInt(document.getElementById('recurrence-interval').value) || 1;
-        const hour = document.getElementById('recurrence-hour').value;
-        const minute = document.getElementById('recurrence-minute').value;
+        const allDay = document.getElementById('recurrence-all-day').checked;
 
         const recurrence = {
             frequency,
             interval,
-            time: `${hour}:${minute}`
+            allDay: allDay
         };
+
+        // Only include time if not all-day
+        if (!allDay) {
+            const hour = document.getElementById('recurrence-hour').value;
+            const minute = document.getElementById('recurrence-minute').value;
+            recurrence.time = `${hour}:${minute}`;
+        }
 
         // Weekly: collect selected days
         if (frequency === 'WEEKLY') {
@@ -1917,11 +1931,17 @@ const UI = {
                 const eventData = {
                     title: `${spokeName} (${sliceName}/${categoryName})`,
                     date: new Date().toISOString().split('T')[0],
-                    time: this.pendingRecurrenceData.time || '09:00',
-                    duration: 60,
                     description: `Repeating spoke: ${spokeName}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
                     rrule: rrule
                 };
+
+                // Set time or all-day
+                if (this.pendingRecurrenceData.allDay) {
+                    eventData.allDay = true;
+                } else {
+                    eventData.time = this.pendingRecurrenceData.time || '09:00';
+                    eventData.duration = 60;
+                }
 
                 const event = await CalendarAdapter.createEvent(eventData);
                 if (event && event.id) {
