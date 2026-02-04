@@ -797,8 +797,7 @@ const UI = {
                                             <span class="sub-item-text" style="flex: 1;padding-right:1em">${subText}</span>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
-                                                <button class="secondary" onclick="UI.showSpokeConfig('${category.id}', '${item.id}', ${idx}, '${subText.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}')" title="Configure spoke type">✏️</button>
-                                                <button class="" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
+                                                <button class="" onclick="UI.showSpokeConfig('${category.id}', '${item.id}', ${idx}, '${subText.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}')" title="Configure spoke">+</button>
                                                 <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">
                                                     <img width="15" height="15" src="./assets/trash.svg" />
                                                 </button>
