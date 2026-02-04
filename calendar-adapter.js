@@ -230,7 +230,9 @@ const CalendarAdapter = {
         }
 
         if (recurrence.until) {
-            parts.push(`UNTIL=${recurrence.until}`);
+            // Convert YYYY-MM-DD to YYYYMMDD format if needed
+            const until = recurrence.until.replace(/-/g, '');
+            parts.push(`UNTIL=${until}`);
         } else if (recurrence.count) {
             parts.push(`COUNT=${recurrence.count}`);
         }

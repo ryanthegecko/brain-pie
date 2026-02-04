@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.3
+**Current Version:** v0.4
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -26,16 +26,18 @@ The app uses a hierarchical structure with four layers:
 
 ```
 brain-pie/
-├── index.html           # Main HTML structure, overlays, and modals
-├── styles.css           # All styling including responsive breakpoints
-├── app.js               # Main application controller and initialization
-├── data-model.js        # Data structure management and business logic
-├── chart-renderer.js    # D3.js visualization and interactions
-├── ui-controller.js     # UI state, overlays, and user interactions
-├── storage.js           # localStorage persistence and import/export
-├── firebase-adapter.js  # Firebase Realtime Database integration
-├── storage-adapter.js   # Abstraction layer for localStorage/Firebase switching
-└── assets/              # Images and icons
+├── index.html              # Main HTML structure, overlays, and modals
+├── styles.css              # All styling including responsive breakpoints
+├── app.js                  # Main application controller and initialization
+├── data-model.js           # Data structure management and business logic
+├── chart-renderer.js       # D3.js visualization and interactions
+├── ui-controller.js        # UI state, overlays, and user interactions
+├── storage.js              # localStorage persistence and import/export
+├── firebase-adapter.js     # Firebase Realtime Database integration
+├── google-auth-adapter.js  # Standalone Google OAuth for calendar-only users
+├── calendar-adapter.js     # Google Calendar API wrapper
+├── storage-adapter.js      # Abstraction layer for localStorage/Firebase switching
+└── assets/                 # Images and icons
     ├── og.png
     └── trash.svg
 ```
@@ -243,9 +245,8 @@ Breakpoints:
 ### Limitations
 1. **No spoke deletion from chart** - Must delete from list view
 2. **No undo/redo** functionality
-3. **Calendar sync is one-way** - Creating events only, no reading back
-4. **No recurring events** support yet
-5. **Single document model** - Can't have multiple "pies"
+3. **Single document model** - Can't have multiple "pies"
+4. **Pending spoke type** - Not yet implemented
 
 ### Known Behaviors
 1. **Expansion can feel cluttered** with many spokes/actions
@@ -254,6 +255,28 @@ Breakpoints:
 4. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.4 (February 2026)
+Repeating spokes with recurring calendar events:
+
+**Repeating Spoke Type:**
+- New "Repeating" spoke type for recurring tasks
+- Recurrence picker UI with flexible options:
+  - Frequency: Daily, Weekly, Monthly, Yearly
+  - Interval: Every N days/weeks/months/years
+  - Weekly day selection (M T W T F S S)
+  - Monthly day-of-month selection
+  - End options: Never, On date, After N occurrences
+- Visual indicator 🔁 for repeating spokes in chart
+- RRULE support for Google Calendar recurring events
+- RRULE support for Apple Calendar .ics files
+
+**Integration:**
+- Repeating spokes create recurring calendar events
+- Calendar events include proper RRULE for recurrence
+- Works with both Google Calendar API and Apple .ics download
+
+---
 
 ### v0.3 (February 2026)
 Google Calendar API integration for true 2-way calendar sync:
@@ -280,7 +303,7 @@ Google Calendar API integration for true 2-way calendar sync:
 
 **Apple Calendar:**
 - Still uses .ics download (no API available)
-- RRULE support for recurring events planned for Phase 2
+- RRULE support for recurring events (added in v0.4)
 
 **Future options for Apple Calendar:**
 - `webcal://` protocol for direct Calendar.app launch
@@ -348,7 +371,6 @@ Initial public release with core functionality:
 ## Planned Features (Next Steps)
 
 ### Priority 1: Complete Spoke Type System
-- **Repeating** - Recurring tasks with calendar integration
 - **Pending** - Conditional tasks awaiting state change
 - State management for pending → action/static transitions
 
@@ -358,10 +380,10 @@ Replace the "redraw expanded view" approach with:
 - Transform/zoom on selected slice
 - Reuse existing DOM elements (no duplication)
 
-### Priority 3: Two-Way Calendar Sync
-- Store calendar event IDs with actions
-- Detect existing events
-- Allow editing existing events vs creating new
+### Priority 3: Enhanced Repeating Spokes
+- Edit recurrence pattern after creation
+- Update/delete recurring calendar events
+- Sync recurring event changes from calendar
 
 ## Development Notes
 
@@ -420,12 +442,16 @@ Debug.log('message', data)
 - [ ] Responsive behavior
 - [ ] localStorage persistence
 - [ ] Example data for new users
-- [ ] Spoke type configuration (static ↔ action)
+- [ ] Spoke type configuration (static ↔ action ↔ repeating)
 - [ ] Action scheduling workflow (add → schedule/skip)
 - [ ] Scheduled time display in branch view
 - [ ] Scheduled time display in list view
 - [ ] Reschedule existing actions
 - [ ] Legacy spoke format compatibility
+- [ ] Repeating spokes with recurrence picker
+- [ ] Recurring events in Google Calendar
+- [ ] RRULE in Apple Calendar .ics files
+- [ ] 2-way calendar sync (moved/deleted events)
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
