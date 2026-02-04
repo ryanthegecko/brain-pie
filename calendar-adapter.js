@@ -324,6 +324,7 @@ const CalendarAdapter = {
         }
 
         if (hasChanges) {
+            // Save to both localStorage AND Firebase
             DataModel.saveToStorage();
             Debug.log('CalendarAdapter: Sync complete -', results);
         }
