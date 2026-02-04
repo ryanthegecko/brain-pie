@@ -118,6 +118,11 @@ const App = {
             UI.updateMainSyncIndicator('synced', StorageAdapter.getProjectId());
         }
 
+        // Sync calendar events on load (if calendar access available)
+        if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+            this.syncCalendarEvents();
+        }
+
         // Add resize listener
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -315,6 +320,27 @@ const App = {
         const categories = DataModel.getCategories();
         ChartRenderer.render(categories);
         UI.renderCategoriesList(categories);
+    },
+
+    /**
+     * Sync calendar events from Google Calendar
+     * Updates local data if events were moved or deleted
+     */
+    async syncCalendarEvents() {
+        if (typeof CalendarAdapter === 'undefined' || !CalendarAdapter.isAvailable()) {
+            return;
+        }
+
+        Debug.log('Syncing calendar events...');
+        const results = await CalendarAdapter.syncFromCalendar();
+
+        if (results.updated > 0 || results.deleted > 0) {
+            this.render();
+            const msg = [];
+            if (results.updated > 0) msg.push(`${results.updated} updated`);
+            if (results.deleted > 0) msg.push(`${results.deleted} removed`);
+            Storage.showStatus(`Calendar: ${msg.join(', ')}`, 'success');
+        }
     }
 };
 

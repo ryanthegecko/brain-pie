@@ -253,6 +253,82 @@ const CalendarAdapter = {
      */
     isAvailable() {
         return typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.hasCalendarAccess();
+    },
+
+    /**
+     * Sync all scheduled actions with Google Calendar
+     * Fetches current state of events and updates local data
+     * @returns {Promise<Object>} Summary of sync results
+     */
+    async syncFromCalendar() {
+        if (!this.isAvailable()) {
+            Debug.log('CalendarAdapter: Cannot sync - not available');
+            return { synced: 0, updated: 0, deleted: 0 };
+        }
+
+        const results = { synced: 0, updated: 0, deleted: 0 };
+        let hasChanges = false;
+
+        // Iterate through all categories, items, spokes, and actions
+        for (const category of DataModel.categories) {
+            for (const item of category.items) {
+                if (!item.subItems) continue;
+
+                for (let spokeIndex = 0; spokeIndex < item.subItems.length; spokeIndex++) {
+                    const spoke = item.subItems[spokeIndex];
+                    if (typeof spoke !== 'object' || !spoke.children) continue;
+
+                    for (let childIndex = 0; childIndex < spoke.children.length; childIndex++) {
+                        const action = spoke.children[childIndex];
+                        if (!action || !action.scheduled || !action.scheduled.calendarEventId) continue;
+
+                        results.synced++;
+                        const eventId = action.scheduled.calendarEventId;
+
+                        try {
+                            const event = await this.getEvent(eventId);
+
+                            if (!event) {
+                                // Event was deleted from calendar - remove scheduled data
+                                Debug.log('CalendarAdapter: Event deleted from calendar:', eventId);
+                                delete action.scheduled;
+                                results.deleted++;
+                                hasChanges = true;
+                            } else if (event.start && event.start.dateTime) {
+                                // Event exists - check if time changed
+                                const eventStart = new Date(event.start.dateTime);
+                                const eventEnd = new Date(event.end.dateTime);
+                                const duration = Math.round((eventEnd - eventStart) / 60000);
+
+                                const eventDate = eventStart.toISOString().split('T')[0];
+                                const eventTime = eventStart.toTimeString().slice(0, 5);
+
+                                if (action.scheduled.date !== eventDate ||
+                                    action.scheduled.time !== eventTime ||
+                                    action.scheduled.duration !== duration) {
+                                    // Time changed - update local data
+                                    Debug.log('CalendarAdapter: Event time changed:', eventId);
+                                    action.scheduled.date = eventDate;
+                                    action.scheduled.time = eventTime;
+                                    action.scheduled.duration = duration;
+                                    results.updated++;
+                                    hasChanges = true;
+                                }
+                            }
+                        } catch (e) {
+                            Debug.log('CalendarAdapter: Error syncing event:', eventId, e.message);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (hasChanges) {
+            DataModel.saveToStorage();
+            Debug.log('CalendarAdapter: Sync complete -', results);
+        }
+
+        return results;
     }
 };
 
