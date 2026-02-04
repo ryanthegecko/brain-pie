@@ -2107,7 +2107,7 @@ select:focus {
     position: absolute;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
     border-radius: 8px;
-    pointer-events: all;
+    pointer-events: none; /* Allow clicks to pass through to the element underneath */
     animation: tutorial-pulse 1.5s ease-in-out infinite;
     transition: all 0.3s ease;
 }
