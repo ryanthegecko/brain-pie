@@ -797,6 +797,7 @@ const UI = {
                                             <span class="sub-item-text" style="flex: 1;padding-right:1em">${subText}</span>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
+                                                <button class="secondary" onclick="UI.showSpokeConfig('${category.id}', '${item.id}', ${idx}, '${subText.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}')" title="Configure spoke type">✏️</button>
                                                 <button class="" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
                                                 <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">
                                                     <img width="15" height="15" src="./assets/trash.svg" />
@@ -1449,6 +1450,7 @@ const UI = {
         document.getElementById('recurrence-time-picker').style.display = 'none';
         document.getElementById('recurrence-hour').value = '09';
         document.getElementById('recurrence-minute').value = '00';
+        document.getElementById('recurrence-duration').value = '60';
 
         // Reset day checkboxes
         document.querySelectorAll('input[name="recurrence-day"]').forEach(cb => cb.checked = false);
@@ -1516,11 +1518,13 @@ const UI = {
             allDay: allDay
         };
 
-        // Only include time if not all-day
+        // Only include time and duration if not all-day
         if (!allDay) {
             const hour = document.getElementById('recurrence-hour').value;
             const minute = document.getElementById('recurrence-minute').value;
+            const duration = parseInt(document.getElementById('recurrence-duration').value) || 60;
             recurrence.time = `${hour}:${minute}`;
+            recurrence.duration = duration;
         }
 
         // Weekly: collect selected days
@@ -1587,9 +1591,20 @@ const UI = {
                 break;
         }
 
-        // Add time
+        // Add time and duration
         if (recurrence.time) {
             desc += ` at ${recurrence.time}`;
+            if (recurrence.duration && recurrence.duration !== 60) {
+                const hrs = Math.floor(recurrence.duration / 60);
+                const mins = recurrence.duration % 60;
+                if (hrs && mins) {
+                    desc += ` (${hrs}h ${mins}m)`;
+                } else if (hrs) {
+                    desc += ` (${hrs}h)`;
+                } else {
+                    desc += ` (${mins}m)`;
+                }
+            }
         }
 
         if (recurrence.until) {
@@ -1940,7 +1955,7 @@ const UI = {
                     eventData.allDay = true;
                 } else {
                     eventData.time = this.pendingRecurrenceData.time || '09:00';
-                    eventData.duration = 60;
+                    eventData.duration = this.pendingRecurrenceData.duration || 60;
                 }
 
                 const event = await CalendarAdapter.createEvent(eventData);
