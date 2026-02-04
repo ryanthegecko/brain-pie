@@ -782,7 +782,12 @@ const UI = {
                                     style="position: relative;">${item.subItems.map((sub, idx) => {
                                     const subText = typeof sub === 'string' ? sub : sub.text;
                                     const children = typeof sub === 'object' ? sub.children || [] : [];
-                                    
+                                    const spokeType = typeof sub === 'object' ? sub.type || 'static' : 'static';
+                                    const isRepeating = spokeType === 'repeating';
+                                    const recurrenceDesc = isRepeating && sub.metadata && sub.metadata.recurrence
+                                        ? UI.formatRecurrenceDescription(sub.metadata.recurrence)
+                                        : '';
+
                                     return `
                                     <li draggable="true"
                                         data-category-id="${category.id}"
@@ -794,7 +799,10 @@ const UI = {
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;width: 100%; min-width: 50%;">
-                                            <span class="sub-item-text" style="flex: 1;padding-right:1em">${subText}</span>
+                                            <div style="flex: 1;padding-right:1em">
+                                                <span class="sub-item-text">${subText}${isRepeating ? ' 🔁' : ''}</span>
+                                                ${recurrenceDesc ? `<div style="font-size: 11px; color: #666; margin-top: 2px;">${recurrenceDesc}</div>` : ''}
+                                            </div>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
                                                 <button class="" onclick="UI.showSpokeConfig('${category.id}', '${item.id}', ${idx}, '${subText.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', '${category.name.replace(/'/g, "\\'")}')" title="Configure spoke">+</button>
