@@ -55,10 +55,20 @@ const UI = {
         this.clearSliceInputs();
 
         document.getElementById('menu-overlay').classList.add('active');
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('menu-opened');
+        }
     },
 
     closeMenu() {
         document.getElementById('menu-overlay').classList.remove('active');
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('menu-closed');
+        }
         // Reset state
         this.currentMenuTab = 1;
         this.selectedCategoryId = null;
@@ -256,6 +266,11 @@ const UI = {
 
         // Render to update the main UI
         App.render();
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('slice-added', { itemId: sliceId });
+        }
     },
 
     clearSliceInputs() {
@@ -530,6 +545,11 @@ const UI = {
         input.value = '';
         this.renderTab2Spokes();
         App.render();
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('spoke-added');
+        }
     },
 
     removeSpokeFromTab2(spokeIndex) {
@@ -1202,6 +1222,11 @@ const UI = {
             // Show date picker
             const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
             this.showDateTimePicker(actionName, spokeText, item?.name || '', category?.name || '', dataLocation);
+
+            // Notify tutorial
+            if (typeof TutorialManager !== 'undefined') {
+                TutorialManager.notifyEvent('action-scheduled');
+            }
         } else if (type === 'repeating') {
             // Show recurrence picker, then add with recurrence
             this.closeActionTypePicker();

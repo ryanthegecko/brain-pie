@@ -358,11 +358,18 @@
                     Remove all Data (Fresh Pie)<img width="25" height="27" src="./assets/trash.svg">
                 </button>
             </div>
-            
+
+            <div class="settings-section">
+                <h3>Help</h3>
+                <button class="tertiary" onclick="TutorialManager.restart(); UI.closeSettings();">
+                    📖 Restart Tutorial
+                </button>
+            </div>
+
             <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
 
             <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                Version 0.4
+                Version 0.6
             </div>
         </div>
     </div>
@@ -878,6 +885,25 @@
         </div>
     </div>
 
+    <!-- Tutorial Overlay (Spotlight) -->
+    <div class="tutorial-overlay" id="tutorial-overlay">
+        <div class="tutorial-spotlight" id="tutorial-spotlight"></div>
+        <div class="tutorial-tooltip" id="tutorial-tooltip">
+            <h3 id="tutorial-title"></h3>
+            <p id="tutorial-content"></p>
+            <div class="tutorial-buttons" id="tutorial-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div class="tutorial-modal-overlay" id="tutorial-modal-overlay">
+        <div class="tutorial-modal-content">
+            <h2 id="tutorial-modal-title"></h2>
+            <p id="tutorial-modal-text"></p>
+            <div class="tutorial-modal-buttons" id="tutorial-modal-buttons"></div>
+        </div>
+    </div>
+
     <script src="storage.js"></script>
     <script src="firebase-adapter.js"></script>
     <script src="google-auth-adapter.js"></script>
@@ -887,6 +913,7 @@
     <script src="import-manager.js"></script>
     <script src="chart-renderer.js"></script>
     <script src="ui-controller.js"></script>
+    <script src="tutorial-manager.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
