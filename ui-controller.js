@@ -1726,7 +1726,8 @@ const UI = {
         try {
             this.updateSyncStatus('connecting', 'Signing in...');
             await FirebaseAdapter.signInWithGoogle();
-            // Auth state change listener will call updateAuthUI
+            // Explicitly update UI after sign-in completes
+            this.updateAuthUI();
         } catch (e) {
             console.error('Sign in error:', e);
             alert('Sign in failed: ' + e.message);
