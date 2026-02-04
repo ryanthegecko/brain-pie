@@ -451,6 +451,39 @@
         </div>
     </div>
 
+    <!-- Action Type Picker Overlay -->
+    <div class="action-type-overlay" id="action-type-overlay" onclick="UI.closeActionTypePicker()">
+        <div class="action-type-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeActionTypePicker()">✕</button>
+            <h2>Action Type</h2>
+
+            <div id="action-type-name" style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #666;">Adding action:</div>
+                <div id="action-type-action-name" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+            </div>
+
+            <div class="action-type-options">
+                <button class="action-type-btn" onclick="UI.selectActionType('static')">
+                    <span class="action-type-icon">📌</span>
+                    <span class="action-type-label">Static</span>
+                    <span class="action-type-desc">Just a reminder (no calendar)</span>
+                </button>
+
+                <button class="action-type-btn" onclick="UI.selectActionType('onetime')">
+                    <span class="action-type-icon">📅</span>
+                    <span class="action-type-label">One-time</span>
+                    <span class="action-type-desc">Schedule once on calendar</span>
+                </button>
+
+                <button class="action-type-btn" onclick="UI.selectActionType('repeating')">
+                    <span class="action-type-icon">🔁</span>
+                    <span class="action-type-label">Repeating</span>
+                    <span class="action-type-desc">Recurring calendar event</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Recurrence Picker Overlay -->
     <div class="recurrence-overlay" id="recurrence-overlay" onclick="UI.closeRecurrencePicker()">
         <div class="recurrence-content" onclick="event.stopPropagation()">
