@@ -362,7 +362,7 @@
             <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
 
             <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                Version 0.2
+                Version 0.4
             </div>
         </div>
     </div>
@@ -459,6 +459,136 @@
         </div>
     </div>
 
+    <!-- Recurrence Picker Overlay -->
+    <div class="recurrence-overlay" id="recurrence-overlay" onclick="UI.closeRecurrencePicker()">
+        <div class="recurrence-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeRecurrencePicker()">✕</button>
+            <h2>Set Recurrence</h2>
+
+            <div class="recurrence-section">
+                <label>Repeat every</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="number" id="recurrence-interval" value="1" min="1" max="99"
+                           style="width: 60px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; text-align: center;">
+                    <select id="recurrence-frequency" onchange="UI.updateRecurrenceOptions()"
+                            style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                        <option value="DAILY">Day(s)</option>
+                        <option value="WEEKLY" selected>Week(s)</option>
+                        <option value="MONTHLY">Month(s)</option>
+                        <option value="YEARLY">Year(s)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Weekly options: day selection -->
+            <div class="recurrence-section" id="recurrence-weekly-options">
+                <label>On days</label>
+                <div class="weekday-picker">
+                    <label class="weekday-option">
+                        <input type="checkbox" name="recurrence-day" value="MO">
+                        <span>M</span>
+                    </label>
+                    <label class="weekday-option">
+                        <input type="checkbox" name="recurrence-day" value="TU">
+                        <span>T</span>
+                    </label>
+                    <label class="weekday-option">
+                        <input type="checkbox" name="recurrence-day" value="WE">
+                        <span>W</span>
+                    </label>
+                    <label class="weekday-option">
+                        <input type="checkbox" name="recurrence-day" value="TH">
+                        <span>T</span>
+                    </label>
+                    <label class="weekday-option">
+                        <input type="checkbox" name="recurrence-day" value="FR">
+                        <span>F</span>
+                    </label>
+                    <label class="weekday-option">
+                        <input type="checkbox" name="recurrence-day" value="SA">
+                        <span>S</span>
+                    </label>
+                    <label class="weekday-option">
+                        <input type="checkbox" name="recurrence-day" value="SU">
+                        <span>S</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Monthly options: day of month -->
+            <div class="recurrence-section" id="recurrence-monthly-options" style="display: none;">
+                <label>On day</label>
+                <select id="recurrence-monthday" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                    <option value="1">1st</option>
+                    <option value="2">2nd</option>
+                    <option value="3">3rd</option>
+                    <option value="4">4th</option>
+                    <option value="5">5th</option>
+                    <option value="6">6th</option>
+                    <option value="7">7th</option>
+                    <option value="8">8th</option>
+                    <option value="9">9th</option>
+                    <option value="10">10th</option>
+                    <option value="11">11th</option>
+                    <option value="12">12th</option>
+                    <option value="13">13th</option>
+                    <option value="14">14th</option>
+                    <option value="15">15th</option>
+                    <option value="16">16th</option>
+                    <option value="17">17th</option>
+                    <option value="18">18th</option>
+                    <option value="19">19th</option>
+                    <option value="20">20th</option>
+                    <option value="21">21st</option>
+                    <option value="22">22nd</option>
+                    <option value="23">23rd</option>
+                    <option value="24">24th</option>
+                    <option value="25">25th</option>
+                    <option value="26">26th</option>
+                    <option value="27">27th</option>
+                    <option value="28">28th</option>
+                    <option value="29">29th</option>
+                    <option value="30">30th</option>
+                    <option value="31">31st</option>
+                </select>
+            </div>
+
+            <div class="recurrence-section">
+                <label>Ends</label>
+                <div class="recurrence-end-options">
+                    <label class="radio-option">
+                        <input type="radio" name="recurrence-end" value="never" checked onchange="UI.updateRecurrenceEndOptions()">
+                        <span>Never</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="recurrence-end" value="date" onchange="UI.updateRecurrenceEndOptions()">
+                        <span>On date</span>
+                    </label>
+                    <input type="date" id="recurrence-end-date" style="margin-left: 24px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; display: none;">
+
+                    <label class="radio-option">
+                        <input type="radio" name="recurrence-end" value="count" onchange="UI.updateRecurrenceEndOptions()">
+                        <span>After</span>
+                    </label>
+                    <div id="recurrence-count-input" style="display: none; margin-left: 24px;">
+                        <input type="number" id="recurrence-count" value="10" min="1" max="999"
+                               style="width: 60px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; text-align: center;">
+                        <span style="margin-left: 8px;">occurrences</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="UI.closeRecurrencePicker()" class="secondary" style="flex: 1;">
+                    Cancel
+                </button>
+                <button onclick="UI.saveRecurrence()" style="flex: 2;">
+                    🔁 Set Recurrence
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Spoke Configuration Overlay -->
     <div class="spoke-config-overlay" id="spoke-config-overlay" onclick="UI.closeSpokeConfig()">
         <div class="spoke-config-content" onclick="event.stopPropagation()">
@@ -489,7 +619,6 @@
                     </div>
                 </label>
 
-                <!-- HIDDEN UNTIL COMPLETE
                 <label class="radio-option spoke-type-option">
                     <input type="radio" name="spoke-type" value="repeating" onchange="UI.updateSpokeTypeFields('repeating')">
                     <div class="spoke-type-label">
@@ -498,6 +627,7 @@
                     </div>
                 </label>
 
+                <!-- HIDDEN UNTIL COMPLETE
                 <label class="radio-option spoke-type-option">
                     <input type="radio" name="spoke-type" value="pending" onchange="UI.updateSpokeTypeFields('pending')">
                     <div class="spoke-type-label">
@@ -533,6 +663,22 @@
                 </div>
             </div>
 
+            <!-- Repeating spoke fields -->
+            <div id="spoke-repeating-fields" style="display: none; margin-top: 20px;">
+                <div class="input-group">
+                    <label>Recurrence Pattern:</label>
+                    <div id="recurrence-display" style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                        <span id="recurrence-description" style="color: #666; font-style: italic;">Not set</span>
+                        <button type="button" class="secondary small" onclick="UI.openRecurrencePickerForSpoke()">
+                            🔁 Set Recurrence
+                        </button>
+                    </div>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    Note: Repeating events will create recurring calendar entries with Google Calendar.
+                </p>
+            </div>
+
             <!-- HIDDEN UNTIL FEATURES COMPLETE
             <div id="spoke-pending-fields" style="display: none; margin-top: 20px;">
                 <div class="input-group">
@@ -548,22 +694,6 @@
                         <option value="repeating">Repeating</option>
                     </select>
                 </div>
-            </div>
-
-            <div id="spoke-repeating-fields" style="display: none; margin-top: 20px;">
-                <div class="input-group">
-                    <label for="recurrence-pattern">Repeat:</label>
-                    <select id="recurrence-pattern">
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="biweekly">Every 2 weeks</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="custom">Custom</option>
-                    </select>
-                </div>
-                <p style="font-size: 12px; color: #666; margin-top: 5px;">
-                    Note: Repeating events will create recurring calendar entries
-                </p>
             </div>
             -->
 

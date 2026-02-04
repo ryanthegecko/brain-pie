@@ -26,13 +26,13 @@ const ChartRenderer = {
             return ` • (${spoke.children.length})`;
         }
 
-        // Only show action indicator (repeating/pending hidden until complete)
+        // Show type indicators
         switch(type) {
             case 'action':
                 return ' ✓';
-            // HIDDEN UNTIL FEATURES COMPLETE:
-            // case 'repeating':
-            //     return ' 🔁';
+            case 'repeating':
+                return ' 🔁';
+            // HIDDEN UNTIL COMPLETE:
             // case 'pending':
             //     return ' ⏸';
             case 'static':

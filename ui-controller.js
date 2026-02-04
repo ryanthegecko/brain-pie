@@ -1389,7 +1389,7 @@ const UI = {
         window.open(calendarUrl, '_blank');
     },
     
-    downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate) {
+    downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, rrule = null) {
         // Format dates for iCalendar format (local time, not UTC)
         const formatICSDate = (date) => {
             const year = date.getFullYear();
@@ -1400,8 +1400,9 @@ const UI = {
             const seconds = String(date.getSeconds()).padStart(2, '0');
             return `${year}${month}${day}T${hours}${minutes}${seconds}`;
         };
-        
-        const icsContent = [
+
+        // Build event lines
+        const eventLines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//Brain Pie//Calendar//EN',
@@ -1409,11 +1410,18 @@ const UI = {
             `DTSTART:${formatICSDate(startDate)}`,
             `DTEND:${formatICSDate(endDate)}`,
             `SUMMARY:${actionText} (${categoryName} - ${sliceName})`,
-            `DESCRIPTION:Category: ${categoryName}\\nSlice: ${sliceName}\\nSpoke: ${spokeText}\\nAction: ${actionText}\\n\\nCreated from Brain Pie`,
-            'END:VEVENT',
-            'END:VCALENDAR'
-        ].join('\r\n');
-        
+            `DESCRIPTION:Category: ${categoryName}\\nSlice: ${sliceName}\\nSpoke: ${spokeText}\\nAction: ${actionText}\\n\\nCreated from Brain Pie`
+        ];
+
+        // Add RRULE for recurring events
+        if (rrule) {
+            eventLines.push(`RRULE:${rrule}`);
+        }
+
+        eventLines.push('END:VEVENT', 'END:VCALENDAR');
+
+        const icsContent = eventLines.join('\r\n');
+
         // Create blob and download
         const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -1425,7 +1433,154 @@ const UI = {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     },
-    
+
+    // Recurrence Picker
+    pendingRecurrence: null,
+
+    showRecurrencePicker(callback) {
+        this.pendingRecurrence = { callback };
+
+        // Reset to defaults
+        document.getElementById('recurrence-interval').value = 1;
+        document.getElementById('recurrence-frequency').value = 'WEEKLY';
+
+        // Reset day checkboxes
+        document.querySelectorAll('input[name="recurrence-day"]').forEach(cb => cb.checked = false);
+
+        // Reset monthly day
+        document.getElementById('recurrence-monthday').value = '1';
+
+        // Reset end options
+        document.querySelector('input[name="recurrence-end"][value="never"]').checked = true;
+        document.getElementById('recurrence-end-date').value = '';
+        document.getElementById('recurrence-count').value = '10';
+
+        // Update UI
+        this.updateRecurrenceOptions();
+        this.updateRecurrenceEndOptions();
+
+        document.getElementById('recurrence-overlay').classList.add('active');
+    },
+
+    closeRecurrencePicker() {
+        document.getElementById('recurrence-overlay').classList.remove('active');
+        this.pendingRecurrence = null;
+    },
+
+    updateRecurrenceOptions() {
+        const freq = document.getElementById('recurrence-frequency').value;
+        const weeklyOptions = document.getElementById('recurrence-weekly-options');
+        const monthlyOptions = document.getElementById('recurrence-monthly-options');
+
+        // Show/hide frequency-specific options
+        weeklyOptions.style.display = freq === 'WEEKLY' ? 'block' : 'none';
+        monthlyOptions.style.display = freq === 'MONTHLY' ? 'block' : 'none';
+    },
+
+    updateRecurrenceEndOptions() {
+        const endType = document.querySelector('input[name="recurrence-end"]:checked').value;
+        const dateInput = document.getElementById('recurrence-end-date');
+        const countInput = document.getElementById('recurrence-count-input');
+
+        dateInput.style.display = endType === 'date' ? 'block' : 'none';
+        countInput.style.display = endType === 'count' ? 'block' : 'none';
+
+        // Set default end date if selecting date option
+        if (endType === 'date' && !dateInput.value) {
+            const futureDate = new Date();
+            futureDate.setMonth(futureDate.getMonth() + 3);
+            dateInput.value = futureDate.toISOString().split('T')[0];
+        }
+    },
+
+    saveRecurrence() {
+        const frequency = document.getElementById('recurrence-frequency').value;
+        const interval = parseInt(document.getElementById('recurrence-interval').value) || 1;
+
+        const recurrence = {
+            frequency,
+            interval
+        };
+
+        // Weekly: collect selected days
+        if (frequency === 'WEEKLY') {
+            const selectedDays = [];
+            document.querySelectorAll('input[name="recurrence-day"]:checked').forEach(cb => {
+                selectedDays.push(cb.value);
+            });
+            if (selectedDays.length > 0) {
+                recurrence.byDay = selectedDays;
+            }
+        }
+
+        // Monthly: get day of month
+        if (frequency === 'MONTHLY') {
+            recurrence.byMonthDay = parseInt(document.getElementById('recurrence-monthday').value);
+        }
+
+        // End options
+        const endType = document.querySelector('input[name="recurrence-end"]:checked').value;
+        if (endType === 'date') {
+            recurrence.until = document.getElementById('recurrence-end-date').value;
+        } else if (endType === 'count') {
+            recurrence.count = parseInt(document.getElementById('recurrence-count').value) || 10;
+        }
+
+        // Call the callback with recurrence data
+        if (this.pendingRecurrence && this.pendingRecurrence.callback) {
+            this.pendingRecurrence.callback(recurrence);
+        }
+
+        this.closeRecurrencePicker();
+    },
+
+    formatRecurrenceDescription(recurrence) {
+        if (!recurrence) return '';
+
+        const freq = recurrence.frequency;
+        const interval = recurrence.interval || 1;
+
+        let desc = 'Every ';
+        if (interval > 1) desc += interval + ' ';
+
+        switch (freq) {
+            case 'DAILY':
+                desc += interval === 1 ? 'day' : 'days';
+                break;
+            case 'WEEKLY':
+                desc += interval === 1 ? 'week' : 'weeks';
+                if (recurrence.byDay && recurrence.byDay.length > 0) {
+                    const dayNames = { MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun' };
+                    const days = recurrence.byDay.map(d => dayNames[d] || d).join(', ');
+                    desc += ` on ${days}`;
+                }
+                break;
+            case 'MONTHLY':
+                desc += interval === 1 ? 'month' : 'months';
+                if (recurrence.byMonthDay) {
+                    desc += ` on the ${recurrence.byMonthDay}${this.getOrdinalSuffix(recurrence.byMonthDay)}`;
+                }
+                break;
+            case 'YEARLY':
+                desc += interval === 1 ? 'year' : 'years';
+                break;
+        }
+
+        if (recurrence.until) {
+            desc += ` until ${recurrence.until}`;
+        } else if (recurrence.count) {
+            desc += `, ${recurrence.count} times`;
+        }
+
+        return desc;
+    },
+
+    getOrdinalSuffix(n) {
+        const s = ['th', 'st', 'nd', 'rd'];
+        const v = n % 100;
+        return s[(v - 20) % 10] || s[v] || s[0];
+    },
+
     openCalendarForAction(actionText, spokeText, sliceName, categoryName) {
         actionText = decodeURIComponent(actionText);
         spokeText = decodeURIComponent(spokeText);
@@ -1489,11 +1644,14 @@ const UI = {
         document.getElementById('spoke-config-overlay').classList.remove('active');
         this.pendingSpokeConfig = null;
         this.pendingReturnToSpokeConfig = false;
+        this.pendingRecurrenceData = null;
 
         // Reset form
         document.querySelector('input[name="spoke-type"][value="static"]').checked = true;
         document.getElementById('spoke-existing-actions').innerHTML = '';
         document.getElementById('spoke-actions-fields').style.display = 'none';
+        document.getElementById('spoke-repeating-fields').style.display = 'none';
+        document.getElementById('recurrence-description').textContent = 'Not set';
         const newActionInput = document.getElementById('new-spoke-action-input');
         if (newActionInput) newActionInput.value = '';
 
@@ -1508,12 +1666,51 @@ const UI = {
     updateSpokeTypeFields(type) {
         // Show/hide actions section based on type
         const actionsFields = document.getElementById('spoke-actions-fields');
+        const repeatingFields = document.getElementById('spoke-repeating-fields');
+
         actionsFields.style.display = type === 'action' ? 'block' : 'none';
+        repeatingFields.style.display = type === 'repeating' ? 'block' : 'none';
 
         // Render existing actions when switching to action type
         if (type === 'action') {
             this.renderExistingActions();
         }
+
+        // Load existing recurrence when switching to repeating type
+        if (type === 'repeating' && this.pendingSpokeConfig) {
+            this.loadExistingRecurrence();
+        }
+    },
+
+    pendingRecurrenceData: null,
+
+    loadExistingRecurrence() {
+        if (!this.pendingSpokeConfig) return;
+
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+
+        const spoke = item.subItems[spokeIndex];
+        if (typeof spoke === 'object' && spoke.metadata && spoke.metadata.recurrence) {
+            this.pendingRecurrenceData = spoke.metadata.recurrence;
+            document.getElementById('recurrence-description').textContent =
+                this.formatRecurrenceDescription(spoke.metadata.recurrence);
+        } else {
+            this.pendingRecurrenceData = null;
+            document.getElementById('recurrence-description').textContent = 'Not set';
+        }
+    },
+
+    openRecurrencePickerForSpoke() {
+        this.showRecurrencePicker((recurrence) => {
+            this.pendingRecurrenceData = recurrence;
+            document.getElementById('recurrence-description').textContent =
+                this.formatRecurrenceDescription(recurrence);
+        });
     },
 
     renderExistingActions() {
@@ -1688,14 +1885,46 @@ const UI = {
 
     pendingReturnToSpokeConfig: false,
 
-    saveSpokeConfig() {
+    async saveSpokeConfig() {
         if (!this.pendingSpokeConfig) return;
 
         const selectedType = document.querySelector('input[name="spoke-type"]:checked').value;
-        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
+        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
 
-        // Update the spoke type (actions are saved individually via addAndScheduleAction)
-        DataModel.updateSpokeType(categoryId, itemId, spokeIndex, selectedType, {});
+        // Build metadata based on type
+        const metadata = {};
+
+        if (selectedType === 'repeating' && this.pendingRecurrenceData) {
+            metadata.recurrence = this.pendingRecurrenceData;
+
+            // Create recurring calendar event if calendar access is available
+            if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                // Build RRULE string from recurrence data
+                const rrule = CalendarAdapter.buildRRule(this.pendingRecurrenceData);
+
+                const eventData = {
+                    title: `${spokeName} (${sliceName}/${categoryName})`,
+                    // Default to 9:00 AM for recurring events
+                    date: new Date().toISOString().split('T')[0],
+                    time: '09:00',
+                    duration: 60,
+                    description: `Repeating spoke: ${spokeName}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
+                    rrule: rrule
+                };
+
+                const event = await CalendarAdapter.createEvent(eventData);
+                if (event && event.id) {
+                    metadata.calendarEventId = event.id;
+                    Storage.showStatus('Recurring event added to calendar', 'success');
+                }
+            }
+        }
+
+        // Update the spoke type and metadata
+        DataModel.updateSpokeType(categoryId, itemId, spokeIndex, selectedType, metadata);
+
+        // Clear pending recurrence data
+        this.pendingRecurrenceData = null;
 
         this.closeSpokeConfig();
     },
