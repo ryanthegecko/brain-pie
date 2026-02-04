@@ -813,14 +813,12 @@ const UI = {
                                                     let scheduleDisplay = '📅';
                                                     let buttonStyle = 'background: #4285F4; padding: 3px 12px;';
                                                     let buttonTitle = 'Add to calendar';
-                                                    let recurrenceInfo = '';
 
                                                     if (hasRecurrence) {
-                                                        // Repeating action - show recurrence info
-                                                        scheduleDisplay = '🔁';
-                                                        buttonStyle = 'background: #9C27B0; padding: 3px 8px;';
+                                                        // Repeating action - show recurrence on green button
+                                                        scheduleDisplay = UI.formatRecurrenceDescriptionCompact(child.recurrence);
+                                                        buttonStyle = 'background: #4CAF50; padding: 3px 8px;';
                                                         buttonTitle = 'Repeating event';
-                                                        recurrenceInfo = UI.formatRecurrenceDescription(child.recurrence);
                                                     } else if (hasSchedule) {
                                                         const schedDate = new Date(child.scheduled.date + 'T' + child.scheduled.time);
                                                         const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -832,7 +830,7 @@ const UI = {
 
                                                     return `
                                                     <li style="cursor: default; display: flex; flex-direction: column; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
-                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center;width: 100%;">
                                                             <span style="flex: 1;margin-right: 1em;">${childText}</span>
                                                             <div style="display: flex; gap: 4px;">
                                                                 <button class="small"
@@ -844,7 +842,6 @@ const UI = {
                                                                 </button>
                                                             </div>
                                                         </div>
-                                                        ${recurrenceInfo ? `<div style="font-size: 10px; color: #9C27B0; margin-top: 3px;">🔁 ${recurrenceInfo}</div>` : ''}
                                                     </li>
                                                 `}).join('')}
                                             </ul>
@@ -1726,6 +1723,55 @@ const UI = {
         return desc;
     },
 
+    /**
+     * Format recurrence for compact button display
+     * e.g., "Every Wed 10:00" instead of "Every week on Wed at 10:00"
+     */
+    formatRecurrenceDescriptionCompact(recurrence) {
+        if (!recurrence) return '🔁';
+
+        const freq = recurrence.frequency;
+        const interval = recurrence.interval || 1;
+        const dayNames = { MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun' };
+
+        let desc = 'Every ';
+
+        // For weekly with specific days, show the day directly
+        if (freq === 'WEEKLY' && recurrence.byDay && recurrence.byDay.length > 0) {
+            if (interval > 1) desc += interval + ' ';
+            const days = recurrence.byDay.map(d => dayNames[d] || d).join(', ');
+            desc += days;
+        } else {
+            // For other frequencies, use shorter labels
+            if (interval > 1) desc += interval + ' ';
+            switch (freq) {
+                case 'DAILY':
+                    desc += interval === 1 ? 'day' : 'days';
+                    break;
+                case 'WEEKLY':
+                    desc += interval === 1 ? 'week' : 'weeks';
+                    break;
+                case 'MONTHLY':
+                    if (recurrence.byMonthDay) {
+                        desc += recurrence.byMonthDay + this.getOrdinalSuffix(recurrence.byMonthDay);
+                    } else {
+                        desc += interval === 1 ? 'month' : 'months';
+                    }
+                    break;
+                case 'YEARLY':
+                    desc += interval === 1 ? 'year' : 'years';
+                    break;
+            }
+        }
+
+        // Add time (compact format, no "at")
+        if (recurrence.time) {
+            desc += ' ' + recurrence.time;
+        }
+
+        return desc;
+    },
+
     getOrdinalSuffix(n) {
         const s = ['th', 'st', 'nd', 'rd'];
         const v = n % 100;
@@ -1747,8 +1793,113 @@ const UI = {
         sliceName = decodeURIComponent(sliceName);
         categoryName = decodeURIComponent(categoryName);
 
-        const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
-        this.showDateTimePicker(actionText, spokeText, sliceName, categoryName, dataLocation);
+        // Check if this is a repeating action
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        const item = category?.items.find(i => i.id === itemId);
+        const spoke = item?.subItems[spokeIndex];
+        const action = (typeof spoke === 'object' && spoke.children) ? spoke.children[childIndex] : null;
+
+        if (action && action.recurrence) {
+            // Repeating action - show recurrence picker for rescheduling
+            this.showRecurrencePickerForReschedule(action, actionText, spokeText, sliceName, categoryName, categoryId, itemId, spokeIndex, childIndex);
+        } else {
+            // One-time action - show date/time picker
+            const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
+            this.showDateTimePicker(actionText, spokeText, sliceName, categoryName, dataLocation);
+        }
+    },
+
+    /**
+     * Show recurrence picker pre-filled with existing values for rescheduling
+     */
+    async showRecurrencePickerForReschedule(action, actionText, spokeText, sliceName, categoryName, categoryId, itemId, spokeIndex, childIndex) {
+        const recurrence = action.recurrence;
+
+        // Pre-fill the form with current values
+        document.getElementById('recurrence-interval').value = recurrence.interval || 1;
+        document.getElementById('recurrence-frequency').value = recurrence.frequency || 'WEEKLY';
+
+        // Time settings
+        if (recurrence.allDay) {
+            document.getElementById('recurrence-all-day').checked = true;
+            document.getElementById('recurrence-time-picker').style.display = 'none';
+        } else {
+            document.getElementById('recurrence-all-day').checked = false;
+            document.getElementById('recurrence-time-picker').style.display = 'flex';
+            if (recurrence.time) {
+                const [hour, minute] = recurrence.time.split(':');
+                document.getElementById('recurrence-hour').value = hour;
+                document.getElementById('recurrence-minute').value = minute;
+            }
+        }
+        document.getElementById('recurrence-duration').value = recurrence.duration || 60;
+
+        // Day checkboxes for weekly
+        document.querySelectorAll('input[name="recurrence-day"]').forEach(cb => {
+            cb.checked = recurrence.byDay && recurrence.byDay.includes(cb.value);
+        });
+
+        // Monthly day
+        document.getElementById('recurrence-monthday').value = recurrence.byMonthDay || 1;
+
+        // End options
+        if (recurrence.until) {
+            document.querySelector('input[name="recurrence-end"][value="date"]').checked = true;
+            document.getElementById('recurrence-end-date').value = recurrence.until;
+        } else if (recurrence.count) {
+            document.querySelector('input[name="recurrence-end"][value="count"]').checked = true;
+            document.getElementById('recurrence-count').value = recurrence.count;
+        } else {
+            document.querySelector('input[name="recurrence-end"][value="never"]').checked = true;
+        }
+
+        // Update UI visibility
+        this.updateRecurrenceOptions();
+        this.updateRecurrenceEndOptions();
+
+        // Set up callback for when user saves
+        this.pendingRecurrence = {
+            callback: async (newRecurrence) => {
+                // Delete old calendar event if it exists
+                if (action.calendarEventId && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                    Debug.log('Deleting old recurring event:', action.calendarEventId);
+                    await CalendarAdapter.deleteEvent(action.calendarEventId);
+                }
+
+                // Update action's recurrence
+                action.recurrence = newRecurrence;
+
+                // Create new calendar event
+                if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                    const rrule = CalendarAdapter.buildRRule(newRecurrence);
+                    const eventData = {
+                        title: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+                        date: new Date().toISOString().split('T')[0],
+                        description: `Repeating action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
+                        rrule: rrule
+                    };
+
+                    if (newRecurrence.allDay) {
+                        eventData.allDay = true;
+                    } else {
+                        eventData.time = newRecurrence.time || '09:00';
+                        eventData.duration = newRecurrence.duration || 60;
+                    }
+
+                    const event = await CalendarAdapter.createEvent(eventData);
+                    if (event && event.id) {
+                        action.calendarEventId = event.id;
+                        Storage.showStatus('Recurring event rescheduled', 'success');
+                    }
+                }
+
+                // Save changes and update UI
+                DataModel.saveToStorage();
+                App.render();
+            }
+        };
+
+        document.getElementById('recurrence-overlay').classList.add('active');
     },
 
     // Spoke Configuration

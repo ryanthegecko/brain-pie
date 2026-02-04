@@ -873,6 +873,7 @@ const ChartRenderer = {
             // Helper to render a single action (icon + label)
             const renderAction = (child, idx, posX, posY, labelAnchor = 'middle') => {
                 const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+                const hasRecurrence = child.recurrence;
                 const childDataLocation = { ...dataLocation, childIndex: idx };
 
                 // Add calendar icon/button or scheduled time
@@ -884,7 +885,29 @@ const ChartRenderer = {
                         that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name, childDataLocation);
                     });
 
-                if (hasSchedule) {
+                if (hasRecurrence) {
+                    // Repeating action - show green pill with recurrence text
+                    const recurrenceText = UI.formatRecurrenceDescriptionCompact(child.recurrence);
+                    const textWidth = Math.max(90, recurrenceText.length * 7);
+
+                    iconGroup.append('rect')
+                        .attr('x', -textWidth / 2)
+                        .attr('y', -12)
+                        .attr('width', textWidth)
+                        .attr('height', 24)
+                        .attr('rx', 12)
+                        .attr('fill', '#4CAF50')
+                        .attr('stroke', 'white')
+                        .attr('stroke-width', 2);
+
+                    iconGroup.append('text')
+                        .attr('text-anchor', 'middle')
+                        .attr('dy', '0.35em')
+                        .style('font-size', '11px')
+                        .style('fill', 'white')
+                        .style('font-weight', 'bold')
+                        .text(recurrenceText);
+                } else if (hasSchedule) {
                     const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
                     const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
