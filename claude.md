@@ -247,6 +247,7 @@ Breakpoints:
 2. **No undo/redo** functionality
 3. **Single document model** - Can't have multiple "pies"
 4. **Pending spoke type** - Not yet implemented
+5. **Recurring event sync is one-way** - Changes made to recurring events in Google Calendar (moving single instances, moving all following events) won't sync back to Brain Pie. The app will continue showing the original recurrence pattern. Deleting the entire series from Google Calendar will remove the action locally.
 
 ### Known Behaviors
 1. **Expansion can feel cluttered** with many spokes/actions
@@ -257,22 +258,37 @@ Breakpoints:
 ## Changelog
 
 ### v0.4 (February 2026)
-Repeating spokes with recurring calendar events:
+Repeating actions with recurring calendar events:
 
-**Repeating Spoke Type:**
-- New "Repeating" spoke type for recurring tasks
+**Action Type Picker:**
+- New flow: name action first → choose type (Static, One-time, Repeating)
+- Simplified spoke buttons: just + and trash (removed pencil)
+- Static actions stay as reminders (no calendar)
+- One-time actions get date/time scheduling
+- Repeating actions get recurrence picker
+
+**Repeating Actions:**
 - Recurrence picker UI with flexible options:
   - Frequency: Daily, Weekly, Monthly, Yearly
   - Interval: Every N days/weeks/months/years
   - Weekly day selection (M T W T F S S)
   - Monthly day-of-month selection
+  - Time picker with 15-minute increments (matches Google Calendar)
+  - Duration selector (15min to 4 hours)
+  - All-day option (default)
   - End options: Never, On date, After N occurrences
-- Visual indicator 🔁 for repeating spokes in chart
+- Green button with compact recurrence text (e.g., "Every Wed 10:00")
 - RRULE support for Google Calendar recurring events
 - RRULE support for Apple Calendar .ics files
 
+**Reschedule Repeating Events:**
+- Click green button on repeating action to reschedule
+- Pre-fills recurrence picker with current settings
+- Deletes old calendar event and creates new one
+- Note: Changes made in Google Calendar don't sync back (documented limitation)
+
 **Integration:**
-- Repeating spokes create recurring calendar events
+- Repeating actions create recurring calendar events
 - Calendar events include proper RRULE for recurrence
 - Works with both Google Calendar API and Apple .ics download
 
