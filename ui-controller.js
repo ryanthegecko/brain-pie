@@ -1771,6 +1771,11 @@ const UI = {
 
             // Reload data from Firebase
             this.reloadDataFromFirebase();
+
+            // Sync calendar events (now that we have a fresh token)
+            if (typeof App !== 'undefined' && App.syncCalendarEvents) {
+                App.syncCalendarEvents();
+            }
         } else {
             document.getElementById('firebase-signed-out').style.display = 'block';
             document.getElementById('firebase-signed-in').style.display = 'none';
