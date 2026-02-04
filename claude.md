@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.2
+**Current Version:** v0.3
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -254,6 +254,40 @@ Breakpoints:
 4. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.3 (February 2026)
+Google Calendar API integration for true 2-way calendar sync:
+
+**Calendar API Features:**
+- Create events via Google Calendar API (not URL redirect)
+- Update events on reschedule (no more duplicate events)
+- Delete events when actions are removed
+- 2-way sync: detect moved/deleted events from Google Calendar
+- Standalone Google Sign-In for calendar (no Firebase required)
+- Token persistence in localStorage for page refreshes
+- Automatic calendar sync on page load
+
+**New Files:**
+- `calendar-adapter.js` - Google Calendar API wrapper
+- `google-auth-adapter.js` - Standalone OAuth for calendar-only users
+
+**How it works:**
+- With Firebase: Calendar access via Firebase Google Sign-In
+- Without Firebase: Standalone "Sign in with Google" in Settings → Calendar Sync
+- Events synced on page load (2 second delay to let Firebase settle)
+- Deleted calendar events remove the action from Brain Pie
+- Moved calendar events update the scheduled time in Brain Pie
+
+**Apple Calendar:**
+- Still uses .ics download (no API available)
+- RRULE support for recurring events planned for Phase 2
+
+**Future options for Apple Calendar:**
+- `webcal://` protocol for direct Calendar.app launch
+- CalDAV integration (requires iCloud credentials - privacy concerns)
+- Native iOS/macOS companion app with EventKit (full parity)
+
+---
 
 ### v0.2 (February 2026)
 Firebase Cloud Sync for real-time collaboration across devices:
