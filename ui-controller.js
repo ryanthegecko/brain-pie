@@ -1444,6 +1444,10 @@ const UI = {
         document.getElementById('recurrence-interval').value = 1;
         document.getElementById('recurrence-frequency').value = 'WEEKLY';
 
+        // Reset time to 9:00 AM
+        document.getElementById('recurrence-hour').value = '09';
+        document.getElementById('recurrence-minute').value = '00';
+
         // Reset day checkboxes
         document.querySelectorAll('input[name="recurrence-day"]').forEach(cb => cb.checked = false);
 
@@ -1496,10 +1500,13 @@ const UI = {
     saveRecurrence() {
         const frequency = document.getElementById('recurrence-frequency').value;
         const interval = parseInt(document.getElementById('recurrence-interval').value) || 1;
+        const hour = document.getElementById('recurrence-hour').value;
+        const minute = document.getElementById('recurrence-minute').value;
 
         const recurrence = {
             frequency,
-            interval
+            interval,
+            time: `${hour}:${minute}`
         };
 
         // Weekly: collect selected days
@@ -1564,6 +1571,11 @@ const UI = {
             case 'YEARLY':
                 desc += interval === 1 ? 'year' : 'years';
                 break;
+        }
+
+        // Add time
+        if (recurrence.time) {
+            desc += ` at ${recurrence.time}`;
         }
 
         if (recurrence.until) {
@@ -1904,9 +1916,8 @@ const UI = {
 
                 const eventData = {
                     title: `${spokeName} (${sliceName}/${categoryName})`,
-                    // Default to 9:00 AM for recurring events
                     date: new Date().toISOString().split('T')[0],
-                    time: '09:00',
+                    time: this.pendingRecurrenceData.time || '09:00',
                     duration: 60,
                     description: `Repeating spoke: ${spokeName}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
                     rrule: rrule
