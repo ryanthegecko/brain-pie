@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.4
+**Current Version:** v0.5
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -33,6 +33,7 @@ brain-pie/
 ├── chart-renderer.js       # D3.js visualization and interactions
 ├── ui-controller.js        # UI state, overlays, and user interactions
 ├── storage.js              # localStorage persistence and import/export
+├── import-manager.js       # Granular import/merge orchestration
 ├── firebase-adapter.js     # Firebase Realtime Database integration
 ├── google-auth-adapter.js  # Standalone Google OAuth for calendar-only users
 ├── calendar-adapter.js     # Google Calendar API wrapper
@@ -193,7 +194,10 @@ Spokes can have different types that affect their behavior:
 
 ### 6. Data Management
 - **Auto-save** to localStorage
-- **Import/Export** JSON files
+- **Granular Import** - Select which categories, slices, or spokes to import with merge detection
+- **Granular Export** - Select what to export, with optional actions toggle
+- **Smart Merge** - Imports automatically merge with existing items by name (case-insensitive)
+- **Calendar Sync on Import** - Scheduled actions automatically create calendar events
 - **Example data** loaded for new users
 - **Privacy by default** - localStorage only unless cloud sync enabled
 
@@ -256,6 +260,32 @@ Breakpoints:
 4. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.5 (February 2026)
+Granular import/export with smart merge:
+
+**Granular Export:**
+- Selection tree to choose categories, slices, and spokes to export
+- "Include Actions" toggle to export with or without action details
+- Select All / Deselect All controls
+- Real-time summary of selected items
+
+**Granular Import:**
+- 2-step wizard: Select → Confirm
+- Selection tree with merge indicators (shows which items will merge vs. add)
+- Name-based matching (case-insensitive) to detect existing items
+- Smart merge: imported items merge with existing by name
+  - Categories: add imported slices to existing category
+  - Slices: add imported spokes to existing slice
+  - Spokes: add imported actions to existing spoke
+- Automatic calendar event creation for imported scheduled actions
+- Old calendar events deleted when schedule times change on import
+- Quick Replace option for full data replacement
+
+**New Files:**
+- `import-manager.js` - Orchestrates import analysis, selection, and execution
+
+---
 
 ### v0.4 (February 2026)
 Repeating actions with recurring calendar events:
