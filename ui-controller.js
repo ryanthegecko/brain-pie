@@ -782,11 +782,6 @@ const UI = {
                                     style="position: relative;">${item.subItems.map((sub, idx) => {
                                     const subText = typeof sub === 'string' ? sub : sub.text;
                                     const children = typeof sub === 'object' ? sub.children || [] : [];
-                                    const spokeType = typeof sub === 'object' ? sub.type || 'static' : 'static';
-                                    const isRepeating = spokeType === 'repeating';
-                                    const recurrenceDesc = isRepeating && sub.metadata && sub.metadata.recurrence
-                                        ? UI.formatRecurrenceDescription(sub.metadata.recurrence)
-                                        : '';
 
                                     return `
                                     <li draggable="true"
@@ -799,10 +794,7 @@ const UI = {
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;width: 100%; min-width: 50%;">
-                                            <div style="flex: 1;padding-right:1em">
-                                                <span class="sub-item-text">${subText}${isRepeating ? ' 🔁' : ''}</span>
-                                                ${recurrenceDesc ? `<div style="font-size: 11px; color: #666; margin-top: 2px;">${recurrenceDesc}</div>` : ''}
-                                            </div>
+                                            <span class="sub-item-text" style="flex: 1;padding-right:1em">${subText}</span>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
                                                 <button class="" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>
@@ -812,16 +804,24 @@ const UI = {
                                             </div>
                                         </div>
                                         ${children.length > 0 ? `
-                                            <ul class="action-list" 
+                                            <ul class="action-list"
                                             style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
                                                 ${children.map((child, childIdx) => {
                                                     const childText = typeof child === 'string' ? child : child.text;
                                                     const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+                                                    const hasRecurrence = child.recurrence;
                                                     let scheduleDisplay = '📅';
                                                     let buttonStyle = 'background: #4285F4; padding: 3px 12px;';
                                                     let buttonTitle = 'Add to calendar';
+                                                    let recurrenceInfo = '';
 
-                                                    if (hasSchedule) {
+                                                    if (hasRecurrence) {
+                                                        // Repeating action - show recurrence info
+                                                        scheduleDisplay = '🔁';
+                                                        buttonStyle = 'background: #9C27B0; padding: 3px 8px;';
+                                                        buttonTitle = 'Repeating event';
+                                                        recurrenceInfo = UI.formatRecurrenceDescription(child.recurrence);
+                                                    } else if (hasSchedule) {
                                                         const schedDate = new Date(child.scheduled.date + 'T' + child.scheduled.time);
                                                         const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                                                         const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -831,17 +831,20 @@ const UI = {
                                                     }
 
                                                     return `
-                                                    <li style="cursor: default; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
-                                                        <span style="flex: 1;margin-right: 1em;">${childText}</span>
-                                                        <div style="display: flex; gap: 4px;">
-                                                            <button class="small"
-                                                                    style="${buttonStyle}"
-                                                                    onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${idx}, ${childIdx})"
-                                                                    title="${buttonTitle}">${scheduleDisplay}</button>
-                                                            <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
-                                                                <img width="15" height="20" src="./assets/trash.svg" />
-                                                            </button>
+                                                    <li style="cursor: default; display: flex; flex-direction: column; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                            <span style="flex: 1;margin-right: 1em;">${childText}</span>
+                                                            <div style="display: flex; gap: 4px;">
+                                                                <button class="small"
+                                                                        style="${buttonStyle}"
+                                                                        onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${idx}, ${childIdx})"
+                                                                        title="${buttonTitle}">${scheduleDisplay}</button>
+                                                                <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
+                                                                    <img width="15" height="20" src="./assets/trash.svg" />
+                                                                </button>
+                                                            </div>
                                                         </div>
+                                                        ${recurrenceInfo ? `<div style="font-size: 10px; color: #9C27B0; margin-top: 3px;">🔁 ${recurrenceInfo}</div>` : ''}
                                                     </li>
                                                 `}).join('')}
                                             </ul>
