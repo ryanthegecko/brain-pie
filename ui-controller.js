@@ -4112,6 +4112,14 @@ const UI = {
             child.completed = !child.completed;
         }
 
+        // Remove from priorities when completed
+        const nowCompleted = typeof spoke.children[childIndex] === 'object' && spoke.children[childIndex].completed;
+        if (nowCompleted) {
+            const ref = { type: 'action', categoryId, itemId, spokeIndex, childIndex };
+            const prioIdx = this.getPriorityIndex(ref);
+            if (prioIdx >= 0) DataModel.removePriority(prioIdx);
+        }
+
         DataModel.saveToStorage();
         this.renderTab2Spokes();
         this.renderExistingActions();
@@ -4246,7 +4254,10 @@ const UI = {
     },
 
     bumpPriority(index) {
-        if (index === 0) return;
+        if (index === 0) {
+            this.removePriority(0);
+            return;
+        }
         DataModel.reorderPriority(index, 0);
         this.renderPriorityList();
     },
