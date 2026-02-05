@@ -128,17 +128,38 @@ h2 {
     }
 }
 
-#chart-container.hide-subitem-labels {
+#chart-container.hide-subitem-labels:not(.tree-view) {
     transform: scale(1.3);
     transform-origin: center center;
     @media (max-width: 1024px) {
     transform: scale(1.6);
     }
+}
+
+#chart-container.hide-subitem-labels {
     .sub-item-label,
     .sub-item-line,
-    .schedule-pill {
+    .schedule-pill,
+    .treemap-spoke-group {
         display: none;
     }
+}
+
+/* Treemap styles */
+.treemap-category rect {
+    transition: opacity 0.2s;
+}
+.treemap-category rect:hover {
+    opacity: 0.3 !important;
+}
+.treemap-slice rect {
+    transition: opacity 0.2s;
+}
+.treemap-slice rect:hover {
+    opacity: 0.95 !important;
+}
+.treemap-spoke-group:hover text {
+    text-decoration: underline;
 }
 
 .spoke-entry {

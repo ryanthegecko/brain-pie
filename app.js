@@ -72,6 +72,44 @@ const Controls = {
     if (checkboxMobile) {
       checkboxMobile.addEventListener('change', (e) => updateState(e.target.checked));
     }
+
+    this.initViewMode();
+  },
+
+  VIEW_MODE_KEY: 'viewMode',
+
+  initViewMode() {
+    const checkboxDesktop = document.getElementById('view-mode-toggle');
+    const checkboxMobile = document.getElementById('view-mode-toggle-mobile');
+    const container = document.getElementById('chart-container');
+
+    const stored = localStorage.getItem(this.VIEW_MODE_KEY);
+    const isTree = stored === 'tree';
+
+    if (checkboxDesktop) checkboxDesktop.checked = isTree;
+    if (checkboxMobile) checkboxMobile.checked = isTree;
+    ChartRenderer.viewMode = isTree ? 'tree' : 'pie';
+    container.classList.toggle('tree-view', isTree);
+
+    const updateViewMode = (shouldBeTree) => {
+      if (checkboxDesktop) checkboxDesktop.checked = shouldBeTree;
+      if (checkboxMobile) checkboxMobile.checked = shouldBeTree;
+      localStorage.setItem(this.VIEW_MODE_KEY, shouldBeTree ? 'tree' : 'pie');
+      ChartRenderer.viewMode = shouldBeTree ? 'tree' : 'pie';
+      container.classList.toggle('tree-view', shouldBeTree);
+
+      ChartRenderer.expandedView = null;
+      ChartRenderer.collapseIfBranchExpanded();
+      ChartRenderer.init('chart-container');
+      App.render();
+    };
+
+    if (checkboxDesktop) {
+      checkboxDesktop.addEventListener('change', (e) => updateViewMode(e.target.checked));
+    }
+    if (checkboxMobile) {
+      checkboxMobile.addEventListener('change', (e) => updateViewMode(e.target.checked));
+    }
   }
 };
 
@@ -107,11 +145,11 @@ const App = {
         // Load data (now async to support Firebase)
         await DataModel.loadFromStorageOrExample();
 
+        Controls.init();
         ChartRenderer.init('chart-container');
         UI.clearInputs();
         UI.clearCategoryInputs();
         this.render();
-        Controls.init();
 
         if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
             setTimeout(() => TutorialManager.start(), 500);
