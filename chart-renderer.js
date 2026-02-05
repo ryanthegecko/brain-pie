@@ -83,6 +83,131 @@ const ChartRenderer = {
         return style;
     },
 
+    // Get the pill text for single/repeating/list spokes (icon or date)
+    getSchedulePillText(spoke) {
+        if (typeof spoke === 'string') return null;
+
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+
+        if (type === 'single') {
+            if (spoke.scheduled && spoke.scheduled.date) {
+                const schedDate = new Date(`${spoke.scheduled.date}T${spoke.scheduled.time || '00:00'}`);
+                return schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            }
+            return '📅';  // Unscheduled single - show calendar icon in pill
+        }
+
+        if (type === 'repeating') {
+            return '🔁';  // Always show repeat icon in pill
+        }
+
+        if (type === 'list') {
+            const hasChildren = spoke.children && spoke.children.length > 0;
+            if (hasChildren) {
+                return `☑️ (${spoke.children.length})`;
+            }
+            return '☑️';
+        }
+
+        return null;
+    },
+
+    // Get pill background color based on spoke state
+    getSchedulePillColor(spoke) {
+        if (typeof spoke === 'string') return null;
+
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+
+        const hasSchedule = spoke.scheduled && spoke.scheduled.date;
+        const hasRecurrence = spoke.metadata && spoke.metadata.recurrence;
+
+        // Green for scheduled, blue for unscheduled/list
+        if (type === 'single') {
+            return hasSchedule ? '#4CAF50' : '#2196F3';
+        }
+        if (type === 'repeating') {
+            return hasRecurrence ? '#4CAF50' : '#2196F3';
+        }
+        if (type === 'list') {
+            return '#2196F3';  // Blue for list type
+        }
+
+        return null;
+    },
+
+    // Get indicator for static spokes only (other types use pills)
+    getSpokeIndicatorWithoutSchedule(spoke) {
+        if (typeof spoke === 'string') return '';
+
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+
+        switch(type) {
+            case 'single':
+            case 'repeating':
+            case 'list':
+                // These types use pills instead of text indicators
+                return '';
+            case 'static':
+            default:
+                return '';
+        }
+    },
+
+    // Add schedule pill after spoke name text element
+    addSchedulePill(group, nameTextElement, spoke, isRightSide, fontSize = 12) {
+        const pillText = this.getSchedulePillText(spoke);
+        if (!pillText) return;
+
+        const pillColor = this.getSchedulePillColor(spoke) || '#4CAF50';
+
+        // Get name text bounding box after brief delay
+        setTimeout(() => {
+            try {
+                const nameBbox = nameTextElement.node().getBBox();
+                const padding = { x: 6, y: 3 };
+                const gap = 10;  // Gap between name and pill
+
+                // Position pill after/before name based on side
+                let pillX;
+                if (isRightSide) {
+                    pillX = nameBbox.x + nameBbox.width + gap;
+                } else {
+                    // For left side, pill goes before name - need to measure pill text first
+                    pillX = nameBbox.x - gap;
+                }
+
+                // Create pill group
+                const pillGroup = group.append('g').attr('class', 'schedule-pill');
+
+                // Add pill text first to measure it
+                const pillTextEl = pillGroup.append('text')
+                    .attr('font-size', fontSize + 'px')
+                    .attr('fill', '#ffffff')
+                    .attr('text-anchor', isRightSide ? 'start' : 'end')
+                    .attr('x', pillX)
+                    .attr('y', nameBbox.y + nameBbox.height - 2)
+                    .text(pillText);
+
+                // Get pill text bbox and add rect behind it
+                const pillTextBbox = pillTextEl.node().getBBox();
+                pillGroup.insert('rect', 'text')
+                    .attr('x', pillTextBbox.x - padding.x)
+                    .attr('y', pillTextBbox.y - padding.y)
+                    .attr('width', pillTextBbox.width + padding.x * 2)
+                    .attr('height', pillTextBbox.height + padding.y * 2)
+                    .attr('rx', 10)
+                    .attr('ry', 10)
+                    .attr('fill', pillColor);
+
+            } catch (e) {
+                // Text element may not be in DOM yet
+            }
+        }, 10);
+    },
+
     handleSpokeClick(event, subItem, catData, sliceData, spokeIndex, categoryId, itemId) {
         event.stopPropagation();
 
@@ -420,17 +545,18 @@ const ChartRenderer = {
 
                     // Add label with click handler using spoke type helpers
                     const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
-                    const indicator = ChartRenderer.getSpokeVisualIndicator(subItem);
+                    const indicator = ChartRenderer.getSpokeIndicatorWithoutSchedule(subItem);
                     const textStyle = ChartRenderer.getSpokeTextStyle(subItem);
+                    const isRightSide = extendX > 0;
 
                     // Put indicator on outside edge: right side = text+indicator, left side = indicator+text
-                    const labelText = extendX > 0 ? spokeName + indicator : indicator + ' ' + spokeName;
-                    const spokeLabel = group.append('text')
-                        .attr('class', 'sub-item-label')
+                    const labelText = isRightSide ? spokeName + indicator : indicator + spokeName;
+
+                    // Create a group for the label (to support pill background)
+                    const labelGroup = group.append('g')
+                        .attr('class', 'spoke-label-group')
                         .attr('transform', `translate(${labelX}, ${labelY}) rotate(${textRotation})`)
-                        .attr('text-anchor', extendX > 0 ? 'start' : 'end')
                         .style('cursor', 'pointer')
-                        .text(labelText)
                         .on('click', function(event) {
                             ChartRenderer.handleSpokeClick(
                                 event,
@@ -443,10 +569,18 @@ const ChartRenderer = {
                             );
                         });
 
+                    const spokeLabel = labelGroup.append('text')
+                        .attr('class', 'sub-item-label')
+                        .attr('text-anchor', isRightSide ? 'start' : 'end')
+                        .text(labelText);
+
                     // Apply text styling based on spoke type
                     Object.keys(textStyle).forEach(key => {
                         spokeLabel.style(key, textStyle[key]);
                     });
+
+                    // Add green pill for scheduled spokes (just the date/time portion)
+                    ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide);
 
                 });
             });
@@ -546,8 +680,9 @@ const ChartRenderer = {
                     const extendX = Math.cos(angle - Math.PI / 2) * (that.innerRadius + 80);
                     const extendY = Math.sin(angle - Math.PI / 2) * (that.innerRadius + 80);
                     const spokeName = (typeof subItem == 'string') ? subItem : subItem.text;
-                    const indicator = that.getSpokeVisualIndicator(subItem);
+                    const indicator = that.getSpokeIndicatorWithoutSchedule(subItem);
                     const textStyle = that.getSpokeTextStyle(subItem);
+                    const isRightSide = extendX > 0;
 
                     // Draw line
                     expandedGroup.append('line')
@@ -561,7 +696,7 @@ const ChartRenderer = {
 
                     // Horizontal line
                     const horizontalLength = 40;
-                    const direction = extendX > 0 ? 1 : -1;
+                    const direction = isRightSide ? 1 : -1;
                     expandedGroup.append('line')
                         .attr('class', 'sub-item-line')
                         .attr('x1', extendX)
@@ -572,20 +707,27 @@ const ChartRenderer = {
                         .attr('stroke-width', 2);
 
                     // Label with spoke type indicator (indicator on outside edge)
-                    const labelText = extendX > 0 ? spokeName + indicator : indicator + ' ' + spokeName;
-                    const spokeLabel = expandedGroup.append('text')
+                    const labelText = isRightSide ? spokeName + indicator : indicator + spokeName;
+
+                    // Create a group for the label (to support pill background)
+                    const labelGroup = expandedGroup.append('g')
+                        .attr('class', 'spoke-label-group')
+                        .attr('transform', `translate(${extendX + ((horizontalLength + 5) * direction)}, ${extendY + 4})`);
+
+                    const spokeLabel = labelGroup.append('text')
                         .attr('class', 'sub-item-label')
                         .style('font-size', '13px')
                         .style('font-weight', '600')
-                        .attr('x', extendX + ((horizontalLength + 5) * direction))
-                        .attr('y', extendY + 4)
-                        .attr('text-anchor', extendX > 0 ? 'start' : 'end')
+                        .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .text(labelText);
 
                     // Apply text styling based on spoke type
                     Object.keys(textStyle).forEach(key => {
                         spokeLabel.style(key, textStyle[key]);
                     });
+
+                    // Add green pill for scheduled spokes (just the date/time portion)
+                    that.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, 13);
                 });
             }
         }, 100)
@@ -713,8 +855,9 @@ const ChartRenderer = {
                             const extendX = Math.cos(angle - Math.PI / 2) * (that.outerRadius + 110);
                             const extendY = Math.sin(angle - Math.PI / 2) * (that.outerRadius + 110);
                             const spokeName = (typeof subItem == 'string' ? subItem : subItem.text);
-                            const indicator = that.getSpokeVisualIndicator(subItem);
+                            const indicator = that.getSpokeIndicatorWithoutSchedule(subItem);
                             const textStyle = that.getSpokeTextStyle(subItem);
+                            const isRightSide = extendX > 0;
 
                             // Draw line from center
                             expandedGroup.append('line')
@@ -728,7 +871,7 @@ const ChartRenderer = {
 
                             // Horizontal line
                             const horizontalLength = 40;
-                            const direction = extendX > 0 ? 1 : -1;
+                            const direction = isRightSide ? 1 : -1;
                             expandedGroup.append('line')
                                 .attr('class', 'sub-item-line')
                                 .attr('x1', extendX)
@@ -739,20 +882,27 @@ const ChartRenderer = {
                                 .attr('stroke-width', 2);
 
                             // Label with spoke type indicator (indicator on outside edge)
-                            const labelText = extendX > 0 ? spokeName + indicator : indicator + ' ' + spokeName;
-                            const spokeLabel = expandedGroup.append('text')
+                            const labelText = isRightSide ? spokeName + indicator : indicator + spokeName;
+
+                            // Create a group for the label (to support pill background)
+                            const labelGroup = expandedGroup.append('g')
+                                .attr('class', 'spoke-label-group')
+                                .attr('transform', `translate(${extendX + ((horizontalLength + 5) * direction)}, ${extendY + 4})`);
+
+                            const spokeLabel = labelGroup.append('text')
                                 .attr('class', 'sub-item-label')
                                 .style('font-size', '13px')
                                 .style('font-weight', '600')
-                                .attr('x', extendX + ((horizontalLength + 5) * direction))
-                                .attr('y', extendY + 4)
-                                .attr('text-anchor', extendX > 0 ? 'start' : 'end')
+                                .attr('text-anchor', isRightSide ? 'start' : 'end')
                                 .text(labelText);
 
                             // Apply text styling based on spoke type
                             Object.keys(textStyle).forEach(key => {
                                 spokeLabel.style(key, textStyle[key]);
                             });
+
+                            // Add green pill for scheduled spokes (just the date/time portion)
+                            that.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, 13);
                         });
                     }
                 });

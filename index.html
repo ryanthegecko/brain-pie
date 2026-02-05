@@ -90,17 +90,17 @@
                     <h3>Category</h3>
                     <div class="category-choice">
                         <label class="radio-option compact">
-                            <input type="radio" name="category-mode" value="existing" onchange="UI.toggleCategoryMode('existing')">
+                            <input type="radio" name="category-mode" value="existing" checked onchange="UI.toggleCategoryMode('existing')">
                             <span>Existing Category</span>
                         </label>
                         <label class="radio-option compact">
-                            <input type="radio" name="category-mode" value="new" checked onchange="UI.toggleCategoryMode('new')">
+                            <input type="radio" name="category-mode" value="new" onchange="UI.toggleCategoryMode('new')">
                             <span>New Category</span>
                         </label>
                     </div>
 
                     <!-- New Category Form -->
-                    <div id="new-category-form" class="controls" style="margin-top: 15px;">
+                    <div id="new-category-form" class="controls" style="margin-top: 15px; display: none;">
                         <div class="input-group">
                             <label for="new-category-name">Category Name</label>
                             <input type="text" id="new-category-name" placeholder="e.g., Health">
@@ -116,7 +116,7 @@
                     </div>
 
                     <!-- Existing Category Dropdown -->
-                    <div id="existing-category-form" class="controls" style="margin-top: 15px; display: none;">
+                    <div id="existing-category-form" class="controls" style="margin-top: 15px;">
                         <div class="input-group" style="flex: 1;">
                             <label for="item-category">Select Category</label>
                             <select id="item-category" onchange="UI.onCategorySelected()">
@@ -211,8 +211,7 @@
     <div class="disclaimer-overlay" id="disclaimer-overlay" onclick="UI.closeDisclaimer()">
         <div class="disclaimer-content" onclick="event.stopPropagation()">
             <h2>About Brain Pie Chart</h2>
-            <p>Brain pie is 4-layer system of Categories, Slices, Spokes 
-                and Actions, to help organise a busy mind.</p>
+            <p>Brain Pie is a multi-layered visual system to help organize a busy mind. Create Categories for life areas, Slices for specific domains, and Spokes for tasks or reminders. Spokes can be simple reminders, one-time tasks, recurring events, or containers for multiple actions—whatever fits your workflow.</p>
             <br />
             <p><strong>This app is completely free and private.</strong></p>
             <p>✓ No data is collected or stored by us<br>
