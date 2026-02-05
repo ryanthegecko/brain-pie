@@ -481,6 +481,17 @@ const ChartRenderer = {
         this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
     },
 
+    // Lighten a hex color by a factor (0-1)
+    lightenColor(hexColor, factor) {
+        const r = parseInt(hexColor.substr(1, 2), 16);
+        const g = parseInt(hexColor.substr(3, 2), 16);
+        const b = parseInt(hexColor.substr(5, 2), 16);
+        const nr = Math.min(255, Math.round(r + (255 - r) * factor));
+        const ng = Math.min(255, Math.round(g + (255 - g) * factor));
+        const nb = Math.min(255, Math.round(b + (255 - b) * factor));
+        return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
+    },
+
     // Helper to determine if a color is dark
     isColorDark(hexColor) {
         const r = parseInt(hexColor.substr(1, 2), 16);
@@ -583,8 +594,16 @@ const ChartRenderer = {
             .attr('opacity', 0.7);
 
         categorySlices
-            .on('mouseover', function() { d3.select(this).selectAll('.category-label, .category-percentage').style('font-weight', 'bold'); })
-            .on('mouseout', function() { d3.select(this).selectAll('.category-label, .category-percentage').style('font-weight', null); });
+            .on('mouseover', (event, d) => {
+                d3.select(event.currentTarget).select('path')
+                    .transition().duration(200)
+                    .attr('fill', ChartRenderer.lightenColor(d.data.color, 0.25));
+            })
+            .on('mouseout', (event, d) => {
+                d3.select(event.currentTarget).select('path')
+                    .transition().duration(200)
+                    .attr('fill', d.data.color);
+            });
 
         // Add click effect for categories
         categorySlices.on('click', (event, d) => {
@@ -694,6 +713,18 @@ const ChartRenderer = {
                 .attr('stroke', 'white')
                 .attr('stroke-width', 2);
 
+            itemSlices
+                .on('mouseover', (event, d) => {
+                    d3.select(event.currentTarget).select('path')
+                        .transition().duration(200)
+                        .attr('fill', ChartRenderer.lightenColor(d.data.color, 0.2));
+                })
+                .on('mouseout', (event, d) => {
+                    d3.select(event.currentTarget).select('path')
+                        .transition().duration(200)
+                        .attr('fill', d.data.color);
+                });
+
             // Add click expand effect
             itemSlices.on('click', (event, d) => {
                 event.stopPropagation();
@@ -712,10 +743,6 @@ const ChartRenderer = {
                     App.render();
                 }
             });
-
-            itemSlices
-                .on('mouseover', function() { d3.select(this).selectAll('.item-label').style('font-weight', 'bold'); })
-                .on('mouseout', function() { d3.select(this).selectAll('.item-label').style('font-weight', null); });
 
             // Item labels - RADIAL TEXT along the wedge angle
             itemSlices.each((d, i, nodes) => {
@@ -760,9 +787,7 @@ const ChartRenderer = {
                 
                 subItems.forEach((subItem, idx) => {
                     const angle = startAngle + (angleStep * (idx + 0.5));
-                    const innerX = 0;
-                    const innerY = 0;
-                    
+
                     // Calculate the actual rendering angle
                     const renderAngle = angle - Math.PI / 2;
                     
@@ -782,12 +807,14 @@ const ChartRenderer = {
                     
                     const extendX = Math.cos(renderAngle) * (this.outerRadius + totalExtension);
                     const extendY = Math.sin(renderAngle) * (this.outerRadius + totalExtension);
-                    
-                    // Draw single line from center to label position
+                    const outerEdgeX = Math.cos(renderAngle) * this.outerRadius;
+                    const outerEdgeY = Math.sin(renderAngle) * this.outerRadius;
+
+                    // Draw line from outer ring edge to label position
                     group.append('line')
                         .attr('class', 'sub-item-line')
-                        .attr('x1', innerX)
-                        .attr('y1', innerY)
+                        .attr('x1', outerEdgeX)
+                        .attr('y1', outerEdgeY)
                         .attr('x2', extendX)
                         .attr('y2', extendY);
                     
@@ -888,7 +915,8 @@ const ChartRenderer = {
         if (this.expandedView || this._wasExpanded) {
             this.svg.style('opacity', 0)
                 .transition().duration(300)
-                .style('opacity', 1);
+                .style('opacity', 1)
+                .on('end', () => { this.svg.style('opacity', null); });
         }
         this._wasExpanded = !!this.expandedView;
     },
@@ -1300,7 +1328,8 @@ const ChartRenderer = {
         if (this.expandedView || this._wasExpanded) {
             this.svg.style('opacity', 0)
                 .transition().duration(300)
-                .style('opacity', 1);
+                .style('opacity', 1)
+                .on('end', () => { this.svg.style('opacity', null); });
         }
         this._wasExpanded = !!this.expandedView;
     },
