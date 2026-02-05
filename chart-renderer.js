@@ -1,8 +1,9 @@
 const ChartRenderer = {
     svg: null,
     highlightGroup: null,
-    currentExpanded: null,
-    currentExpandedLocation: null,  // Track {categoryId, itemId, spokeIndex} for toggle
+    expandedView: null,  // { type: 'slice'|'category', categoryId, itemId? }
+    _wasExpanded: false,  // Track previous state for crossfade animation
+    currentExpandedLocation: null,  // Track {categoryId, itemId, spokeIndex} for toggle (branch expansion)
     branchClickOutsideHandler: null,  // Store reference to document click handler
 
     // Check if branch is expanded and collapse it, returns true if collapsed
@@ -99,7 +100,10 @@ const ChartRenderer = {
         }
 
         if (type === 'repeating') {
-            return '🔁';  // Always show repeat icon in pill
+            if (spoke.metadata && spoke.metadata.recurrence) {
+                return this.formatRecurrencePillText(spoke.metadata.recurrence);
+            }
+            return '🔁';
         }
 
         if (type === 'list') {
@@ -135,6 +139,39 @@ const ChartRenderer = {
         }
 
         return null;
+    },
+
+    // Format recurrence data into short pill text like "Mon, Wed, 17:45"
+    formatRecurrencePillText(recurrence) {
+        if (!recurrence) return '🔁';
+
+        const dayNames = { MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun' };
+        let parts = [];
+
+        const freq = recurrence.frequency;
+        const interval = recurrence.interval || 1;
+
+        if (freq === 'WEEKLY' && recurrence.byDay && recurrence.byDay.length > 0) {
+            parts.push(recurrence.byDay.map(d => dayNames[d] || d).join(', '));
+        } else if (freq === 'DAILY') {
+            parts.push(interval === 1 ? 'Daily' : `Every ${interval}d`);
+        } else if (freq === 'WEEKLY') {
+            parts.push(interval === 1 ? 'Weekly' : `Every ${interval}w`);
+        } else if (freq === 'MONTHLY') {
+            if (recurrence.byMonthDay) {
+                parts.push(`${recurrence.byMonthDay}${UI.getOrdinalSuffix(recurrence.byMonthDay)}`);
+            } else {
+                parts.push(interval === 1 ? 'Monthly' : `Every ${interval}mo`);
+            }
+        } else if (freq === 'YEARLY') {
+            parts.push(interval === 1 ? 'Yearly' : `Every ${interval}y`);
+        }
+
+        if (recurrence.time) {
+            parts.push(recurrence.time);
+        }
+
+        return parts.join(', ');
     },
 
     // Get indicator for static spokes only (other types use pills)
@@ -297,10 +334,40 @@ const ChartRenderer = {
         }
 
         // Calculate category percentages - use overrides if available
-        const categoryData = categories.map(cat => ({
+        let categoryData = categories.map(cat => ({
             ...cat,
             percentage: DataModel.getCategoryPercentage(cat.id)
         })).filter(cat => cat.items.length > 0);
+
+        // Override data for expanded view (full-pie takeover)
+        if (this.expandedView) {
+            const ev = this.expandedView;
+            if (ev.type === 'slice') {
+                // Find the parent category and the target slice
+                const parentCat = categoryData.find(c => c.id === ev.categoryId);
+                const targetSlice = parentCat && parentCat.items.find(item => item.id === ev.itemId);
+                if (parentCat && targetSlice) {
+                    categoryData = [{
+                        ...parentCat,
+                        percentage: 100,
+                        items: [{ ...targetSlice, percentage: 100 }]
+                    }];
+                } else {
+                    // Data no longer exists, collapse
+                    this.expandedView = null;
+                }
+            } else if (ev.type === 'category') {
+                const targetCat = categoryData.find(c => c.id === ev.categoryId);
+                if (targetCat) {
+                    categoryData = [{
+                        ...targetCat,
+                        percentage: 100
+                    }];
+                } else {
+                    this.expandedView = null;
+                }
+            }
+        }
 
         // Outer ring (categories)
         const outerPie = d3.pie()
@@ -334,12 +401,12 @@ const ChartRenderer = {
             event.stopPropagation();
             // Collapse branch if one is expanded
             if (this.collapseIfBranchExpanded()) return;
-            if (!this.currentExpanded) {
-                this.expandCategory(d, outerData);
-            }
-        }).on('mouseleave', () => {
-            if (!this.currentExpanded) {
-                this.collapseSlice();
+            if (this.expandedView) {
+                // In expanded view, clicking outer ring collapses back to full pie
+                this.collapseToFullPie();
+            } else {
+                this.expandedView = { type: 'category', categoryId: d.data.id };
+                App.render();
             }
         });
 
@@ -442,12 +509,17 @@ const ChartRenderer = {
                 event.stopPropagation();
                 // Collapse branch if one is expanded
                 if (this.collapseIfBranchExpanded()) return;
-                if (!this.currentExpanded) {
-                    this.expandSlice(d, catData, category, itemData)
-                }
-            }).on('mouseleave', () => {
-                if (!this.currentExpanded) {
-                    this.collapseSlice();
+                if (this.expandedView && this.expandedView.type === 'slice') {
+                    // In slice expanded view, clicking the slice collapses
+                    this.collapseToFullPie();
+                } else if (this.expandedView && this.expandedView.type === 'category') {
+                    // In category expanded view, clicking a slice drills into it
+                    this.expandedView = { type: 'slice', categoryId: catData.data.id, itemId: d.data.id };
+                    App.render();
+                } else {
+                    // Normal view - expand to slice takeover
+                    this.expandedView = { type: 'slice', categoryId: catData.data.id, itemId: d.data.id };
+                    App.render();
                 }
             });
 
@@ -585,379 +657,44 @@ const ChartRenderer = {
                 });
             });
         });
-    },
 
-    expandSlice(sliceData, categoryData, category, allItemsInCategory) {
-        this.currentExpanded = sliceData;
-        const that = this;
-        setTimeout(() => {
-            // Clear any existing highlight
-            that.highlightGroup.selectAll('*').remove();
-
-            // Calculate expansion factor
-            const angleSize = sliceData.endAngle - sliceData.startAngle;
-            const anglePercentage = (angleSize / (2 * Math.PI)) * 100;
-
-            let targetPercentage;
-            if (anglePercentage < 30) {
-                targetPercentage = 30;
-            } else {
-                targetPercentage = 60;
-            }
-
-            // Calculate scale factor
-            const scaleFactor = targetPercentage / anglePercentage;
-            const newAngleSize = angleSize * scaleFactor;
-
-            // Center the expansion around the slice's midpoint
-            const midAngle = (sliceData.startAngle + sliceData.endAngle) / 2;
-            const newStartAngle = midAngle - (newAngleSize / 2);
-            const newEndAngle = midAngle + (newAngleSize / 2);
-
-            // Calculate translation: pull wedge INWARD (negative direction) by 30% of innerRadius
-            const translateDistance = -that.innerRadius * 0.3;
-            const translateX = Math.cos(midAngle - Math.PI / 2) * translateDistance;
-            const translateY = Math.sin(midAngle - Math.PI / 2) * translateDistance;
-
-            // Create expanded arc
-            const expandedArc = d3.arc()
-                .innerRadius(0)
-                .outerRadius(that.innerRadius + 50)
-                .startAngle(newStartAngle)
-                .endAngle(newEndAngle);
-
-            // Draw expanded slice
-            const expandedGroup = that.highlightGroup.append('g')
-                .attr('class', 'expanded-slice')
-                .attr('transform', `translate(${translateX}, ${translateY})`);
-
-            expandedGroup.append('path')
-                .attr('d', expandedArc)
-                .attr('fill', sliceData.data.color)
-                .attr('stroke', 'white')
-                .attr('stroke-width', 3)
-                .attr('opacity', 0.95);
-
-
-            that.highlightGroup.raise();
-
-            this.highlightGroup.on('click', (event) => {
-                that.collapseSlice();
-            })
-
-            // Hide base layer
-            that.svg.selectAll('.sub-item-label, .sub-item-line, .inner-slice, .outer-slice')
-                .transition().duration(100)
-                .style('opacity', 0.03)
-
-            // Add label
-            const labelRadius = (that.innerRadius + 50) / 2;
-            const x = Math.cos(midAngle - Math.PI / 2) * labelRadius;
-            const y = Math.sin(midAngle - Math.PI / 2) * labelRadius;
-
-            let rotation = (midAngle * 180 / Math.PI) - 90;
-            if (rotation > 90 && rotation < 270) {
-                rotation += 180;
-            }
-
-            const textColor = that.isColorDark(sliceData.data.color) ? '#ffffff' : '#333333';
-            expandedGroup.append('text')
-                .attr('class', 'item-label')
-                .style('fill', textColor)
-                .style('font-size', '16px')
-                .style('font-weight', 'bold')
-                .attr('transform', `translate(${x}, ${y}) rotate(${rotation})`)
-                .attr('text-anchor', 'middle')
-                .text(sliceData.data.name);
-
-            // Draw sub-items in expanded view
-            const subItems = sliceData.data.subItems;
-            if (subItems.length > 0) {
-                const angleStep = newAngleSize / subItems.length;
-
-                subItems.forEach((subItem, idx) => {
-                    const angle = newStartAngle + (angleStep * (idx + 0.5));
-                    const extendX = Math.cos(angle - Math.PI / 2) * (that.innerRadius + 80);
-                    const extendY = Math.sin(angle - Math.PI / 2) * (that.innerRadius + 80);
-                    const spokeName = (typeof subItem == 'string') ? subItem : subItem.text;
-                    const indicator = that.getSpokeIndicatorWithoutSchedule(subItem);
-                    const textStyle = that.getSpokeTextStyle(subItem);
-                    const isRightSide = extendX > 0;
-
-                    // Draw line
-                    expandedGroup.append('line')
-                        .attr('class', 'sub-item-line')
-                        .attr('x1', 0)
-                        .attr('y1', 0)
-                        .attr('x2', extendX)
-                        .attr('y2', extendY)
-                        .attr('stroke', '#666')
-                        .attr('stroke-width', 2);
-
-                    // Horizontal line
-                    const horizontalLength = 40;
-                    const direction = isRightSide ? 1 : -1;
-                    expandedGroup.append('line')
-                        .attr('class', 'sub-item-line')
-                        .attr('x1', extendX)
-                        .attr('y1', extendY)
-                        .attr('x2', extendX + (horizontalLength * direction))
-                        .attr('y2', extendY)
-                        .attr('stroke', '#666')
-                        .attr('stroke-width', 2);
-
-                    // Label with spoke type indicator (indicator on outside edge)
-                    const labelText = isRightSide ? spokeName + indicator : indicator + spokeName;
-
-                    // Create a group for the label (to support pill background)
-                    const labelGroup = expandedGroup.append('g')
-                        .attr('class', 'spoke-label-group')
-                        .attr('transform', `translate(${extendX + ((horizontalLength + 5) * direction)}, ${extendY + 4})`);
-
-                    const spokeLabel = labelGroup.append('text')
-                        .attr('class', 'sub-item-label')
-                        .style('font-size', '13px')
-                        .style('font-weight', '600')
-                        .attr('text-anchor', isRightSide ? 'start' : 'end')
-                        .text(labelText);
-
-                    // Apply text styling based on spoke type
-                    Object.keys(textStyle).forEach(key => {
-                        spokeLabel.style(key, textStyle[key]);
-                    });
-
-                    // Add green pill for scheduled spokes (just the date/time portion)
-                    that.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, 13);
+        // Back button when in expanded view
+        if (this.expandedView) {
+            const backBtn = this.svg.append('g')
+                .attr('class', 'back-button')
+                .attr('transform', `translate(0, ${-this.innerRadius - 70})`)
+                .style('cursor', 'pointer')
+                .on('click', (event) => {
+                    event.stopPropagation();
+                    this.collapseToFullPie();
                 });
-            }
-        }, 100)
 
-    },
-
-    collapseSlice() {
-        this.currentExpanded = null;
-        this.highlightGroup.selectAll('*').remove();
-        this.svg.selectAll('.sub-item-label, .sub-item-line, .inner-slice, .outer-slice, .category-label, .category-percentage, .item-label')
-            .transition().duration(100)
-            .style('opacity', 1)
-    },
-
-    expandCategory(categoryData, allCategories) {
-        this.currentExpanded = categoryData;
-        const that = this;
-
-        setTimeout(() => {
-            // Clear any existing highlight
-            that.highlightGroup.selectAll('*').remove();
-
-            // Calculate expansion factor for category
-            const angleSize = categoryData.endAngle - categoryData.startAngle;
-            const anglePercentage = (angleSize / (2 * Math.PI)) * 100;
-
-            let targetPercentage;
-            if (anglePercentage < 30) {
-                targetPercentage = 30;
-            } else if (anglePercentage < 60) {
-                targetPercentage = 60;
-            } else {
-                targetPercentage = 100
-            }
-
-            // Calculate scale factor
-            const scaleFactor = targetPercentage / anglePercentage;
-            const newAngleSize = angleSize * scaleFactor;
-
-            // Center the expansion around the category's midpoint
-            const midAngle = (categoryData.startAngle + categoryData.endAngle) / 2;
-            const newStartAngle = midAngle - (newAngleSize / 2);
-            const newEndAngle = midAngle + (newAngleSize / 2);
-
-            // Calculate translation: pull wedge INWARD (negative direction) by 30% of innerRadius
-            const translateDistance = -that.innerRadius * 0.3;
-            const translateX = Math.cos(midAngle - Math.PI / 2) * translateDistance;
-            const translateY = Math.sin(midAngle - Math.PI / 2) * translateDistance;
-
-            // Create expanded outer arc (category)
-            const expandedOuterArc = d3.arc()
-                .innerRadius(that.innerRadius)
-                .outerRadius(that.outerRadius + 80)
-                .startAngle(newStartAngle)
-                .endAngle(newEndAngle);
-
-            // Draw expanded category slice with translation
-            const expandedGroup = that.highlightGroup.append('g')
-                .attr('class', 'expanded-category')
-                .attr('transform', `translate(${translateX}, ${translateY})`);
-
-            expandedGroup.append('path')
-                .attr('d', expandedOuterArc)
-                .attr('fill', categoryData.data.color)
-                .attr('stroke', 'white')
-                .attr('stroke-width', 4)
+            backBtn.append('circle')
+                .attr('r', 18)
+                .attr('fill', '#666')
                 .attr('opacity', 0.8);
 
-            // Expand inner items within this category
-            const category = categoryData.data;
-            const items = category.items;
-
-            if (items && items.length > 0) {
-                // Create pie for items within expanded angle
-                const itemPie = d3.pie()
-                    .value(d => d.percentage)
-                    .sort(null)
-                    .startAngle(newStartAngle)
-                    .endAngle(newEndAngle);
-
-                const expandedInnerArc = d3.arc()
-                    .innerRadius(0)
-                    .outerRadius(that.innerRadius);
-
-                const itemData = itemPie(items);
-
-                // Draw expanded items
-                itemData.forEach((itemDatum, itemIndex) => {
-                    expandedGroup.append('path')
-                        .attr('d', expandedInnerArc(itemDatum))
-                        .attr('fill', itemDatum.data.color)
-                        .attr('stroke', 'white')
-                        .attr('stroke-width', 2);
-
-                    // Item label (only if enough space)
-                    if ((itemDatum.endAngle - itemDatum.startAngle) > 0.15) {
-                        const itemMidAngle = (itemDatum.startAngle + itemDatum.endAngle) / 2;
-                        const labelRadius = that.innerRadius / 2;
-                        const x = Math.cos(itemMidAngle - Math.PI / 2) * labelRadius;
-                        const y = Math.sin(itemMidAngle - Math.PI / 2) * labelRadius;
-
-                        let rotation = (itemMidAngle * 180 / Math.PI) - 90;
-                        if (rotation > 90 && rotation < 270) {
-                            rotation += 180;
-                        }
-
-                        const textColor = that.isColorDark(itemDatum.data.color) ? '#ffffff' : '#333333';
-                        expandedGroup.append('text')
-                            .attr('class', 'item-label')
-                            .style('fill', textColor)
-                            .style('font-size', '15px')
-                            .style('font-weight', 'bold')
-                            .attr('transform', `translate(${x}, ${y}) rotate(${rotation})`)
-                            .attr('text-anchor', 'middle')
-                            .text(itemDatum.data.name);
-                    }
-
-                    // Draw sub-items for each item
-                    const subItems = itemDatum.data.subItems;
-                    if (subItems && subItems.length > 0) {
-                        const subAngleStep = (itemDatum.endAngle - itemDatum.startAngle) / subItems.length;
-
-                        subItems.forEach((subItem, idx) => {
-                            const angle = itemDatum.startAngle + (subAngleStep * (idx + 0.5));
-                            const extendX = Math.cos(angle - Math.PI / 2) * (that.outerRadius + 110);
-                            const extendY = Math.sin(angle - Math.PI / 2) * (that.outerRadius + 110);
-                            const spokeName = (typeof subItem == 'string' ? subItem : subItem.text);
-                            const indicator = that.getSpokeIndicatorWithoutSchedule(subItem);
-                            const textStyle = that.getSpokeTextStyle(subItem);
-                            const isRightSide = extendX > 0;
-
-                            // Draw line from center
-                            expandedGroup.append('line')
-                                .attr('class', 'sub-item-line')
-                                .attr('x1', 0)
-                                .attr('y1', 0)
-                                .attr('x2', extendX)
-                                .attr('y2', extendY)
-                                .attr('stroke', '#666')
-                                .attr('stroke-width', 2);
-
-                            // Horizontal line
-                            const horizontalLength = 40;
-                            const direction = isRightSide ? 1 : -1;
-                            expandedGroup.append('line')
-                                .attr('class', 'sub-item-line')
-                                .attr('x1', extendX)
-                                .attr('y1', extendY)
-                                .attr('x2', extendX + (horizontalLength * direction))
-                                .attr('y2', extendY)
-                                .attr('stroke', '#666')
-                                .attr('stroke-width', 2);
-
-                            // Label with spoke type indicator (indicator on outside edge)
-                            const labelText = isRightSide ? spokeName + indicator : indicator + spokeName;
-
-                            // Create a group for the label (to support pill background)
-                            const labelGroup = expandedGroup.append('g')
-                                .attr('class', 'spoke-label-group')
-                                .attr('transform', `translate(${extendX + ((horizontalLength + 5) * direction)}, ${extendY + 4})`);
-
-                            const spokeLabel = labelGroup.append('text')
-                                .attr('class', 'sub-item-label')
-                                .style('font-size', '13px')
-                                .style('font-weight', '600')
-                                .attr('text-anchor', isRightSide ? 'start' : 'end')
-                                .text(labelText);
-
-                            // Apply text styling based on spoke type
-                            Object.keys(textStyle).forEach(key => {
-                                spokeLabel.style(key, textStyle[key]);
-                            });
-
-                            // Add green pill for scheduled spokes (just the date/time portion)
-                            that.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, 13);
-                        });
-                    }
-                });
-            }
-
-            // Category label on expanded view
-            const labelRadius = (that.innerRadius + that.outerRadius + 80) / 2;
-            const x = Math.cos(midAngle - Math.PI / 2) * labelRadius;
-            const y = Math.sin(midAngle - Math.PI / 2) * labelRadius;
-
-            let rotation = (midAngle * 180 / Math.PI) - 90;
-            if (rotation > 90 && rotation < 270) {
-                rotation += 180;
-            }
-
-            const textColor = that.isColorDark(categoryData.data.color) ? '#ffffff' : '#333333';
-
-            expandedGroup.append('text')
-                .attr('class', 'category-label')
-                .style('fill', textColor)
-                .style('font-size', '24px')
-                .style('font-weight', 'bold')
-                .attr('transform', `translate(${x}, ${y}) rotate(${rotation})`)
+            backBtn.append('text')
                 .attr('text-anchor', 'middle')
-                .text(categoryData.data.name);
-
-            expandedGroup.append('text')
-                .attr('class', 'category-percentage')
-                .style('fill', textColor)
+                .attr('dy', '0.35em')
                 .style('font-size', '18px')
-                .attr('transform', `translate(${x}, ${y + 25}) rotate(${rotation})`)
-                .attr('text-anchor', 'middle')
-                .text(`${categoryData.data.percentage.toFixed(1)}%`);
+                .style('fill', '#fff')
+                .style('font-weight', 'bold')
+                .text('\u2715');  // ✕ character
+        }
 
-            that.highlightGroup.raise();
+        // Crossfade animation when transitioning between views
+        if (this.expandedView || this._wasExpanded) {
+            this.svg.style('opacity', 0)
+                .transition().duration(300)
+                .style('opacity', 1);
+        }
+        this._wasExpanded = !!this.expandedView;
+    },
 
-            // Click to collapse
-            this.highlightGroup.on('click', (event) => {
-                that.collapseSlice();
-            });
-
-            // Fade base layer ONLY (not the highlight group)
-            that.svg.selectAll('.outer-slice, .inner-slice')
-                .transition().duration(100)
-                .style('opacity', 0.03);
-            
-            that.svg.selectAll('.sub-item-label, .sub-item-line, .category-label, .category-percentage, .item-label')
-                .filter(function() {
-                    // Only fade elements that are NOT in the highlight group
-                    return !this.closest('.highlight-layer');
-                })
-                .transition().duration(100)
-                .style('opacity', 0.03);
-
-        }, 100);
+    collapseToFullPie() {
+        this.expandedView = null;
+        App.render();
     },
     expandBranch(spokeData, categoryData, itemData, spokeAngle, categoryId, itemId, spokeIndex) {
         // Auto-close existing branches unless debug mode allows multiple
@@ -965,7 +702,6 @@ const ChartRenderer = {
             this.collapseBranch();
         }
 
-        this.currentExpanded = spokeData;
         this.currentExpandedLocation = { categoryId, itemId, spokeIndex };
         const that = this;
         // Store location info for click handlers
@@ -1186,7 +922,6 @@ const ChartRenderer = {
     },
 
     collapseBranch() {
-        this.currentExpanded = null;
         this.currentExpandedLocation = null;
         this.highlightGroup.selectAll('*').remove();
 

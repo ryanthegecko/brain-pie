@@ -167,7 +167,8 @@ const TutorialManager = {
             buttons: [
                 { text: 'Load Life Pie', action: 'loadLifePie', class: 'secondary' },
                 { text: 'Load Team Pie', action: 'loadTeamPie', class: 'secondary' },
-                { text: 'Start Fresh', action: 'startFresh', class: 'primary' }
+                { text: 'Continue With This Pie', action: 'continuePie', class: 'primary' },
+                { text: 'Start Fresh', action: 'startFresh', class: 'secondary' }
             ]
         }
     ],
@@ -384,6 +385,9 @@ const TutorialManager = {
                     break;
                 case 'loadTeamPie':
                     onclick = 'TutorialManager.finishWithTeamPie()';
+                    break;
+                case 'continuePie':
+                    onclick = 'TutorialManager.continuePie()';
                     break;
                 case 'startFresh':
                     onclick = 'TutorialManager.startFresh()';
@@ -670,6 +674,13 @@ const TutorialManager = {
      */
     finishWithTeamPie() {
         this.loadTeamPie();
+        this.complete();
+    },
+
+    /**
+     * Complete tutorial and keep current pie data
+     */
+    continuePie() {
         this.complete();
     },
 
