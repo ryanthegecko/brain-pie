@@ -56,7 +56,7 @@ const TutorialManager = {
             id: 'calendar-login',
             type: 'modal',
             title: 'Calendar Sync',
-            content: "Sign in with Google to enable 2-way sync. When you move an event in Google Calendar, Brain Pie updates automatically. Without sign-in, events still go to your calendar, just one-way. You'll need to accept calendar permissions when prompted.",
+            content: "Sign in with Google to enable 2-way sync. When you move an event in Google Calendar, Brain Pie updates automatically. Without sign-in, events still go to your calendar, just one-way. You'll need to accept calendar permissions when prompted.\n\nDon't worry — the example data won't be added to your calendar. Only events you schedule yourself will appear there.",
             buttons: [
                 { text: 'Skip', action: 'skip', class: 'secondary' },
                 { text: 'Maybe Later', action: 'next', class: '' },
