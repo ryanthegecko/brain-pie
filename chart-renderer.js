@@ -1554,8 +1554,10 @@ const ChartRenderer = {
                 .style('cursor', 'pointer')
                 .on('click', (event) => {
                     event.stopPropagation();
-                    UI.addToPriorities({ type: 'action', categoryId, itemId, spokeIndex, childIndex: idx });
-                    that.collapseBranch();
+                    const ref = { type: 'action', categoryId, itemId, spokeIndex, childIndex: idx };
+                    DataModel.addPriority(ref);
+                    UI.renderPriorityList();
+                    starGroup.select('text').attr('fill', UI.isPrioritised(ref) ? '#FFD700' : '#ccc');
                 });
             starGroup.append('text')
                 .attr('x', 5).attr('y', 12)
