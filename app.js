@@ -113,10 +113,10 @@ const App = {
         this.render();
         Controls.init();
 
-        // Check if tutorial should start for first-time users
-        if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
-            setTimeout(() => TutorialManager.start(), 500);
-        }
+        // Tutorial disabled for now (can still be started manually from Settings)
+        // if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
+        //     setTimeout(() => TutorialManager.start(), 500);
+        // }
 
         // Update main sync indicator if in Firebase mode
         if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
