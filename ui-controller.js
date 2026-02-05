@@ -876,7 +876,12 @@ const UI = {
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;width: 100%; min-width: 50%;">
-                                            <span class="sub-item-text" style="flex: 1;padding-right:1em">${subText}</span>
+                                            <span class="sub-item-text" contenteditable="true"
+                                                style="flex: 1;padding-right:1em;outline:none;border-radius:3px;"
+                                                onfocus="this.style.background='#f0f0f0'"
+                                                onblur="this.style.background='transparent'; if(!UI.draggedData) App.renameSpoke('${category.id}', '${item.id}', ${idx}, this.textContent)"
+                                                onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+                                            >${subText}</span>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
                                                 ${spokeTypeBtn}
@@ -1400,9 +1405,14 @@ const UI = {
             document.getElementById('event-notes').value = '';
         }
 
-        // Update button text and show reminder based on whether this is a reschedule
+        // Update title, button text, and show reminder based on whether this is a reschedule
+        const titleEl = document.getElementById('datetime-picker-title');
         const addButton = document.getElementById('calendar-submit-btn');
         const rescheduleReminder = document.getElementById('reschedule-reminder');
+
+        if (titleEl) {
+            titleEl.textContent = existingSchedule ? 'Reschedule Action' : 'Schedule Action';
+        }
 
         if (addButton) {
             if (existingSchedule) {
@@ -2609,15 +2619,20 @@ const UI = {
             document.getElementById('event-notes').value = '';
         }
 
-        // Update button text
+        // Update title, button text, and reminder
+        const isReschedule = existingSchedule && existingSchedule.date;
+        const titleEl = document.getElementById('datetime-picker-title');
         const addButton = document.getElementById('calendar-submit-btn');
         const rescheduleReminder = document.getElementById('reschedule-reminder');
 
+        if (titleEl) {
+            titleEl.textContent = isReschedule ? 'Reschedule Action' : 'Schedule Action';
+        }
         if (addButton) {
-            addButton.textContent = existingSchedule && existingSchedule.date ? '📅 Reschedule' : '📅 Add to Calendar';
+            addButton.textContent = isReschedule ? '📅 Reschedule' : '📅 Add to Calendar';
         }
         if (rescheduleReminder) {
-            rescheduleReminder.style.display = existingSchedule && existingSchedule.date ? 'block' : 'none';
+            rescheduleReminder.style.display = isReschedule ? 'block' : 'none';
         }
 
         // Clear action-level pending data and set spoke-level
@@ -2703,6 +2718,16 @@ const UI = {
 
         this.updateRecurrenceOptions();
         this.updateRecurrenceEndOptions();
+
+        // Update title and button based on whether this is an update
+        const recTitleEl = document.getElementById('recurrence-picker-title');
+        const recSubmitBtn = document.getElementById('recurrence-submit-btn');
+        if (recTitleEl) {
+            recTitleEl.textContent = existingRecurrence ? 'Update Recurrence' : 'Set Recurrence';
+        }
+        if (recSubmitBtn) {
+            recSubmitBtn.textContent = existingRecurrence ? '🔁 Update Recurrence' : '🔁 Set Recurrence';
+        }
 
         // Set up callback for when recurrence is saved
         this.pendingRecurrence = {

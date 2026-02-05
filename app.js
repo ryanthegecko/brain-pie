@@ -201,6 +201,11 @@ const App = {
         this.render();
     },
 
+    renameSpoke(categoryId, itemId, spokeIndex, newName) {
+        DataModel.renameSpoke(categoryId, itemId, spokeIndex, newName);
+        this.render();
+    },
+
     updateItemPercentage(categoryId, itemId, newPercentage) {
         DataModel.updateItemPercentage(categoryId, itemId, newPercentage);
         this.render();

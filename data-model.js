@@ -199,6 +199,22 @@ const DataModel = {
         this.saveToStorage();
     },
 
+    renameSpoke(categoryId, itemId, spokeIndex, newName) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+
+        const spoke = item.subItems[spokeIndex];
+        if (typeof spoke === 'string') {
+            item.subItems[spokeIndex] = newName.trim();
+        } else {
+            spoke.text = newName.trim();
+        }
+        this.saveToStorage();
+    },
+
     updateItemPercentage(categoryId, itemId, newPercentage) {
         const category = this.categories.find(cat => cat.id === categoryId);
         if (!category) return;
