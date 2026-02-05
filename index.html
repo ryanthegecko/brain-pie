@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Brain Pie</title>
+    <link rel="icon" href="assets/favicon.svg" />
     <meta property="og:title" content="Brain Pie" />
     <meta property="og:description" content="A visualiser for your mind." />
     <meta property="og:type" content="website" />
-    
-
 
     <meta property="og:url" content="https://ryanthegecko.github.io/brain-pie/" />
     <meta property="og:image" content="https://ryanthegecko.github.io/brain-pie/assets/og.png" />
@@ -91,12 +90,12 @@
                     <h3>Category</h3>
                     <div class="category-choice">
                         <label class="radio-option compact">
-                            <input type="radio" name="category-mode" value="new" checked onchange="UI.toggleCategoryMode('new')">
-                            <span>New Category</span>
-                        </label>
-                        <label class="radio-option compact">
                             <input type="radio" name="category-mode" value="existing" onchange="UI.toggleCategoryMode('existing')">
                             <span>Existing Category</span>
+                        </label>
+                        <label class="radio-option compact">
+                            <input type="radio" name="category-mode" value="new" checked onchange="UI.toggleCategoryMode('new')">
+                            <span>New Category</span>
                         </label>
                     </div>
 
@@ -134,7 +133,7 @@
                     <div class="controls" style="margin-top: 15px;">
                         <div class="input-group" style="flex: 2;">
                             <label for="item-name">Slice Name</label>
-                            <input type="text" id="item-name" placeholder="e.g., Passport">
+                            <input type="text" id="item-name" placeholder="e.g., Yoga">
                         </div>
                         <div class="input-group">
                             <label for="item-percentage">Weight (%)</label>
@@ -193,7 +192,7 @@
                                 <input type="text" id="tab2-new-spoke" placeholder="Enter spoke name..."
                                        onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addSpokeFromTab2();}">
                             </div>
-                            <button onclick="UI.addSpokeFromTab2()">Add Spoke</button>
+                            <button style="background: #4CAF50;" onclick="UI.addSpokeFromTab2()">Add Spoke</button>
                         </div>
                     </div>
                 </div>
@@ -358,11 +357,18 @@
                     Remove all Data (Fresh Pie)<img width="25" height="27" src="./assets/trash.svg">
                 </button>
             </div>
-            
+
+            <div class="settings-section">
+                <h3>Help</h3>
+                <button class="tertiary" onclick="TutorialManager.restart(); UI.closeSettings();">
+                    📖 Restart Tutorial
+                </button>
+            </div>
+
             <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
 
             <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
-                Version 0.4
+                Version 0.6
             </div>
         </div>
     </div>
@@ -435,7 +441,17 @@
                     <option value="240">4 hours</option>
                 </select>
             </div>
-            
+
+            <div class="datetime-section">
+                <label for="event-location">Location <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="text" id="event-location" placeholder="Address, Google Maps link, or meeting room" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+            </div>
+
+            <div class="datetime-section">
+                <label for="event-notes">Notes <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <textarea id="event-notes" placeholder="Phone numbers, URLs, or any details for the calendar event" rows="3" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
+            </div>
+
             <div id="reschedule-reminder" style="display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px; font-size: 13px; color: #856404;">
                 ⚠️ Remember to manually delete the old calendar entry if you no longer need it.
             </div>
@@ -489,6 +505,12 @@
         <div class="recurrence-content" onclick="event.stopPropagation()">
             <button class="menu-close" onclick="UI.closeRecurrencePicker()">✕</button>
             <h2>Set Recurrence</h2>
+
+            <div class="recurrence-section">
+                <label for="recurrence-start-date">Starting from</label>
+                <input type="date" id="recurrence-start-date"
+                       style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+            </div>
 
             <div class="recurrence-section">
                 <label>Repeat every</label>
@@ -782,15 +804,15 @@
                     <input type="radio" name="spoke-type" value="static" checked onchange="UI.updateSpokeTypeFields('static')">
                     <div class="spoke-type-label">
                         <span class="spoke-type-title">📌 Static</span>
-                        <span class="spoke-type-description">Stays on your mind indefinitely (e.g., "Call Mum regularly")</span>
+                        <span class="spoke-type-description">Persistent reminder (no calendar)</span>
                     </div>
                 </label>
 
                 <label class="radio-option spoke-type-option">
-                    <input type="radio" name="spoke-type" value="action" onchange="UI.updateSpokeTypeFields('action')">
+                    <input type="radio" name="spoke-type" value="single" onchange="UI.updateSpokeTypeFields('single')">
                     <div class="spoke-type-label">
-                        <span class="spoke-type-title">✓ Action(s)</span>
-                        <span class="spoke-type-description">One-time tasks to complete (can add to calendar)</span>
+                        <span class="spoke-type-title">📅 Single</span>
+                        <span class="spoke-type-description">One-time schedulable task</span>
                     </div>
                 </label>
 
@@ -798,19 +820,17 @@
                     <input type="radio" name="spoke-type" value="repeating" onchange="UI.updateSpokeTypeFields('repeating')">
                     <div class="spoke-type-label">
                         <span class="spoke-type-title">🔁 Repeating</span>
-                        <span class="spoke-type-description">Recurring task (daily, weekly, etc.)</span>
+                        <span class="spoke-type-description">Recurring schedulable task</span>
                     </div>
                 </label>
 
-                <!-- HIDDEN UNTIL COMPLETE
                 <label class="radio-option spoke-type-option">
-                    <input type="radio" name="spoke-type" value="pending" onchange="UI.updateSpokeTypeFields('pending')">
+                    <input type="radio" name="spoke-type" value="list" onchange="UI.updateSpokeTypeFields('list')">
                     <div class="spoke-type-label">
-                        <span class="spoke-type-title">⏸ Pending</span>
-                        <span class="spoke-type-description">Waiting for something to happen first</span>
+                        <span class="spoke-type-title">☑️ List</span>
+                        <span class="spoke-type-description">Container for multiple actions</span>
                     </div>
                 </label>
-                -->
             </div>
 
             <!-- Action(s) section -->
@@ -878,6 +898,64 @@
         </div>
     </div>
 
+    <!-- Spoke Type Picker Overlay (for changing spoke types) -->
+    <div class="spoke-type-picker-overlay" id="spoke-type-picker-overlay" onclick="UI.closeSpokeTypePicker()">
+        <div class="spoke-type-picker-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeSpokeTypePicker()">✕</button>
+            <h2>Spoke Type</h2>
+
+            <div id="spoke-type-picker-details" style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #666;">Spoke:</div>
+                <div id="spoke-type-picker-name" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+            </div>
+
+            <div class="spoke-type-picker-options">
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('static')">
+                    <span class="spoke-type-picker-icon">📌</span>
+                    <span class="spoke-type-picker-label">Static</span>
+                    <span class="spoke-type-picker-desc">Persistent reminder</span>
+                </button>
+
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('single')">
+                    <span class="spoke-type-picker-icon">📅</span>
+                    <span class="spoke-type-picker-label">Single</span>
+                    <span class="spoke-type-picker-desc">One-time schedulable task</span>
+                </button>
+
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('repeating')">
+                    <span class="spoke-type-picker-icon">🔁</span>
+                    <span class="spoke-type-picker-label">Repeating</span>
+                    <span class="spoke-type-picker-desc">Recurring schedulable task</span>
+                </button>
+
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('list')">
+                    <span class="spoke-type-picker-icon">☑️</span>
+                    <span class="spoke-type-picker-label">List</span>
+                    <span class="spoke-type-picker-desc">Container for multiple actions</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Overlay (Spotlight) -->
+    <div class="tutorial-overlay" id="tutorial-overlay">
+        <div class="tutorial-spotlight" id="tutorial-spotlight"></div>
+        <div class="tutorial-tooltip" id="tutorial-tooltip">
+            <h3 id="tutorial-title"></h3>
+            <p id="tutorial-content"></p>
+            <div class="tutorial-buttons" id="tutorial-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Tutorial Modal -->
+    <div class="tutorial-modal-overlay" id="tutorial-modal-overlay">
+        <div class="tutorial-modal-content">
+            <h2 id="tutorial-modal-title"></h2>
+            <p id="tutorial-modal-text"></p>
+            <div class="tutorial-modal-buttons" id="tutorial-modal-buttons"></div>
+        </div>
+    </div>
+
     <script src="storage.js"></script>
     <script src="firebase-adapter.js"></script>
     <script src="google-auth-adapter.js"></script>
@@ -887,6 +965,7 @@
     <script src="import-manager.js"></script>
     <script src="chart-renderer.js"></script>
     <script src="ui-controller.js"></script>
+    <script src="tutorial-manager.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

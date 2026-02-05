@@ -113,6 +113,11 @@ const App = {
         this.render();
         Controls.init();
 
+        // Check if tutorial should start for first-time users
+        if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
+            setTimeout(() => TutorialManager.start(), 500);
+        }
+
         // Update main sync indicator if in Firebase mode
         if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
             UI.updateMainSyncIndicator('synced', StorageAdapter.getProjectId());
@@ -236,6 +241,11 @@ const App = {
         DataModel.addSubItem(categoryId, itemId, text);
         input.value = '';
         this.render();
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('spoke-added');
+        }
     },
 
     moveSubItem(fromCategoryId, fromItemId, fromIndex, toCategoryId, toItemId, toIndex) {
@@ -253,6 +263,11 @@ const App = {
         if (text && text.trim()) {
             DataModel.addSpokeChild(categoryId, itemId, spokeIndex, text.trim());
             this.render();
+
+            // Notify tutorial
+            if (typeof TutorialManager !== 'undefined') {
+                TutorialManager.notifyEvent('action-added');
+            }
         }
     },
 
@@ -366,14 +381,14 @@ const ExampleData = {
                             "name": "Laundry",
                             "percentage": 33.33,
                             "color": "#00BCD4",
-                            "subItems": ["Sort clothes", "Wash darks", "Fold and put away"]
+                            "subItems": ["Sort clothes", "Wash darks", "Wash lights", "Fold and put away"]
                         },
                         {
                             "id": "3",
                             "name": "Garden",
                             "percentage": 33.33,
                             "color": "#4CAF50",
-                            "subItems": ["Water plants", "Trim hedges", "Weed flower beds", "Mow lawn"]
+                            "subItems": ["Water plants", "Trim hedges", "Weed flower beds", "Cut grass"]
                         }
                     ]
                 },
@@ -408,7 +423,7 @@ const ExampleData = {
                             "name": "Sleep",
                             "percentage": 25,
                             "color": "#673AB7",
-                            "subItems": ["Set bedtime alarm", "Wind down routine"]
+                            "subItems": ["Screens off reminder"]
                         }
                     ]
                 },
@@ -450,27 +465,369 @@ const ExampleData = {
                             "name": "Friends",
                             "percentage": 33.33,
                             "color": "#7E57C2",
-                            "subItems": ["Text Sarah", "Plan coffee with Mike", "Group chat about zoo trip"]
+                            "subItems": ["Get back to Sarah", "Plan coffee with Mike", "Zoo trip group chat"]
                         },
                         {
                             "id": "12",
                             "name": "Family",
                             "percentage": 33.33,
                             "color": "#5E35B1",
-                            "subItems": ["Call Mum", "Video chat with Steve", "Plan weekend visit", "Send photos"]
+                            "subItems": ["Call Mum", "Plan weekend visit", "Send photos"]
                         },
                         {
                             "id": "13",
                             "name": "Community",
                             "percentage": 33.33,
                             "color": "#512DA8",
-                            "subItems": ["Help with school fundraiser","Volunteer event on 18th"]
+                            "subItems": ["Help with school fundraiser","Volunteer at coding event"]
                         }
                     ]
                 }
             ],
         }
     }
+}
+
+const ExampleData2 = {
+    
+    get() {
+        return {
+            "categories": [
+                {
+                "id": "audette.-f-1770247590933",
+                "name": "Audette. F (PM)",
+                "color": "#107cb2",
+                "items": [
+                    {
+                    "id": "1770247617961",
+                    "name": "Finalise Launch date",
+                    "percentage": 69.44444444444446,
+                    "color": "#ff9800",
+                    "subItems": [
+                        {
+                        "text": "Arrange Zoom",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        },
+                        {
+                        "text": "Collate Assets for Drive",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    },
+                    {
+                    "id": "1770247639223",
+                    "name": "Upload Assets to Drive",
+                    "percentage": 13.888888888888888,
+                    "color": "#9c27b0",
+                    "subItems": []
+                    },
+                    {
+                    "id": "1770247658920",
+                    "name": "Schedule call with HR",
+                    "percentage": 16.666666666666664,
+                    "color": "#2196f3",
+                    "subItems": [
+                        {
+                        "text": "0845 222 4455",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    }
+                ]
+                },
+                {
+                "id": "sarah.-w-1770247542477",
+                "name": "Sarah. W (Design)",
+                "color": "#16e395",
+                "items": [
+                    {
+                    "id": "1770248407666",
+                    "name": "Home page",
+                    "percentage": 43.847488198796995,
+                    "color": "#b03030",
+                    "subItems": [
+                        {
+                        "text": "Resize icons",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        },
+                        {
+                        "text": "Add new client to blog section",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        },
+                        {
+                        "text": "Link for scrolling reference",
+                        "type": "static",
+                        "children": [
+                            {
+                            "text": "https://uk.archetype.co/",
+                            "children": []
+                            }
+                        ],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    },
+                    {
+                    "id": "1770247724945",
+                    "name": "Testimonial page",
+                    "percentage": 10.4532411865932,
+                    "color": "#795548",
+                    "subItems": []
+                    },
+                    {
+                    "id": "1770247731097",
+                    "name": "About page",
+                    "percentage": 12.402018439873068,
+                    "color": "#7e919a",
+                    "subItems": [
+                        {
+                        "text": "Done",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    },
+                    {
+                    "id": "1770247738288",
+                    "name": "Contact Us page",
+                    "percentage": 14.740551143808906,
+                    "color": "#ff5722",
+                    "subItems": [
+                        {
+                        "text": "Done",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    },
+                    {
+                    "id": "1770248431674",
+                    "name": "Services page",
+                    "percentage": 18.556701030927837,
+                    "color": "#076b00",
+                    "subItems": [
+                        {
+                        "text": "Done",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    }
+                ]
+                },
+                {
+                "id": "elliot.-s-1770247552987",
+                "name": "Elliot. S (Dev)",
+                "color": "#607d8b",
+                "items": [
+                    {
+                    "id": "1770247700263",
+                    "name": "Home page",
+                    "percentage": 8.470180899970122,
+                    "color": "#b03030",
+                    "subItems": []
+                    },
+                    {
+                    "id": "1770248413605",
+                    "name": "Testimonial Page",
+                    "percentage": 17.356928073709266,
+                    "color": "#795548",
+                    "subItems": []
+                    },
+                    {
+                    "id": "1770248417541",
+                    "name": "About Page",
+                    "percentage": 20.82831368845112,
+                    "color": "#7e919a",
+                    "subItems": [
+                        {
+                        "text": "Done",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    },
+                    {
+                    "id": "1770248425441",
+                    "name": "Contact Us page",
+                    "percentage": 24.993976426141348,
+                    "color": "#ff5722",
+                    "subItems": [
+                        {
+                        "text": "Done",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    },
+                    {
+                    "id": "1770247776932",
+                    "name": "Services Page",
+                    "percentage": 28.350600911728137,
+                    "color": "#076b00",
+                    "subItems": [
+                        {
+                        "text": "Add new navigation",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        },
+                        {
+                        "text": "Fix footer spacing",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        },
+                        {
+                        "text": "Finish Mobile view",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        },
+                        {
+                        "text": "Finish Tablet view",
+                        "type": "static",
+                        "children": [],
+                        "metadata": {
+                            "condition": null,
+                            "calendarEventId": null,
+                            "nextState": null,
+                            "recurrence": null
+                        }
+                        }
+                    ]
+                    }
+                ]
+                }
+            ],
+            "categoryPercentageOverrides": {}
+        }
+    }
+
+}
+
+const ExampleData3 = {
+
+    get() {
+        return {
+            categories: [
+                {
+                    "id": "health",
+                    "name": "Health",
+                    "color": "#FF6B6B",
+                    "items": [
+                        {
+                            "id": "4",
+                            "name": "Exercise",
+                            "percentage": 33.33,
+                            "color": "#F44336",
+                            "subItems": ["Morning jog", "Stretching routine", "Gym session"]
+                        },
+                        {
+                            "id": "5",
+                            "name": "Meal Prep",
+                            "percentage": 33.33,
+                            "color": "#E91E63",
+                            "subItems": ["Plan weekly menu", "Food shopping", "Prep vegetables", "Cook batch meals"]
+                        },
+                        {
+                            "id": "6",
+                            "name": "Medical",
+                            "percentage": 33.33,
+                            "color": "#9C27B0",
+                            "subItems": ["Schedule checkup", "Pick up prescription", "Update insurance"]
+                        }
+                    ]
+                },
+            ],
+        }
+    }
+
 }
 
 // Initialize app when DOM is ready
