@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.9
+**Current Version:** v0.10
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -148,6 +148,10 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Compact time formatting (9AM, 1:30PM) and recurrence summaries (Mon, Wed, 5PM)
 - Smooth transitions and animations
 - Inline editable spoke names in summary cards
+- Priority stars on chart spokes (gold ★, larger for top-5 items, clickable to bump)
+- Hover fill lightening on slices (D3 mouseover, no CSS opacity — see SVG Opacity Pitfall)
+- Spoke lines start at outer ring edge (only external portion visible)
+- ViewBox scaling for smaller viewports (see Responsive Design section)
 
 #### 3. **UI Controller** (`ui-controller.js`)
 - Manages all overlay states (menu, settings, datetime picker, spoke config, disclaimer)
@@ -257,8 +261,27 @@ Optional real-time sync using Firebase Realtime Database:
 - **Visual indicator** - Shows project name and sync status in main UI
 
 ### 7. Responsive Design
-Breakpoints:
-- Desktop: Full features, larger chart
+
+**Pie ViewBox Scaling (key technique):**
+
+The pie chart renders spoke labels, schedule pills, priority stars, and icons that extend well beyond the outer ring. At large viewport widths (≥1920px), everything fits naturally. At smaller widths, spoke text clips against the SVG edges.
+
+The solution is **virtual canvas rendering with viewBox scaling** — the same technique browsers use for zoom. Rather than shrinking the pie radius (which keeps text at full size and creates a tiny pie with large text), we render the entire pie at a generous virtual size (1920px wide) and use the SVG `viewBox` attribute to scale everything down proportionally to fit the actual viewport. This shrinks the pie, text, pills, and stars together, maintaining the same visual proportions as a wider screen.
+
+**How it works in `init()`:**
+- **≥1920px wide**: Render at actual dimensions, no `viewBox` — everything fits naturally
+- **<1920px wide**: Set internal `this.width`/`this.height` to a 1920px-wide virtual canvas (height scaled proportionally). The SVG element's `width`/`height` stay at actual container size, but `viewBox` is set to the virtual dimensions. The browser then scales the entire SVG coordinate system down to fit, shrinking all content uniformly
+- **Treemap view**: Always renders at actual dimensions (no viewBox scaling needed since treemap content is bounded by slice rectangles)
+
+**Why this approach was chosen:**
+- Previous attempt: `autoResizeRadius()` — shrank the pie radius based on estimated text widths. Failed because text stayed at 12px while the pie shrank, creating a visual imbalance. The text width estimation was also fragile and hard to tune across different content.
+- Previous attempt: `autoScaleViewBox()` — dynamically calculated needed viewBox from content reach. Worked but was over-engineered; the fixed 1920px virtual width is simpler and produces better results.
+- The viewBox approach is simple, robust, and handles any content length. If a spoke has a very long name + schedule pill + priority star, it all just scales down together.
+
+**TODO:** May need revisiting for mobile viewports (≤768px) where the scaling factor becomes large and text may become too small to read. Consider a different virtual width or a minimum font size at mobile breakpoints.
+
+**CSS Breakpoints:**
+- Desktop (>1024px): Full features, larger chart
 - Tablet (≤1024px): Adjusted sizing, single-column lists
 - Mobile (≤768px): Simplified layout, touch-friendly
 
@@ -304,6 +327,67 @@ Breakpoints:
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.10 (February 2026)
+ViewBox responsive scaling, priority stars on chart, hover rework, and UI polish:
+
+**ViewBox Responsive Scaling:**
+- Viewports <1920px: render pie at 1920px virtual canvas, scale down via SVG `viewBox` attribute
+- Viewports ≥1920px: render at actual dimensions (unchanged behavior)
+- Treemap always renders at actual dimensions (no scaling needed)
+- Uniformly shrinks pie, text, pills, stars, and spoke lines together
+- Previous approaches (radius shrinking, dynamic viewBox calculation) removed
+- See Responsive Design section for full technical details
+
+**Slice Hover Rework:**
+- Replaced CSS `opacity` hover with D3 `mouseover`/`mouseout` fill-color lightening
+- Categories lighten by 25%, inner slices by 20%, with 200ms D3 transitions
+- New `lightenColor(hex, factor)` helper method
+- Root cause: CSS opacity on SVG `<g>` elements creates compositing layers that cause text aliasing on hover (see SVG Opacity Pitfall in Development Notes)
+
+**Spoke Lines:**
+- Lines now start at outer ring edge instead of center
+- Only the portion extending beyond the pie is visible (cleaner look)
+
+**Priority Stars on Chart:**
+- Gold stars (★) on prioritised spokes in both pie and treemap views
+- Pie: star on inner side of spoke label (right-side: left of text, left-side: right of text)
+- Treemap: star before icon/text, shifts content right by 12px
+- Clickable to bump priority (same as star button elsewhere)
+- Top-5 items get larger stars (pie: 16px vs 12px, treemap: 14px vs 10px)
+
+**Prioritiser Enhancements:**
+- Click star button to bump item to top of priority list
+- Click priority item to navigate: expands parent slice, opens action popup for list spokes
+- `addPriority()` now returns 'added', 'moved', or 'already-top' (bump-to-top on re-add)
+
+**Scheduler Star Buttons:**
+- Star buttons (★) on datetime picker, recurrence picker, spoke type picker, and spoke config overlays
+- Positioned left of close button, grey when inactive, gold when active
+- Hidden when no data location available (e.g. during initial recurrence creation)
+
+**Spoke Config Redesign:**
+- Replaced radio buttons with button-style type picker (matching spoke type picker popup)
+- Blue border + light blue background for selected type
+- `selectSpokeConfigType()` method for button toggle behavior
+
+**Action Popup Enhancements:**
+- Checkbox for action completion (green when checked, line-through on text)
+- Star button for prioritiser (gold when active)
+- Trash icon with red pill background
+- Calendar schedule pill (green rounded pill with white text)
+- Wider card (320px), taller rows (32px)
+- Programmatic open support (centers popup when no mouse event)
+
+**Dynamic Scheduler Titles:**
+- Titles now include spoke/action name: "Schedule: {name}", "Reschedule: {name}"
+- Recurrence: "Set Recurrence: {name}", "Update Recurrence: {name}"
+
+**Crossfade Cleanup:**
+- D3 crossfade transitions now clean up inline opacity via `.on('end')` callback
+- Prevents stale compositing layers from persisting after view transitions
+
+---
 
 ### v0.9 (February 2026)
 Treemap polish, unified action popup, and prioritiser system:
@@ -620,8 +704,8 @@ Initial public release with core functionality:
 - Update/delete recurring calendar events
 - Sync recurring event changes from calendar
 
-### Priority 3: Responsive Label Sizing
-Improve text sizing for better readability across screen sizes:
+### Priority 3: Responsive Label Sizing (partially addressed)
+The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller viewports by rendering at 1920px virtual width and scaling down. This uniformly shrinks all text. Remaining work:
 
 **Slice Labels:**
 - Detect max character count across ALL slices in the pie
@@ -635,9 +719,14 @@ Improve text sizing for better readability across screen sizes:
 - Apply offset adjustment per individual label based on character count
 - Keep to two sets of values (short vs long) for reliable responsive behavior
 
+**Mobile (≤768px):**
+- ViewBox scaling may make text too small at mobile widths
+- May need a smaller virtual width or alternative approach for mobile
+
 ### Completed
 - ~~Expansion Refactor~~ - Implemented as full-pie takeover in v0.8 (re-render approach with data override, not DOM transform)
 - ~~Prioritiser System~~ - Implemented in v0.9 (separate `priorityList` array, draggable window UI, star buttons)
+- ~~Spoke Label Clipping~~ - Implemented as ViewBox scaling in v0.10 (render at 1920px virtual canvas, scale down via SVG viewBox for viewports <1920px)
 
 ## Development Notes
 
@@ -648,6 +737,24 @@ Improve text sizing for better readability across screen sizes:
 4. Add interaction handlers in **ui-controller.js**
 5. Wire up in **app.js**
 6. Test storage persistence
+
+### SVG Opacity Pitfall — NO CSS opacity hover on SVG groups
+CSS `opacity` changes on SVG `<g>` elements (e.g. `.outer-slice:hover { opacity: 0.85 }`) cause **visible text aliasing/shifting** because the browser creates a compositing layer for the group and re-rasterizes all text within it on every hover.
+
+**Never do:** Use CSS `:hover { opacity }` or CSS `transition: opacity` on SVG `<g>` elements that contain text.
+
+**Instead:** Use D3 `mouseover`/`mouseout` to change the `fill` attribute of the child `<path>` directly. This modifies pixel color without creating compositing layers:
+```javascript
+group.on('mouseover', (event, d) => {
+    d3.select(event.currentTarget).select('path')
+        .attr('fill', ChartRenderer.lightenColor(d.data.color, 0.25));
+}).on('mouseout', (event, d) => {
+    d3.select(event.currentTarget).select('path')
+        .attr('fill', d.data.color);
+});
+```
+
+**Also:** When using D3 opacity transitions on parent `<g>` elements (e.g. crossfade animations), always clean up the inline style after completion with `.on('end', () => { el.style('opacity', null); })` to avoid leaving a compositing layer active.
 
 ### Code Style
 - ES6+ JavaScript
@@ -749,6 +856,25 @@ Debug.log('message', data)
 - [ ] **Prioritiser**: Orphan cleanup on load (deleted items removed)
 - [ ] **Prioritiser**: Persists across page reload
 - [ ] **Prioritiser**: Syncs via Firebase
+- [ ] **ViewBox scaling**: Pie renders correctly at 1440px, 1600px, 1920px+ widths
+- [ ] **ViewBox scaling**: Text, pills, stars all scale proportionally at <1920px
+- [ ] **ViewBox scaling**: Treemap unaffected (no scaling)
+- [ ] **Slice hover**: Categories lighten on hover (fill change, no aliasing)
+- [ ] **Slice hover**: Inner slices lighten on hover (fill change, no aliasing)
+- [ ] **Slice hover**: 200ms smooth transition in and out
+- [ ] **Spoke lines**: Only visible outside the pie (no line through slices)
+- [ ] **Priority stars (chart)**: Gold stars on prioritised spokes in pie view
+- [ ] **Priority stars (chart)**: Gold stars on prioritised spokes in treemap view
+- [ ] **Priority stars (chart)**: Top-5 items have larger stars
+- [ ] **Priority stars (chart)**: Click star to bump priority
+- [ ] **Prioritiser**: Click item to navigate to chart location
+- [ ] **Prioritiser**: Click star to bump item to top
+- [ ] **Scheduler stars**: Star button on datetime picker, recurrence picker, spoke type picker, spoke config
+- [ ] **Spoke config**: Button-style type picker (not radio buttons)
+- [ ] **Spoke config**: Blue border on selected type
+- [ ] **Action popup**: Checkbox for completion
+- [ ] **Action popup**: Star for prioritiser
+- [ ] **Action popup**: Programmatic open (from prioritiser navigation)
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
