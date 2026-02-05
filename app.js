@@ -113,10 +113,9 @@ const App = {
         this.render();
         Controls.init();
 
-        // Tutorial disabled for now (can still be started manually from Settings)
-        // if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
-        //     setTimeout(() => TutorialManager.start(), 500);
-        // }
+        if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
+            setTimeout(() => TutorialManager.start(), 500);
+        }
 
         // Update main sync indicator if in Firebase mode
         if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
@@ -517,8 +516,12 @@ const ExampleData2 = {
                         },
                         {
                         "text": "Collate Assets for Drive",
-                        "type": "static",
-                        "children": [],
+                        "type": "list",
+                        "children": [
+                            { "text": "Images", "children": [] },
+                            { "text": "Text copy", "children": [] },
+                            { "text": "Board profiles", "children": [] }
+                        ],
                         "metadata": {
                             "condition": null,
                             "calendarEventId": null,
@@ -591,7 +594,7 @@ const ExampleData2 = {
                         },
                         {
                         "text": "Link for scrolling reference",
-                        "type": "static",
+                        "type": "list",
                         "children": [
                             {
                             "text": "https://uk.archetype.co/",
@@ -738,8 +741,13 @@ const ExampleData2 = {
                     "subItems": [
                         {
                         "text": "Add new navigation",
-                        "type": "static",
+                        "type": "single",
                         "children": [],
+                        "scheduled": {
+                            "date": "2032-05-04",
+                            "time": "10:00",
+                            "duration": 60
+                        },
                         "metadata": {
                             "condition": null,
                             "calendarEventId": null,
