@@ -4,6 +4,9 @@ const DataModel = {
     // Manual category percentages (when user overrides)
     categoryPercentageOverrides: {},
 
+    // Priority list - ordered array of item references (index 0 = highest)
+    priorityList: [],
+
     async loadFromStorageOrExample() {
         let data;
 
@@ -18,6 +21,8 @@ const DataModel = {
             // Returning user: use stored data
             this.categories = data.categories;
             this.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+            this.priorityList = data.priorityList || [];
+            this.validatePriorityList();
             return;
         }
 
@@ -42,6 +47,7 @@ const DataModel = {
         const data = {
             categories: this.categories,
             categoryPercentageOverrides: this.categoryPercentageOverrides,
+            priorityList: this.priorityList,
             settings: {
                 calendarProvider: calendarProvider
             },
@@ -834,5 +840,76 @@ const DataModel = {
         item.subItems.push(newSpoke);
         if (!skipSave) this.saveToStorage();
         return { action: 'added' };
+    },
+
+    // --- Priority List Methods ---
+
+    addPriority(ref) {
+        // Check for duplicates
+        const isDuplicate = this.priorityList.some(p =>
+            p.type === ref.type &&
+            p.categoryId === ref.categoryId &&
+            p.itemId === ref.itemId &&
+            p.spokeIndex === ref.spokeIndex &&
+            p.childIndex === ref.childIndex
+        );
+        if (isDuplicate) return false;
+
+        // Add to top of list
+        this.priorityList.unshift(ref);
+        this.saveToStorage();
+        return true;
+    },
+
+    removePriority(index) {
+        if (index >= 0 && index < this.priorityList.length) {
+            this.priorityList.splice(index, 1);
+            this.saveToStorage();
+        }
+    },
+
+    reorderPriority(fromIdx, toIdx) {
+        if (fromIdx < 0 || fromIdx >= this.priorityList.length) return;
+        if (toIdx < 0 || toIdx >= this.priorityList.length) return;
+        const [item] = this.priorityList.splice(fromIdx, 1);
+        this.priorityList.splice(toIdx, 0, item);
+        this.saveToStorage();
+    },
+
+    resolvePriority(ref) {
+        const category = this.categories.find(c => c.id === ref.categoryId);
+        if (!category) return null;
+
+        if (ref.type === 'slice') {
+            const item = category.items.find(i => i.id === ref.itemId);
+            if (!item) return null;
+            return { displayName: item.name, context: category.name, color: item.color || category.color };
+        }
+
+        const item = category.items.find(i => i.id === ref.itemId);
+        if (!item) return null;
+        const subItems = item.subItems || [];
+        if (ref.spokeIndex == null || ref.spokeIndex >= subItems.length) return null;
+
+        const spoke = subItems[ref.spokeIndex];
+        const spokeName = typeof spoke === 'string' ? spoke : (spoke.text || '');
+
+        if (ref.type === 'spoke') {
+            return { displayName: spokeName, context: `${item.name} / ${category.name}`, color: item.color || category.color };
+        }
+
+        if (ref.type === 'action') {
+            if (typeof spoke !== 'object' || !spoke.children) return null;
+            if (ref.childIndex == null || ref.childIndex >= spoke.children.length) return null;
+            const child = spoke.children[ref.childIndex];
+            const childName = typeof child === 'string' ? child : (child.text || '');
+            return { displayName: childName, context: `${spokeName} / ${item.name}`, color: item.color || category.color };
+        }
+
+        return null;
+    },
+
+    validatePriorityList() {
+        this.priorityList = this.priorityList.filter(ref => this.resolvePriority(ref) !== null);
     }
 };

@@ -127,6 +127,7 @@ const App = {
                     const { _saveId, _savedBy, ...cleanData } = data;
                     DataModel.categories = cleanData.categories;
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
+                    DataModel.priorityList = cleanData.priorityList || [];
 
                     // Save to localStorage so it's up-to-date on next page load
                     Storage.save(cleanData);
@@ -378,6 +379,9 @@ const App = {
         const categories = DataModel.getCategories();
         ChartRenderer.render(categories);
         UI.renderCategoriesList(categories);
+        if (document.getElementById('prioritiser-window').classList.contains('active')) {
+            UI.renderPriorityList();
+        }
     },
 
     /**

@@ -364,13 +364,10 @@ const ChartRenderer = {
                 return;
             }
 
-            // Show branch expansion for spokes with children
-            if (this.viewMode === 'tree') {
-                ChartRenderer.expandBranchTreemap(subItem, catData, sliceData, categoryId, itemId, spokeIndex);
-            } else {
-                const angle = sliceData.startAngle + ((sliceData.endAngle - sliceData.startAngle) / sliceData.data.subItems.length) * (spokeIndex + 0.5);
-                ChartRenderer.expandBranch(subItem, catData, sliceData, angle, categoryId, itemId, spokeIndex);
-            }
+            // Show action popup near click
+            const sliceName = sliceData.data ? sliceData.data.name : '';
+            const categoryName = catData.data ? catData.data.name : '';
+            ChartRenderer.showActionPopup(event, subItem, categoryName, sliceName, categoryId, itemId, spokeIndex);
         } else if (spokeType === 'single') {
             // For single type, open date/time picker directly
             this.collapseIfBranchExpanded();
@@ -990,23 +987,23 @@ const ChartRenderer = {
 
                 // Slice header label
                 const sliceTextColor = this.isColorDark(sliceNode.data.color) ? '#ffffff' : '#222222';
-                const maxSliceChars = Math.floor((sliceW - 8) / 7);
+                const maxSliceChars = Math.floor((sliceW - 8) / 8.5);
                 const sliceLabel = sliceNode.data.name.length > maxSliceChars
                     ? sliceNode.data.name.substring(0, Math.max(3, maxSliceChars - 1)) + '...'
                     : sliceNode.data.name;
 
                 sliceGroup.append('text')
                     .attr('x', 4)
-                    .attr('y', 15)
-                    .attr('font-size', '11px')
-                    .attr('font-weight', '600')
+                    .attr('y', 18)
+                    .attr('font-size', '14px')
+                    .attr('font-weight', 'bold')
                     .attr('fill', sliceTextColor)
                     .text(sliceLabel)
                     .style('pointer-events', 'none');
 
                 // --- Level 3: Spokes as wrapped text rows ---
                 const subItems = sliceNode.data.subItems || [];
-                const spokeStartY = 22;
+                const spokeStartY = 30;
                 const lineHeight = 13;
                 const spokePadding = 3;  // Extra gap between spokes
                 const charWidth = 5.8;   // Approx width per char at 10px font
@@ -1218,220 +1215,7 @@ const ChartRenderer = {
         this.expandedView = null;
         App.render();
     },
-    expandBranch(spokeData, categoryData, itemData, spokeAngle, categoryId, itemId, spokeIndex) {
-        // Auto-close existing branches unless debug mode allows multiple
-        if (!Debug.isActive('allowMultipleBranches') && this.currentExpandedLocation) {
-            this.collapseBranch();
-        }
-
-        this.currentExpandedLocation = { categoryId, itemId, spokeIndex };
-        const that = this;
-        // Store location info for click handlers
-        const dataLocation = { categoryId, itemId, spokeIndex };
-        
-        setTimeout(() => {
-            // Calculate opposite corner for pie shrinkage
-            const renderAngle = spokeAngle - Math.PI / 2;
-            const branchX = Math.cos(renderAngle);
-            const branchY = Math.sin(renderAngle);
-
-            // Move pie to opposite corner (scale down and translate)
-            const shrinkScale = 0.925;
-            const translateDistance = 108;
-            const pieTranslateX = -branchX * translateDistance;
-            const pieTranslateY = -branchY * translateDistance;
-
-            // Shrink and move main pie
-            that.svg.transition().duration(300)
-                .attr('transform', `translate(${that.width / 2 + pieTranslateX}, ${that.height / 2 + pieTranslateY}) scale(${shrinkScale})`);
-
-            // Calculate text's visual angle (text is horizontal by default, then rotated)
-            const testX = branchX;
-            const testY = branchY;
-            const verticalness = Math.abs(testY);
-            const maxRotation = 30;
-            const rotationAmount = verticalness * maxRotation;
-
-            // Text rotation from horizontal baseline
-            let textRotationDeg;
-            if (testX > 0) {
-                textRotationDeg = testY < 0 ? -rotationAmount : rotationAmount;
-            } else {
-                textRotationDeg = testY < 0 ? rotationAmount : -rotationAmount;
-            }
-
-            // Branch should follow text's visual direction:
-            // - Right side (testX > 0): branch goes right, tilted by textRotation
-            // - Left side (testX < 0): branch goes left, tilted by textRotation
-            const baseAngleDeg = testX > 0 ? 0 : 180;  // Horizontal right or left
-            const branchAngleDeg = baseAngleDeg + textRotationDeg;
-            const branchAngleRad = (branchAngleDeg * Math.PI) / 180;
-
-            // Starting point for branch (from spoke position)
-            const startX = Math.cos(renderAngle) * (that.outerRadius + 70);
-            const startY = Math.sin(renderAngle) * (that.outerRadius + 80);
-
-            // Push bottom branches up with rapid scaling near 6:00
-            // testY: -1 at 12:00, 0 at 3:00/9:00, +1 at 6:00
-            // Use power curve: kicks in around 4:00, peaks at 6:00, scales out by 8:00
-            const yOffset = testY > 0 ? -35 * Math.pow(testY, 2) : 0;
-
-            // Create branch visualization
-            const branchGroup = that.highlightGroup.append('g')
-                .attr('class', 'branch-view')
-                .attr('transform', `translate(0, ${yOffset})`);
-
-            // Branch origin point (where child branches radiate from)
-            const branchOriginX = startX + (Math.cos(branchAngleRad) * 10);
-            const branchOriginY = startY + (Math.sin(branchAngleRad) * 10);
-
-            // Draw children as branches from origin
-            const children = spokeData.children || [];
-
-            // Helper to render a single action (icon + label)
-            const renderAction = (child, idx, posX, posY, labelAnchor = 'middle') => {
-                const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
-                const hasRecurrence = child.recurrence;
-                const childDataLocation = { ...dataLocation, childIndex: idx };
-
-                // Add calendar icon/button or scheduled time
-                const iconGroup = branchGroup.append('g')
-                    .attr('transform', `translate(${posX}, ${posY - 25})`)
-                    .style('cursor', 'pointer')
-                    .on('click', function(event) {
-                        event.stopPropagation();
-                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name, childDataLocation);
-                    });
-
-                if (hasRecurrence) {
-                    // Repeating action - show green pill with recurrence text
-                    const recurrenceText = UI.formatRecurrenceDescriptionCompact(child.recurrence);
-                    const textWidth = Math.max(90, recurrenceText.length * 7);
-
-                    iconGroup.append('rect')
-                        .attr('x', -textWidth / 2)
-                        .attr('y', -12)
-                        .attr('width', textWidth)
-                        .attr('height', 24)
-                        .attr('rx', 12)
-                        .attr('fill', '#4CAF50')
-                        .attr('stroke', 'white')
-                        .attr('stroke-width', 2);
-
-                    iconGroup.append('text')
-                        .attr('text-anchor', 'middle')
-                        .attr('dy', '0.35em')
-                        .style('font-size', '11px')
-                        .style('fill', 'white')
-                        .style('font-weight', 'bold')
-                        .text(recurrenceText);
-                } else if (hasSchedule) {
-                    const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
-                    const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-
-                    iconGroup.append('rect')
-                        .attr('x', -45)
-                        .attr('y', -12)
-                        .attr('width', 90)
-                        .attr('height', 24)
-                        .attr('rx', 12)
-                        .attr('fill', '#4CAF50')
-                        .attr('stroke', 'white')
-                        .attr('stroke-width', 2);
-
-                    iconGroup.append('text')
-                        .attr('text-anchor', 'middle')
-                        .attr('dy', '0.35em')
-                        .style('font-size', '11px')
-                        .style('fill', 'white')
-                        .style('font-weight', 'bold')
-                        .text(`${dateStr} ${timeStr}`);
-                } else {
-                    iconGroup.append('circle')
-                        .attr('r', 10)
-                        .attr('fill', '#4285F4')
-                        .attr('stroke', 'white')
-                        .attr('stroke-width', 2);
-
-                    iconGroup.append('text')
-                        .attr('text-anchor', 'middle')
-                        .attr('dy', '0.35em')
-                        .style('font-size', '12px')
-                        .style('fill', 'white')
-                        .style('font-weight', 'bold')
-                        .text('📅');
-                }
-
-                // Child label
-                const isCompleted = child.completed || false;
-                branchGroup.append('text')
-                    .attr('x', posX)
-                    .attr('y', posY - 5)
-                    .attr('text-anchor', labelAnchor)
-                    .style('font-size', '14px')
-                    .style('fill', isCompleted ? '#999' : '#333')
-                    .style('text-decoration', isCompleted ? 'line-through' : 'none')
-                    .text((isCompleted ? '✓ ' : '') + (child.text || child))
-                    .on('click', function(event) {
-                        event.stopPropagation();
-                        that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name, childDataLocation);
-                    });
-            };
-
-            if (children.length === 1) {
-                // Single child: place near the branch origin
-                const singleX = branchOriginX + (Math.cos(branchAngleRad) * 20);
-                const singleY = branchOriginY + (Math.sin(branchAngleRad) * 20);
-                renderAction(children[0], 0, singleX, singleY);
-            } else {
-                // Multiple children: draw as branches from origin
-                const childAngleSpread = Math.PI / 3; // 60 degrees spread
-                const childAngleStart = branchAngleRad - (childAngleSpread / 2);
-
-                children.forEach((child, idx) => {
-                    const childAngle = childAngleStart + (childAngleSpread * idx / Math.max(1, children.length - 1));
-                    const childLength = 120;
-                    const textPadding = 30;
-                    const childEndX = branchOriginX + (Math.cos(childAngle) * childLength);
-                    const childEndY = branchOriginY + (Math.sin(childAngle) * childLength);
-                    const textX = branchOriginX + (Math.cos(childAngle) * (childLength + textPadding));
-                    const textY = branchOriginY + (Math.sin(childAngle) * (childLength + textPadding));
-
-                    // Child branch line
-                    branchGroup.append('line')
-                        .attr('x1', branchOriginX)
-                        .attr('y1', branchOriginY)
-                        .attr('x2', childEndX)
-                        .attr('y2', childEndY)
-                        .attr('stroke', '#666')
-                        .attr('stroke-width', 2);
-
-                    renderAction(child, idx, textX, textY);
-                });
-            }
-            
-            that.highlightGroup.raise();
-
-            // Add document-level click handler to collapse when clicking outside branch
-            // Use setTimeout to avoid the current click event triggering it immediately
-            setTimeout(() => {
-                that.branchClickOutsideHandler = function(event) {
-                    // Check if click is within the branch-view group
-                    const branchView = document.querySelector('.branch-view');
-                    if (branchView && branchView.contains(event.target)) {
-                        return; // Click was on branch elements, don't collapse
-                    }
-                    // Click was outside - collapse
-                    that.collapseBranch();
-                };
-                document.addEventListener('click', that.branchClickOutsideHandler);
-            }, 50);
-
-        }, 100);
-    },
-
-    expandBranchTreemap(spokeData, categoryData, sliceData, categoryId, itemId, spokeIndex) {
+    showActionPopup(event, spokeData, categoryName, sliceName, categoryId, itemId, spokeIndex) {
         if (!Debug.isActive('allowMultipleBranches') && this.currentExpandedLocation) {
             this.collapseBranch();
         }
@@ -1443,29 +1227,58 @@ const ChartRenderer = {
         if (children.length === 0) return;
 
         const spokeName = spokeData.text || spokeData;
-        const sliceName = sliceData.data ? sliceData.data.name : '';
-        const categoryName = categoryData.data ? categoryData.data.name : '';
+
+        // Convert click position to SVG coordinates
+        const svgNode = this.svg.node().ownerSVGElement || this.svg.node();
+        const svgRect = svgNode.getBoundingClientRect();
+        let clickSvgX = event.clientX - svgRect.left;
+        let clickSvgY = event.clientY - svgRect.top;
+        if (this.viewMode === 'pie') {
+            clickSvgX -= this.width / 2;
+            clickSvgY -= this.height / 2;
+        }
 
         // Card dimensions
         const rowHeight = 28;
         const cardPadding = 12;
-        const headerHeight = 28;
+        const headerHeight = 32;
         const cardWidth = Math.min(280, this.width - 40);
         const cardHeight = Math.min(headerHeight + children.length * rowHeight + cardPadding, this.height - 40);
 
-        // Center the card
-        const cardX = (this.width - cardWidth) / 2;
-        const cardY = (this.height - cardHeight) / 2;
+        // Position near click, clamped within SVG bounds
+        let minX, maxX, minY, maxY;
+        if (this.viewMode === 'pie') {
+            minX = -this.width / 2 + 10;
+            maxX = this.width / 2 - cardWidth - 10;
+            minY = -this.height / 2 + 10;
+            maxY = this.height / 2 - cardHeight - 10;
+        } else {
+            minX = 10;
+            maxX = this.width - cardWidth - 10;
+            minY = 10;
+            maxY = this.height - cardHeight - 10;
+        }
+        const cardX = Math.max(minX, Math.min(maxX, clickSvgX - cardWidth / 2));
+        const cardY = Math.max(minY, Math.min(maxY, clickSvgY + 15));
 
         const branchGroup = this.highlightGroup.append('g')
-            .attr('class', 'branch-view treemap-branch');
+            .attr('class', 'branch-view action-popup');
 
-        // Dimmer behind card
+        // Dimmer behind card (accounts for coordinate system)
+        const dimmerX = this.viewMode === 'pie' ? -this.width / 2 : 0;
+        const dimmerY = this.viewMode === 'pie' ? -this.height / 2 : 0;
         branchGroup.append('rect')
+            .attr('x', dimmerX)
+            .attr('y', dimmerY)
             .attr('width', this.width)
             .attr('height', this.height)
-            .attr('fill', '#000')
-            .attr('opacity', 0.2);
+            .attr('fill', 'transparent')
+            .attr('opacity', 0)
+            .style('cursor', 'default')
+            .on('click', (event) => {
+                event.stopPropagation();
+                this.collapseBranch();
+            });
 
         // Card background
         branchGroup.append('rect')
@@ -1481,11 +1294,30 @@ const ChartRenderer = {
         // Card header
         branchGroup.append('text')
             .attr('x', cardX + cardPadding)
-            .attr('y', cardY + 20)
+            .attr('y', cardY + 22)
             .attr('font-size', '13px')
             .attr('font-weight', 'bold')
             .attr('fill', '#333')
             .text(spokeName);
+
+        // Close button
+        const closeBtn = branchGroup.append('g')
+            .attr('transform', `translate(${cardX + cardWidth - 18}, ${cardY + 18})`)
+            .style('cursor', 'pointer')
+            .on('click', (event) => {
+                event.stopPropagation();
+                this.collapseBranch();
+            });
+        closeBtn.append('circle')
+            .attr('r', 11)
+            .attr('fill', '#e0e0e0');
+        closeBtn.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('dy', '0.35em')
+            .attr('fill', '#666')
+            .attr('font-size', '12px')
+            .attr('font-weight', 'bold')
+            .text('\u2715');
 
         // Action rows
         children.forEach((child, idx) => {
@@ -1501,7 +1333,6 @@ const ChartRenderer = {
                     that.openCalendarForAction(child, spokeData, sliceName, categoryName, childDataLocation);
                 });
 
-            // Calendar indicator
             if (hasSchedule) {
                 const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time || '00:00'}`);
                 const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -1519,12 +1350,10 @@ const ChartRenderer = {
                     .attr('text-anchor', 'middle')
                     .attr('font-size', '8px')
                     .attr('fill', '#fff')
-                    .text('✓');
+                    .text('\u2713');
 
-                // Date pill after text
-                const pillX = cardX + cardPadding + 18;
                 rowGroup.append('text')
-                    .attr('x', pillX)
+                    .attr('x', cardX + cardPadding + 18)
                     .attr('y', rowY + 14)
                     .attr('font-size', '11px')
                     .attr('fill', '#333')
@@ -1552,7 +1381,7 @@ const ChartRenderer = {
                     .attr('text-anchor', 'middle')
                     .attr('font-size', '8px')
                     .attr('fill', '#fff')
-                    .text('📅');
+                    .text('\uD83D\uDCC5');
 
                 rowGroup.append('text')
                     .attr('x', cardX + cardPadding + 18)
@@ -1565,11 +1394,11 @@ const ChartRenderer = {
 
         this.highlightGroup.raise();
 
-        // Click outside to collapse
+        // Document-level click handler for clicks outside SVG
         setTimeout(() => {
             that.branchClickOutsideHandler = function(event) {
-                const branchView = document.querySelector('.treemap-branch');
-                if (branchView && branchView.contains(event.target)) return;
+                const popup = document.querySelector('.action-popup');
+                if (popup && popup.contains(event.target)) return;
                 that.collapseBranch();
             };
             document.addEventListener('click', that.branchClickOutsideHandler);
@@ -1580,16 +1409,9 @@ const ChartRenderer = {
         this.currentExpandedLocation = null;
         this.highlightGroup.selectAll('*').remove();
 
-        // Remove document click handler
         if (this.branchClickOutsideHandler) {
             document.removeEventListener('click', this.branchClickOutsideHandler);
             this.branchClickOutsideHandler = null;
-        }
-
-        // Restore main pie position and scale (pie mode only)
-        if (this.viewMode === 'pie') {
-            this.svg.transition().duration(300)
-                .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
         }
     },
     openCalendarForAction(action, spokeData, itemData, categoryData, dataLocation = null) {
