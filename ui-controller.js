@@ -885,6 +885,9 @@ const UI = {
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
                                                 ${spokeTypeBtn}
+                                                <button class="priority-star-btn ${UI.isPrioritised({type:'spoke', categoryId:category.id, itemId:item.id, spokeIndex:idx}) ? 'active' : ''}"
+                                                    onclick="event.stopPropagation(); UI.addToPriorities({type:'spoke', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}})"
+                                                    title="Add to priorities">&#9733;</button>
                                                 <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">
                                                     <img width="15" height="15" src="./assets/trash.svg" />
                                                 </button>
@@ -928,6 +931,9 @@ const UI = {
                                                                         style="${buttonStyle}"
                                                                         onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${idx}, ${childIdx})"
                                                                         title="${buttonTitle}">${scheduleDisplay}</button>
+                                                                <button class="priority-star-btn ${UI.isPrioritised({type:'action', categoryId:category.id, itemId:item.id, spokeIndex:idx, childIndex:childIdx}) ? 'active' : ''}"
+                                                                    onclick="event.stopPropagation(); UI.addToPriorities({type:'action', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}, childIndex:${childIdx}})"
+                                                                    title="Add to priorities">&#9733;</button>
                                                                 <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
                                                                     <img width="15" height="20" src="./assets/trash.svg" />
                                                                 </button>
@@ -4061,5 +4067,199 @@ const UI = {
         this.renderTab2Spokes();
         this.renderExistingActions();
         App.render();
+    },
+
+    // --- Prioritiser ---
+
+    prioritiserShowAll: false,
+    prioritiserDragState: null,
+
+    togglePrioritiser() {
+        const win = document.getElementById('prioritiser-window');
+        if (win.classList.contains('active')) {
+            this.closePrioritiser();
+        } else {
+            this.openPrioritiser();
+        }
+    },
+
+    openPrioritiser() {
+        const win = document.getElementById('prioritiser-window');
+        win.classList.add('active');
+        this.renderPriorityList();
+        this.initPrioritiserDrag();
+    },
+
+    closePrioritiser() {
+        document.getElementById('prioritiser-window').classList.remove('active');
+    },
+
+    isPrioritised(ref) {
+        return DataModel.priorityList.some(p =>
+            p.type === ref.type &&
+            p.categoryId === ref.categoryId &&
+            p.itemId === ref.itemId &&
+            p.spokeIndex === ref.spokeIndex &&
+            (ref.childIndex == null ? p.childIndex == null : p.childIndex === ref.childIndex)
+        );
+    },
+
+    addToPriorities(ref) {
+        const added = DataModel.addPriority(ref);
+        if (added) {
+            Storage.showStatus('Added to priorities');
+            this.openPrioritiser();
+        } else {
+            Storage.showStatus('Already in priorities');
+        }
+        // Re-render cards to update star button state
+        App.render();
+    },
+
+    renderPriorityList() {
+        DataModel.validatePriorityList();
+        const list = document.getElementById('prioritiser-list');
+        const empty = document.getElementById('prioritiser-empty');
+        const showAllBtn = document.getElementById('prioritiser-show-all');
+
+        const priorities = DataModel.priorityList;
+        const maxVisible = this.prioritiserShowAll ? priorities.length : 5;
+        const visible = priorities.slice(0, maxVisible);
+
+        if (priorities.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = 'block';
+            showAllBtn.style.display = 'none';
+            return;
+        }
+
+        empty.style.display = 'none';
+        showAllBtn.style.display = priorities.length > 5 ? 'block' : 'none';
+        if (priorities.length > 5) {
+            showAllBtn.querySelector('button').textContent = this.prioritiserShowAll ? 'Show top 5' : `Show all (${priorities.length})`;
+        }
+
+        list.innerHTML = visible.map((ref, idx) => {
+            const resolved = DataModel.resolvePriority(ref);
+            if (!resolved) return '';
+            return `
+                <div class="prioritiser-item" draggable="true"
+                    data-priority-index="${idx}"
+                    ondragstart="UI.handlePriorityDragStart(event, ${idx})"
+                    ondragend="UI.handlePriorityDragEnd(event)"
+                    ondragover="UI.handlePriorityDragOver(event)"
+                    ondrop="UI.handlePriorityDrop(event, ${idx})">
+                    <span class="priority-rank">${idx + 1}</span>
+                    <span class="priority-color" style="background: ${resolved.color}"></span>
+                    <div class="priority-info">
+                        <div class="priority-name">${resolved.displayName}</div>
+                        <div class="priority-context">${resolved.context}</div>
+                    </div>
+                    <button class="priority-remove" onclick="event.stopPropagation(); UI.removePriority(${idx})" title="Remove from priorities">&#10005;</button>
+                </div>
+            `;
+        }).join('');
+    },
+
+    togglePrioritiserShowAll() {
+        this.prioritiserShowAll = !this.prioritiserShowAll;
+        this.renderPriorityList();
+    },
+
+    removePriority(index) {
+        DataModel.removePriority(index);
+        this.renderPriorityList();
+        App.render();
+    },
+
+    // Priority item drag-to-reorder
+    handlePriorityDragStart(event, index) {
+        this.prioritiserDragState = { fromIndex: index };
+        event.target.classList.add('dragging');
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', index.toString());
+    },
+
+    handlePriorityDragEnd(event) {
+        this.prioritiserDragState = null;
+        event.target.classList.remove('dragging');
+        document.querySelectorAll('.prioritiser-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+    },
+
+    handlePriorityDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        const item = event.target.closest('.prioritiser-item');
+        if (item) {
+            document.querySelectorAll('.prioritiser-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+            item.classList.add('drag-over');
+        }
+    },
+
+    handlePriorityDrop(event, toIndex) {
+        event.preventDefault();
+        document.querySelectorAll('.prioritiser-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+        if (!this.prioritiserDragState) return;
+        const fromIndex = this.prioritiserDragState.fromIndex;
+        if (fromIndex !== toIndex) {
+            DataModel.reorderPriority(fromIndex, toIndex);
+            this.renderPriorityList();
+        }
+        this.prioritiserDragState = null;
+    },
+
+    // Draggable window
+    initPrioritiserDrag() {
+        const titlebar = document.getElementById('prioritiser-titlebar');
+        const win = document.getElementById('prioritiser-window');
+        if (titlebar._dragInit) return;
+        titlebar._dragInit = true;
+
+        let isDragging = false;
+        let startX, startY, startLeft, startTop;
+
+        const onStart = (clientX, clientY) => {
+            isDragging = true;
+            const rect = win.getBoundingClientRect();
+            startX = clientX;
+            startY = clientY;
+            startLeft = rect.left;
+            startTop = rect.top;
+            win.style.transition = 'none';
+        };
+
+        const onMove = (clientX, clientY) => {
+            if (!isDragging) return;
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+            win.style.left = (startLeft + dx) + 'px';
+            win.style.top = (startTop + dy) + 'px';
+            win.style.right = 'auto';
+        };
+
+        const onEnd = () => {
+            isDragging = false;
+            win.style.transition = '';
+        };
+
+        // Mouse events
+        titlebar.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            onStart(e.clientX, e.clientY);
+        });
+        document.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+        document.addEventListener('mouseup', onEnd);
+
+        // Touch events
+        titlebar.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            onStart(t.clientX, t.clientY);
+        }, { passive: true });
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const t = e.touches[0];
+            onMove(t.clientX, t.clientY);
+        }, { passive: true });
+        document.addEventListener('touchend', onEnd);
     }
 };

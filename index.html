@@ -39,6 +39,7 @@
                     <p>&nbsp;</p>
                     <p>Hide spokes <input class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"></p>
                     <p>Tree view <input class="view-mode-toggle" id="view-mode-toggle" type="checkbox" name="view-mode-toggle"></p>
+                    <p><button class="tertiary small" onclick="UI.togglePrioritiser()">&#9733; Priorities</button></p>
                 </div>
             </div>
             <div class="top-bar-right-mobile">
@@ -64,6 +65,7 @@
                         type="checkbox"
                         name="view-mode-toggle">
                     </p>
+                    <p><button class="tertiary small" onclick="UI.togglePrioritiser()">&#9733; Priorities</button></p>
                 </div>
             </div>
             <div class="storage-status" id="storage-status"></div>
@@ -74,6 +76,23 @@
             <div class="categories-section">
                 <h2>Categories, Slices, Spokes & Actions </h2>
                 <div class="categories-grid" id="categories-list"></div>
+            </div>
+        </div>
+
+        <!-- Prioritiser Window -->
+        <div class="prioritiser-window" id="prioritiser-window">
+            <div class="prioritiser-titlebar" id="prioritiser-titlebar">
+                <span class="prioritiser-title">&#9733; Priorities</span>
+                <button class="prioritiser-close" onclick="UI.closePrioritiser()">&#10005;</button>
+            </div>
+            <div class="prioritiser-body">
+                <div id="prioritiser-list" class="prioritiser-list"></div>
+                <div id="prioritiser-show-all" class="prioritiser-show-all" style="display: none;">
+                    <button class="small secondary" onclick="UI.togglePrioritiserShowAll()">Show all</button>
+                </div>
+                <div class="prioritiser-empty" id="prioritiser-empty">
+                    No priorities yet. Click &#9733; next to a spoke to add one.
+                </div>
             </div>
         </div>
     </main>
