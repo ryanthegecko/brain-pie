@@ -641,7 +641,7 @@ const ExampleData2 = {
                     "color": "#ff9800",
                     "subItems": [
                         {
-                        "text": "Arrange Zoom",
+                        "text": "Catch up with Ben",
                         "type": "static",
                         "children": [],
                         "metadata": {
@@ -677,7 +677,7 @@ const ExampleData2 = {
                     },
                     {
                     "id": "1770247658920",
-                    "name": "Schedule call with HR",
+                    "name": "Call with HR",
                     "percentage": 16.666666666666664,
                     "color": "#2196f3",
                     "subItems": [

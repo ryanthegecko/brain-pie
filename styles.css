@@ -128,6 +128,7 @@ h2 {
     }
 }
 
+
 #chart-container.hide-subitem-labels:not(.tree-view) {
     transform: scale(1.3);
     transform-origin: center center;
@@ -405,6 +406,30 @@ input[type="file"] {
     justify-content: center;
     cursor: pointer;
     padding: 0;
+}
+
+.scheduler-star-btn {
+    position: absolute;
+    top: 15px;
+    right: 52px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: #e0e0e0;
+    color: #999;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.scheduler-star-btn.active {
+    background: #FFD700;
+    color: #fff;
 }
 
 .menu-section {
@@ -1319,6 +1344,11 @@ select:focus {
 .spoke-type-picker-btn:hover {
     border-color: #4CAF50;
     background: #f5fff5;
+}
+
+.spoke-type-picker-btn.selected {
+    border-color: #4285F4;
+    background: #f0f6ff;
 }
 
 .spoke-type-picker-icon {
