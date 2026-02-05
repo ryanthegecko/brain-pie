@@ -94,24 +94,26 @@ const ChartRenderer = {
         if (type === 'single') {
             if (spoke.scheduled && spoke.scheduled.date) {
                 const schedDate = new Date(`${spoke.scheduled.date}T${spoke.scheduled.time || '00:00'}`);
-                return schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                const timeStr = spoke.scheduled.time ? this.formatCompactTime(spoke.scheduled.time) : '';
+                return timeStr ? `${dateStr} ${timeStr}` : dateStr;
             }
-            return '📅';  // Unscheduled single - show calendar icon in pill
+            return null;  // Unscheduled single - icon only, no pill
         }
 
         if (type === 'repeating') {
             if (spoke.metadata && spoke.metadata.recurrence) {
                 return this.formatRecurrencePillText(spoke.metadata.recurrence);
             }
-            return '🔁';
+            return null;  // Unset repeating - icon only, no pill
         }
 
         if (type === 'list') {
             const hasChildren = spoke.children && spoke.children.length > 0;
             if (hasChildren) {
-                return `☑️ (${spoke.children.length})`;
+                return `(${spoke.children.length})`;
             }
-            return '☑️';
+            return null;
         }
 
         return null;
@@ -141,6 +143,29 @@ const ChartRenderer = {
         return null;
     },
 
+    // Get the icon to render outside the pill (always shown for non-static types)
+    getScheduleIcon(spoke) {
+        if (typeof spoke === 'string') return null;
+
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+
+        if (type === 'single') return '📅';
+        if (type === 'repeating') return '🔁';
+        if (type === 'list') return '☑️';
+        return null;
+    },
+
+    // Format time compactly: "09:00" → "9AM", "09:45" → "9:45AM", "13:00" → "1PM", "13:30" → "1:30PM"
+    formatCompactTime(timeStr) {
+        if (!timeStr) return '';
+        const [h, m] = timeStr.split(':').map(Number);
+        const period = h >= 12 ? 'PM' : 'AM';
+        const hour12 = h % 12 || 12;
+        if (m === 0) return `${hour12}${period}`;
+        return `${hour12}:${String(m).padStart(2, '0')}${period}`;
+    },
+
     // Format recurrence data into short pill text like "Mon, Wed, 17:45"
     formatRecurrencePillText(recurrence) {
         if (!recurrence) return '🔁';
@@ -168,7 +193,7 @@ const ChartRenderer = {
         }
 
         if (recurrence.time) {
-            parts.push(recurrence.time);
+            parts.push(this.formatCompactTime(recurrence.time));
         }
 
         return parts.join(', ');
@@ -193,51 +218,70 @@ const ChartRenderer = {
         }
     },
 
-    // Add schedule pill after spoke name text element
+    // Add schedule icon and pill after spoke name text element
     addSchedulePill(group, nameTextElement, spoke, isRightSide, fontSize = 12) {
+        const icon = this.getScheduleIcon(spoke);
         const pillText = this.getSchedulePillText(spoke);
-        if (!pillText) return;
+        if (!icon && !pillText) return;
 
         const pillColor = this.getSchedulePillColor(spoke) || '#4CAF50';
+        const iconSize = 16;
 
         // Get name text bounding box after brief delay
         setTimeout(() => {
             try {
                 const nameBbox = nameTextElement.node().getBBox();
                 const padding = { x: 6, y: 3 };
-                const gap = 10;  // Gap between name and pill
+                const gap = 8;
 
-                // Position pill after/before name based on side
-                let pillX;
+                const pillGroup = group.append('g').attr('class', 'schedule-pill');
+                let cursorX;
+
                 if (isRightSide) {
-                    pillX = nameBbox.x + nameBbox.width + gap;
+                    cursorX = nameBbox.x + nameBbox.width + gap;
                 } else {
-                    // For left side, pill goes before name - need to measure pill text first
-                    pillX = nameBbox.x - gap;
+                    cursorX = nameBbox.x - gap;
                 }
 
-                // Create pill group
-                const pillGroup = group.append('g').attr('class', 'schedule-pill');
+                const textY = nameBbox.y + nameBbox.height - 2;
 
-                // Add pill text first to measure it
-                const pillTextEl = pillGroup.append('text')
-                    .attr('font-size', fontSize + 'px')
-                    .attr('fill', '#ffffff')
-                    .attr('text-anchor', isRightSide ? 'start' : 'end')
-                    .attr('x', pillX)
-                    .attr('y', nameBbox.y + nameBbox.height - 2)
-                    .text(pillText);
+                // Render icon outside the pill
+                if (icon) {
+                    const iconEl = pillGroup.append('text')
+                        .attr('font-size', iconSize + 'px')
+                        .attr('text-anchor', isRightSide ? 'start' : 'end')
+                        .attr('x', cursorX)
+                        .attr('y', textY)
+                        .text(icon);
 
-                // Get pill text bbox and add rect behind it
-                const pillTextBbox = pillTextEl.node().getBBox();
-                pillGroup.insert('rect', 'text')
-                    .attr('x', pillTextBbox.x - padding.x)
-                    .attr('y', pillTextBbox.y - padding.y)
-                    .attr('width', pillTextBbox.width + padding.x * 2)
-                    .attr('height', pillTextBbox.height + padding.y * 2)
-                    .attr('rx', 10)
-                    .attr('ry', 10)
-                    .attr('fill', pillColor);
+                    const iconBbox = iconEl.node().getBBox();
+                    if (isRightSide) {
+                        cursorX = iconBbox.x + iconBbox.width + 8;
+                    } else {
+                        cursorX = iconBbox.x - 8;
+                    }
+                }
+
+                // Render pill with text (if there's text beyond just the icon)
+                if (pillText) {
+                    const pillTextEl = pillGroup.append('text')
+                        .attr('font-size', fontSize + 'px')
+                        .attr('fill', '#ffffff')
+                        .attr('text-anchor', isRightSide ? 'start' : 'end')
+                        .attr('x', cursorX)
+                        .attr('y', textY)
+                        .text(pillText);
+
+                    const pillTextBbox = pillTextEl.node().getBBox();
+                    pillGroup.insert('rect', 'text:last-of-type')
+                        .attr('x', pillTextBbox.x - padding.x)
+                        .attr('y', pillTextBbox.y - padding.y)
+                        .attr('width', pillTextBbox.width + padding.x * 2)
+                        .attr('height', pillTextBbox.height + padding.y * 2)
+                        .attr('rx', 10)
+                        .attr('ry', 10)
+                        .attr('fill', pillColor);
+                }
 
             } catch (e) {
                 // Text element may not be in DOM yet
@@ -759,25 +803,11 @@ const ChartRenderer = {
                 .attr('class', 'branch-view')
                 .attr('transform', `translate(0, ${yOffset})`);
 
-            // Calculate branch length based on spoke label text
-            const spokeText = spokeData.text || spokeData;
-            const indicator = that.getSpokeVisualIndicator(spokeData);
-            const fullLabel = spokeText + indicator;
-            // Approximate width: ~7px per character at 14px font, plus padding
-            const textWidth = fullLabel.length * 7;
-            const branchLength = Math.max(60, textWidth + 15);  // minimum 60px, plus padding
-            const branchEndX = startX + (Math.cos(branchAngleRad) * branchLength);
-            const branchEndY = startY + (Math.sin(branchAngleRad) * branchLength);
+            // Branch origin point (where child branches radiate from)
+            const branchOriginX = startX + (Math.cos(branchAngleRad) * 10);
+            const branchOriginY = startY + (Math.sin(branchAngleRad) * 10);
 
-            branchGroup.append('line')
-                .attr('x1', startX)
-                .attr('y1', startY)
-                .attr('x2', branchEndX)
-                .attr('y2', branchEndY)
-                .attr('stroke', '#888')
-                .attr('stroke-width', 1);
-
-            // Draw children - single child at end of trunk, multiple as branches
+            // Draw children as branches from origin
             const children = spokeData.children || [];
 
             // Helper to render a single action (icon + label)
@@ -872,10 +902,12 @@ const ChartRenderer = {
             };
 
             if (children.length === 1) {
-                // Single child: place at end of trunk, no branch line
-                renderAction(children[0], 0, branchEndX, branchEndY);
+                // Single child: place near the branch origin
+                const singleX = branchOriginX + (Math.cos(branchAngleRad) * 20);
+                const singleY = branchOriginY + (Math.sin(branchAngleRad) * 20);
+                renderAction(children[0], 0, singleX, singleY);
             } else {
-                // Multiple children: draw as branches
+                // Multiple children: draw as branches from origin
                 const childAngleSpread = Math.PI / 3; // 60 degrees spread
                 const childAngleStart = branchAngleRad - (childAngleSpread / 2);
 
@@ -883,15 +915,15 @@ const ChartRenderer = {
                     const childAngle = childAngleStart + (childAngleSpread * idx / Math.max(1, children.length - 1));
                     const childLength = 120;
                     const textPadding = 30;
-                    const childEndX = branchEndX + (Math.cos(childAngle) * childLength);
-                    const childEndY = branchEndY + (Math.sin(childAngle) * childLength);
-                    const textX = branchEndX + (Math.cos(childAngle) * (childLength + textPadding));
-                    const textY = branchEndY + (Math.sin(childAngle) * (childLength + textPadding));
+                    const childEndX = branchOriginX + (Math.cos(childAngle) * childLength);
+                    const childEndY = branchOriginY + (Math.sin(childAngle) * childLength);
+                    const textX = branchOriginX + (Math.cos(childAngle) * (childLength + textPadding));
+                    const textY = branchOriginY + (Math.sin(childAngle) * (childLength + textPadding));
 
                     // Child branch line
                     branchGroup.append('line')
-                        .attr('x1', branchEndX)
-                        .attr('y1', branchEndY)
+                        .attr('x1', branchOriginX)
+                        .attr('y1', branchOriginY)
                         .attr('x2', childEndX)
                         .attr('y2', childEndY)
                         .attr('stroke', '#666')

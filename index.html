@@ -162,6 +162,7 @@
                     <button class="secondary" onclick="UI.switchMenuTab(2)" id="continue-to-spokes-btn" disabled>
                         Continue to Spokes & Actions →
                     </button>
+                    <button id="tab1-done-btn" onclick="UI.closeMenu()">Done</button>
                 </div>
             </div>
 
@@ -376,7 +377,7 @@
     <div class="datetime-overlay" id="datetime-overlay" onclick="UI.closeDateTimePicker()">
         <div class="datetime-content" onclick="event.stopPropagation()">
             <button class="menu-close" onclick="UI.closeDateTimePicker()">✕</button>
-            <h2>Schedule Action</h2>
+            <h2 id="datetime-picker-title">Schedule Action</h2>
             
             <div id="action-details" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Action:</div>
@@ -503,7 +504,7 @@
     <div class="recurrence-overlay" id="recurrence-overlay" onclick="UI.closeRecurrencePicker()">
         <div class="recurrence-content" onclick="event.stopPropagation()">
             <button class="menu-close" onclick="UI.closeRecurrencePicker()">✕</button>
-            <h2>Set Recurrence</h2>
+            <h2 id="recurrence-picker-title">Set Recurrence</h2>
 
             <div class="recurrence-section">
                 <label for="recurrence-start-date">Starting from</label>
@@ -684,7 +685,7 @@
                 <button onclick="UI.closeRecurrencePicker()" class="secondary" style="flex: 1;">
                     Cancel
                 </button>
-                <button onclick="UI.saveRecurrence()" style="flex: 2;">
+                <button id="recurrence-submit-btn" onclick="UI.saveRecurrence()" style="flex: 2;">
                     🔁 Set Recurrence
                 </button>
             </div>
