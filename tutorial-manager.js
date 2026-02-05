@@ -66,7 +66,7 @@ const TutorialManager = {
             id: 'health-pie-intro',
             type: 'modal',
             title: "Let's Build Together",
-            content: "Now let's try adding something. Here's a simple Health pie. Imagine you saw an ad for a yoga class and want to try it out.",
+            content: "Here's a simple Health pie. We want to start taking sleep more seriously - let's add a Sleep slice to keep it on our radar.",
             onEnter: 'loadHealthPie',
             buttons: [
                 { text: 'Skip', action: 'skip', class: 'secondary' },
@@ -77,16 +77,16 @@ const TutorialManager = {
             id: 'open-menu',
             type: 'spotlight',
             title: 'Open the Menu',
-            content: 'Click "+ Add" to create a new slice for Yoga.',
+            content: 'Click "+ Add" to create a new Sleep slice.',
             highlight: '.top-bar-right button:first-child',
             mobileHighlight: '.top-bar-right-mobile button:first-child',
             nextEvent: 'menu-opened'
         },
         {
-            id: 'create-yoga-slice',
+            id: 'create-sleep-slice',
             type: 'spotlight',
-            title: 'Add a Yoga Slice',
-            content: 'Select the "Health" category, then type "Yoga" as the slice name and click "Add Slice".',
+            title: 'Add a Sleep Slice',
+            content: 'Select the existing "Health" category, then type "Sleep" as the slice name and click "Add Slice".',
             highlight: '#menu-tab-1',
             nextEvent: 'slice-added'
         },
@@ -94,15 +94,25 @@ const TutorialManager = {
             id: 'close-menu',
             type: 'spotlight',
             title: 'Close the Menu',
-            content: 'Great! Close the menu to see your new Yoga slice.',
+            content: 'Great! Close the menu to see your new Sleep slice.',
             highlight: '.menu-close',
             nextEvent: 'menu-closed'
         },
         {
+            id: 'add-yoga-intro',
+            type: 'modal',
+            title: 'Now Add a Task',
+            content: "Nice! Now imagine you saw an ad for a yoga class. Let's add it to the Exercise slice and schedule a trial.",
+            buttons: [
+                { text: 'Skip', action: 'skip', class: 'secondary' },
+                { text: 'Continue', action: 'next', class: 'primary' }
+            ]
+        },
+        {
             id: 'add-spoke',
             type: 'spotlight',
-            title: 'Add a Task',
-            content: 'Find your Yoga slice below and type "Trial class" in the input field, then press Enter.',
+            title: 'Add Yoga to Exercise',
+            content: 'Find the Exercise slice below and type "Yoga" in the input field, then press Enter.',
             highlight: '.add-spoke-input',
             highlightDynamic: true,
             nextEvent: 'spoke-added'
@@ -110,8 +120,8 @@ const TutorialManager = {
         {
             id: 'add-action',
             type: 'spotlight',
-            title: 'Add an Action',
-            content: 'Click the + button to add a specific action to schedule.',
+            title: 'Add a Trial Class',
+            content: 'Click the + button next to Yoga to add "Trial class" as an action.',
             highlight: '.spoke-add-btn',
             highlightDynamic: true,
             nextEvent: 'action-added'
@@ -120,7 +130,7 @@ const TutorialManager = {
             id: 'schedule-action',
             type: 'spotlight',
             title: 'Schedule It',
-            content: 'Choose "One-time" to schedule this for your calendar. The trial class is next Wednesday at 6:45pm!',
+            content: 'Choose "One-time" to schedule this. The trial class is next Wednesday at 6:45pm!',
             highlight: '.action-type-btn-onetime',
             nextEvent: 'action-scheduled'
         },
