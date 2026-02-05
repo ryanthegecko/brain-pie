@@ -18,23 +18,35 @@ const ChartRenderer = {
     getSpokeVisualIndicator(spoke) {
         if (typeof spoke === 'string') return '';
 
-        const type = spoke.type || 'static';
+        // Backwards compat: 'action' → 'list'
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+
         const hasChildren = spoke.children && spoke.children.length > 0;
+        const hasSchedule = spoke.scheduled && spoke.scheduled.date;
+        const hasRecurrence = spoke.metadata && spoke.metadata.recurrence;
 
-        // If it has children, show action indicator with count
-        if (hasChildren) {
-            return ` • (${spoke.children.length})`;
-        }
-
-        // Show type indicators
+        // Show type indicators based on type
         switch(type) {
-            case 'action':
-                return ' ✓';
+            case 'single':
+                if (hasSchedule) {
+                    // Show date pill
+                    const schedDate = new Date(`${spoke.scheduled.date}T${spoke.scheduled.time || '00:00'}`);
+                    const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    return ` • ${dateStr}`;
+                }
+                return ' 📅';
             case 'repeating':
+                if (hasRecurrence) {
+                    return ' 🔁';
+                }
                 return ' 🔁';
-            // HIDDEN UNTIL COMPLETE:
-            // case 'pending':
-            //     return ' ⏸';
+            case 'list':
+                // For list type, show action count
+                if (hasChildren) {
+                    return ` • (${spoke.children.length})`;
+                }
+                return ' ☑️';
             case 'static':
             default:
                 return '';
@@ -44,22 +56,29 @@ const ChartRenderer = {
     getSpokeTextStyle(spoke) {
         if (typeof spoke === 'string') return {};
 
-        const type = spoke.type || 'static';
+        // Backwards compat: 'action' → 'list'
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+
         const hasChildren = spoke.children && spoke.children.length > 0;
+        const hasSchedule = spoke.scheduled && spoke.scheduled.date;
 
         let style = {};
 
-        // Actions with children are bold
-        if (hasChildren) {
+        // List with children are bold
+        if (type === 'list' && hasChildren) {
             style['font-weight'] = 'bold';
         }
 
-        // HIDDEN UNTIL FEATURES COMPLETE:
-        // Pending spokes are italic
-        // if (type === 'pending') {
-        //     style['font-style'] = 'italic';
-        //     style['fill'] = '#999';
-        // }
+        // Scheduled single spokes are bold
+        if (type === 'single' && hasSchedule) {
+            style['font-weight'] = 'bold';
+        }
+
+        // Repeating spokes are bold
+        if (type === 'repeating') {
+            style['font-weight'] = 'bold';
+        }
 
         return style;
     },
@@ -71,7 +90,8 @@ const ChartRenderer = {
         const spokeType = DataModel.getSpokeType(categoryId, itemId, spokeIndex);
         const hasChildren = (typeof subItem === 'object' && subItem.children && subItem.children.length > 0);
 
-        if (hasChildren) {
+        // For list type with children, show branch expansion
+        if (spokeType === 'list' && hasChildren) {
             // Check if this spoke is already expanded (toggle behavior)
             const loc = this.currentExpandedLocation;
             if (loc && loc.categoryId === categoryId && loc.itemId === itemId && loc.spokeIndex === spokeIndex) {
@@ -83,19 +103,18 @@ const ChartRenderer = {
             // Show branch expansion for spokes with children
             const angle = sliceData.startAngle + ((sliceData.endAngle - sliceData.startAngle) / sliceData.data.subItems.length) * (spokeIndex + 0.5);
             ChartRenderer.expandBranch(subItem, catData, sliceData, angle, categoryId, itemId, spokeIndex);
-        } else {
-            // Collapse any expanded branch first
+        } else if (spokeType === 'single') {
+            // For single type, open date/time picker directly
             this.collapseIfBranchExpanded();
-            // For static, repeating, or pending spokes, show configuration
-            const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
-            UI.showSpokeConfig(
-                categoryId,
-                itemId,
-                spokeIndex,
-                spokeName,
-                sliceData.data.name,
-                catData.data.name
-            );
+            UI.openSpokeScheduler(categoryId, itemId, spokeIndex);
+        } else if (spokeType === 'repeating') {
+            // For repeating type, open recurrence picker directly
+            this.collapseIfBranchExpanded();
+            UI.openSpokeRecurrenceScheduler(categoryId, itemId, spokeIndex);
+        } else {
+            // For static type or list without children, show spoke type picker
+            this.collapseIfBranchExpanded();
+            UI.showSpokeTypePicker(categoryId, itemId, spokeIndex);
         }
     },
     
