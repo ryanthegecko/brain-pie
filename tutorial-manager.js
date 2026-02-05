@@ -31,7 +31,7 @@ const TutorialManager = {
             id: 'life-pie',
             type: 'modal',
             title: 'The Life Pie',
-            content: 'This is a "whole life" pie. Categories like Home, Health, Learning, and Social help organize everything on your mind. Each slice breaks down into spokes (tasks) and actions.',
+            content: 'This is a "whole life" pie. Categories like Home, Health, Learning, and Social help organize everything on your mind. Slices represent individual items in each category, and each slice can be given Spokes, often representing steps needed, or more granular tasks.',
             onEnter: 'loadLifePie',
             buttons: [
                 { text: 'Skip', action: 'skip', class: 'secondary' },
