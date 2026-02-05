@@ -134,7 +134,7 @@ const GoogleAuthAdapter = {
      * Sign out
      */
     signOut() {
-        if (this.accessToken) {
+        if (this.accessToken && typeof google !== 'undefined' && google.accounts) {
             google.accounts.oauth2.revoke(this.accessToken);
         }
 
