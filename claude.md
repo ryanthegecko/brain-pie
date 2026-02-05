@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.8
+**Current Version:** v0.9
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -58,6 +58,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Handles CRUD operations for categories, items (slices), spokes, and actions
 - Manages percentage calculations and normalization
 - Handles category percentage overrides (manual adjustments)
+- Manages priority list (add, remove, reorder, resolve, validate references)
 
 **Key Data Structure:**
 ```javascript
@@ -116,7 +117,13 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
   ],
   categoryPercentageOverrides: {
     "category-id": 45.5  // Manual percentage override
-  }
+  },
+  priorityList: [
+    // Ordered array of item references (index 0 = highest priority)
+    { type: "spoke", categoryId: "cat-id", itemId: "item-id", spokeIndex: 0 },
+    { type: "action", categoryId: "cat-id", itemId: "item-id", spokeIndex: 1, childIndex: 0 },
+    { type: "slice", categoryId: "cat-id", itemId: "item-id" }
+  ]
 }
 ```
 
@@ -128,7 +135,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
   - **Slice takeover** - Click inner slice → re-renders as full 360° pie with that single slice
   - **Category takeover** - Click outer ring → re-renders showing only that category's slices across 360°
   - **Drill-down** - In category view, click a slice to drill into slice takeover
-  - **Branch expansion** - Click spoke with children to show action tree
+  - **Action popup** - Click spoke with children to show action card near clicked item
 - Back button (✕) and click-anywhere to collapse back to full pie
 - Crossfade animation (300ms) between views
 
@@ -149,12 +156,14 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Manages the spoke builder for adding new items
 - Calendar integration (Google Calendar & Apple iCal)
 - Spoke configuration and action scheduling workflow
+- Prioritiser window (draggable, toggle show/hide, drag-to-reorder items)
 
 **Overlays:**
 - Add Slices Menu
 - Settings (calendar provider selection)
 - Date/Time Picker (for scheduling actions)
 - Spoke Configuration (set spoke type, add/schedule actions)
+- Prioritiser Window (fixed, draggable, narrow sidebar)
 - Disclaimer/About
 
 #### 4. **Storage** (`storage.js`)
@@ -190,7 +199,7 @@ Focus on specific areas with full 360° takeover:
 - Click a **category** → pie shows only that category's slices across full 360°, outer ring is that category
 - In category view, click a **slice** to drill down into slice takeover
 - Click **✕ back button** or anywhere on expanded chart to return to full pie
-- Click a **spoke with actions** to show branch tree (unchanged)
+- Click a **spoke with actions** to show action popup card near clicked item
 - All transitions use 300ms crossfade animation
 
 ### 4. Spoke Type System
@@ -296,6 +305,46 @@ Breakpoints:
 
 ## Changelog
 
+### v0.9 (February 2026)
+Treemap polish, unified action popup, and prioritiser system:
+
+**Treemap Slice Name Sizing:**
+- Increased slice header font from 11px/600 to 14px/bold for better readability
+- Added 8px padding beneath slice headers before spoke text begins
+- Adjusted character truncation calculations for larger font
+
+**Unified Action Popup:**
+- Replaced pie-view branch expansion (radial fan-out with pie shrink/translate) and treemap modal with a single `showActionPopup()` method
+- Popup card appears near the clicked spoke (positioned using click coordinates, clamped to SVG bounds)
+- Works identically in both pie and treemap views
+- Close button (✕) in card header top-right
+- Click transparent dimmer to dismiss
+- Document-level click-outside handler as fallback
+- No overlay darkening — chart remains fully visible
+- Removed old `expandBranch()` and `expandBranchTreemap()` methods (~360 lines removed)
+- Simplified `collapseBranch()` — no longer restores pie transform
+
+**Prioritiser System:**
+- New `priorityList` array in data model (top-level, alongside `categories`)
+- Each entry references a spoke, action, or slice by type + IDs + indices
+- Array order = priority rank (index 0 = highest)
+- CRUD methods: `addPriority()`, `removePriority()`, `reorderPriority()`, `resolvePriority()`
+- `validatePriorityList()` discards orphaned references on load and before each render
+- Persists to localStorage and syncs via Firebase
+
+**Prioritiser Window UI:**
+- Narrow fixed-position window (260px wide), z-index 500
+- Draggable via title bar (mouse and touch support)
+- Shows top 5 items by default, "Show all" toggle when more exist
+- Each item shows rank number, color dot, name, context path, and remove button
+- Drag-to-reorder priority items within the window
+- "★ Priorities" toggle button in top bar (both desktop and mobile)
+- Star buttons (★) next to every spoke and action in summary cards
+- Stars highlight gold when item is already prioritised
+- Empty state message when no priorities set
+
+---
+
 ### v0.8 (February 2026)
 Full-pie takeover expansion, UI polish, and editable spokes:
 
@@ -309,7 +358,7 @@ Full-pie takeover expansion, UI polish, and editable spokes:
 - 300ms crossfade animation between views
 - Removed old `expandSlice()`, `expandCategory()`, `collapseSlice()` overlay system
 - New `expandedView` state replaces `currentExpanded`
-- Branch expansion (expandBranch/collapseBranch) unchanged
+- Branch expansion replaced with unified action popup in v0.9
 
 **Chart Schedule Pills Redesign:**
 - Schedule icon rendered outside the pill (separate SVG element)
@@ -588,6 +637,7 @@ Improve text sizing for better readability across screen sizes:
 
 ### Completed
 - ~~Expansion Refactor~~ - Implemented as full-pie takeover in v0.8 (re-render approach with data override, not DOM transform)
+- ~~Prioritiser System~~ - Implemented in v0.9 (separate `priorityList` array, draggable window UI, star buttons)
 
 ## Development Notes
 
@@ -678,6 +728,27 @@ Debug.log('message', data)
 - [ ] **Tutorial**: "Continue With This Pie" option at completion
 - [ ] **Tutorial**: "Click Done" spotlight step works
 - [ ] **Tab 1 Done button**: Always visible (not just tutorial)
+- [ ] **Treemap slice names**: Larger font (14px bold) with padding beneath
+- [ ] **Action popup**: Appears near clicked spoke in pie view
+- [ ] **Action popup**: Appears near clicked spoke in treemap view
+- [ ] **Action popup**: Close via ✕ button
+- [ ] **Action popup**: Close via clicking outside card
+- [ ] **Action popup**: Action rows open calendar/schedule pickers
+- [ ] **Action popup**: Toggle same spoke to close
+- [ ] **Action popup**: Clamped within SVG bounds at edges
+- [ ] **Prioritiser**: Toggle window via "★ Priorities" button
+- [ ] **Prioritiser**: Drag window by title bar (mouse and touch)
+- [ ] **Prioritiser**: Close button dismisses window
+- [ ] **Prioritiser**: Star button adds spoke to priority list
+- [ ] **Prioritiser**: Star button adds action to priority list
+- [ ] **Prioritiser**: Duplicate detection (can't add same item twice)
+- [ ] **Prioritiser**: Remove item via ✕ in list
+- [ ] **Prioritiser**: Drag-to-reorder items
+- [ ] **Prioritiser**: Top 5 visible, "Show all" toggle
+- [ ] **Prioritiser**: Stars highlight gold for prioritised items
+- [ ] **Prioritiser**: Orphan cleanup on load (deleted items removed)
+- [ ] **Prioritiser**: Persists across page reload
+- [ ] **Prioritiser**: Syncs via Firebase
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
