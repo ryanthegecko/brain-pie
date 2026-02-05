@@ -449,6 +449,21 @@ Replace the "redraw expanded view" approach with:
 - Update/delete recurring calendar events
 - Sync recurring event changes from calendar
 
+### Priority 4: Responsive Label Sizing
+Improve text sizing for better readability across screen sizes:
+
+**Slice Labels:**
+- Detect max character count across ALL slices in the pie
+- Apply CSS classes based on max length: `.slice-chars-20plus`, `.slice-chars-15plus`, etc.
+- All slices use the same font size (determined by the longest label)
+- Ensures visual consistency while fitting longest text
+
+**Category Labels (outer ring):**
+- Currently uses browser-width-based offset for curved text
+- Longer labels need less offset to appear centered
+- Apply offset adjustment per individual label based on character count
+- Keep to two sets of values (short vs long) for reliable responsive behavior
+
 ## Development Notes
 
 ### Adding New Features
