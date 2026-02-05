@@ -514,9 +514,13 @@ const UI = {
                         const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                         scheduleDisplay = `<span class="action-schedule">${dateStr} ${timeStr}</span>`;
                     }
+                    const isCompleted = child.completed || false;
                     return `
                         <div class="tab2-action-item">
-                            <span class="action-text">${childText}</span>
+                            <input type="checkbox" class="action-checkbox"
+                                onchange="UI.toggleActionCompleted('${categoryId}', '${itemId}', ${idx}, ${childIdx})"
+                                ${isCompleted ? 'checked' : ''}>
+                            <span class="action-text ${isCompleted ? 'action-completed' : ''}">${childText}</span>
                             ${scheduleDisplay}
                             <button class="small warn" onclick="UI.removeActionFromTab2(${idx}, ${childIdx})" title="Remove action">×</button>
                         </div>
@@ -906,10 +910,14 @@ const UI = {
                                                         buttonTitle = 'Reschedule';
                                                     }
 
+                                                    const isActionCompleted = child.completed || false;
                                                     return `
                                                     <li style="cursor: default; display: flex; flex-direction: column; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
                                                         <div style="display: flex; justify-content: space-between; align-items: center;width: 100%;">
-                                                            <span style="flex: 1;margin-right: 1em;">${childText}</span>
+                                                            <input type="checkbox" class="action-checkbox"
+                                                                onchange="UI.toggleActionCompleted('${category.id}', '${item.id}', ${idx}, ${childIdx})"
+                                                                ${isActionCompleted ? 'checked' : ''}>
+                                                            <span style="flex: 1;margin-right: 1em;" class="${isActionCompleted ? 'action-completed' : ''}">${childText}</span>
                                                             <div style="display: flex; gap: 4px;">
                                                                 <button class="small"
                                                                         style="${buttonStyle}"
@@ -2259,14 +2267,18 @@ const UI = {
                 scheduleInfo = `<span style="color: #4CAF50; font-weight: 600;">${dateStr} ${timeStr}</span>`;
             }
 
+            const isCompleted = child.completed || false;
             const entry = document.createElement('div');
             entry.className = 'spoke-action-entry';
             entry.style.background = '#f5f5f5';
             entry.style.padding = '8px 12px';
             entry.style.borderRadius = '6px';
             entry.innerHTML = `
+                <input type="checkbox" class="action-checkbox"
+                    onchange="UI.toggleActionCompleted('${categoryId}', '${itemId}', ${spokeIndex}, ${idx})"
+                    ${isCompleted ? 'checked' : ''}>
                 <div style="flex: 1;">
-                    <div style="font-weight: 500;">${childText}</div>
+                    <div style="font-weight: 500;" class="${isCompleted ? 'action-completed' : ''}">${childText}</div>
                     <div style="font-size: 12px; margin-top: 2px;">${scheduleInfo}</div>
                 </div>
                 <button type="button" class="small" style="background: #4285F4;"
@@ -2279,25 +2291,24 @@ const UI = {
         });
     },
 
-    addAndScheduleAction() {
-        if (!this.pendingSpokeConfig) return;
+    _addActionToSpoke() {
+        if (!this.pendingSpokeConfig) return null;
 
         const input = document.getElementById('new-spoke-action-input');
         const actionText = input.value.trim();
 
         if (!actionText) {
             alert('Please enter an action name');
-            return;
+            return null;
         }
 
-        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
 
-        // Ensure spoke is action type and an object
         const category = DataModel.categories.find(c => c.id === categoryId);
-        if (!category) return;
+        if (!category) return null;
 
         const item = category.items.find(i => i.id === itemId);
-        if (!item) return;
+        if (!item) return null;
 
         // Convert spoke to object if needed
         if (typeof item.subItems[spokeIndex] === 'string') {
@@ -2319,7 +2330,8 @@ const UI = {
         const childIndex = item.subItems[spokeIndex].children.length;
         item.subItems[spokeIndex].children.push({
             text: actionText,
-            children: []
+            children: [],
+            completed: false
         });
 
         // Set spoke type to list (has children)
@@ -2332,13 +2344,28 @@ const UI = {
         // Update display
         this.renderExistingActions();
 
+        return { actionText, childIndex };
+    },
+
+    addAction() {
+        const result = this._addActionToSpoke();
+        if (!result) return;
+        App.render();
+    },
+
+    addAndScheduleAction() {
+        const result = this._addActionToSpoke();
+        if (!result) return;
+
+        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
+
         // Close spoke config temporarily and open scheduler
         document.getElementById('spoke-config-overlay').classList.remove('active');
 
         // Open scheduler with return-to-config flag
         this.pendingReturnToSpokeConfig = true;
-        const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
-        this.showDateTimePicker(actionText, spokeName, sliceName, categoryName, dataLocation);
+        const dataLocation = { categoryId, itemId, spokeIndex, childIndex: result.childIndex };
+        this.showDateTimePicker(result.actionText, spokeName, sliceName, categoryName, dataLocation);
     },
 
     rescheduleAction(childIndex) {
@@ -3986,5 +4013,28 @@ const UI = {
 
         this.closeExportPreview();
         Storage.exportToFile(exportData);
+    },
+
+    toggleActionCompleted(categoryId, itemId, spokeIndex, childIndex) {
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+
+        const spoke = item.subItems[spokeIndex];
+        if (typeof spoke !== 'object' || !spoke.children || !spoke.children[childIndex]) return;
+
+        const child = spoke.children[childIndex];
+        if (typeof child === 'string') {
+            spoke.children[childIndex] = { text: child, children: [], completed: true };
+        } else {
+            child.completed = !child.completed;
+        }
+
+        DataModel.saveToStorage();
+        this.renderTab2Spokes();
+        this.renderExistingActions();
+        App.render();
     }
 };

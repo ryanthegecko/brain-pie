@@ -1120,13 +1120,15 @@ const ChartRenderer = {
                 }
 
                 // Child label
+                const isCompleted = child.completed || false;
                 branchGroup.append('text')
                     .attr('x', posX)
                     .attr('y', posY - 5)
                     .attr('text-anchor', labelAnchor)
                     .style('font-size', '14px')
-                    .style('fill', '#333')
-                    .text(child.text || child)
+                    .style('fill', isCompleted ? '#999' : '#333')
+                    .style('text-decoration', isCompleted ? 'line-through' : 'none')
+                    .text((isCompleted ? '✓ ' : '') + (child.text || child))
                     .on('click', function(event) {
                         event.stopPropagation();
                         that.openCalendarForAction(child, spokeData, itemData.data.name, categoryData.data.name, childDataLocation);
