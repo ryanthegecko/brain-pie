@@ -423,12 +423,14 @@ const ChartRenderer = {
                     const indicator = ChartRenderer.getSpokeVisualIndicator(subItem);
                     const textStyle = ChartRenderer.getSpokeTextStyle(subItem);
 
+                    // Put indicator on outside edge: right side = text+indicator, left side = indicator+text
+                    const labelText = extendX > 0 ? spokeName + indicator : indicator + spokeName;
                     const spokeLabel = group.append('text')
                         .attr('class', 'sub-item-label')
                         .attr('transform', `translate(${labelX}, ${labelY}) rotate(${textRotation})`)
                         .attr('text-anchor', extendX > 0 ? 'start' : 'end')
                         .style('cursor', 'pointer')
-                        .text(spokeName + indicator)
+                        .text(labelText)
                         .on('click', function(event) {
                             ChartRenderer.handleSpokeClick(
                                 event,
@@ -569,7 +571,8 @@ const ChartRenderer = {
                         .attr('stroke', '#666')
                         .attr('stroke-width', 2);
 
-                    // Label with spoke type indicator
+                    // Label with spoke type indicator (indicator on outside edge)
+                    const labelText = extendX > 0 ? spokeName + indicator : indicator + spokeName;
                     const spokeLabel = expandedGroup.append('text')
                         .attr('class', 'sub-item-label')
                         .style('font-size', '13px')
@@ -577,7 +580,7 @@ const ChartRenderer = {
                         .attr('x', extendX + ((horizontalLength + 5) * direction))
                         .attr('y', extendY + 4)
                         .attr('text-anchor', extendX > 0 ? 'start' : 'end')
-                        .text(spokeName + indicator);
+                        .text(labelText);
 
                     // Apply text styling based on spoke type
                     Object.keys(textStyle).forEach(key => {
@@ -735,7 +738,8 @@ const ChartRenderer = {
                                 .attr('stroke', '#666')
                                 .attr('stroke-width', 2);
 
-                            // Label with spoke type indicator
+                            // Label with spoke type indicator (indicator on outside edge)
+                            const labelText = extendX > 0 ? spokeName + indicator : indicator + spokeName;
                             const spokeLabel = expandedGroup.append('text')
                                 .attr('class', 'sub-item-label')
                                 .style('font-size', '13px')
@@ -743,7 +747,7 @@ const ChartRenderer = {
                                 .attr('x', extendX + ((horizontalLength + 5) * direction))
                                 .attr('y', extendY + 4)
                                 .attr('text-anchor', extendX > 0 ? 'start' : 'end')
-                                .text(spokeName + indicator);
+                                .text(labelText);
 
                             // Apply text styling based on spoke type
                             Object.keys(textStyle).forEach(key => {
