@@ -584,7 +584,10 @@ const DataModel = {
         return {
             text: spoke.text || '',
             type: type,
-            children: spoke.children || [],
+            children: (spoke.children || []).map(child => {
+                if (typeof child === 'string') return { text: child, children: [], completed: false };
+                return { ...child, completed: child.completed || false };
+            }),
             scheduled: spoke.scheduled || null, // For single/repeating: spoke-level scheduling
             metadata: {
                 condition: spoke.metadata?.condition || null,

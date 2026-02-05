@@ -848,12 +848,15 @@
                                id="new-spoke-action-input"
                                placeholder="Enter action name..."
                                style="flex: 1;"
-                               onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addAndScheduleAction();}">
+                               onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addAction();}">
+                        <button type="button" onclick="UI.addAction()">
+                            Add
+                        </button>
                         <button type="button" class="secondary" onclick="UI.addAndScheduleAction()">
                             Add & Schedule
                         </button>
                     </div>
-                    <span class="helper-text">Add an action, then schedule it. Repeat for more actions.</span>
+                    <span class="helper-text">Add actions, then optionally schedule them.</span>
                 </div>
             </div>
 
