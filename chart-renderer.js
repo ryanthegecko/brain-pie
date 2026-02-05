@@ -1,6 +1,7 @@
 const ChartRenderer = {
     svg: null,
     highlightGroup: null,
+    viewMode: 'pie',  // 'pie' or 'tree'
     expandedView: null,  // { type: 'slice'|'category', categoryId, itemId? }
     _wasExpanded: false,  // Track previous state for crossfade animation
     currentExpandedLocation: null,  // Track {categoryId, itemId, spokeIndex} for toggle (branch expansion)
@@ -119,6 +120,46 @@ const ChartRenderer = {
         return null;
     },
 
+    // Get the scheduled date for a spoke (returns Date or null)
+    getScheduledDate(spoke) {
+        if (typeof spoke === 'string') return null;
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+
+        if (type === 'single' && spoke.scheduled && spoke.scheduled.date) {
+            return new Date(`${spoke.scheduled.date}T${spoke.scheduled.time || '00:00'}`);
+        }
+        if (type === 'repeating' && spoke.metadata && spoke.metadata.recurrence) {
+            const rec = spoke.metadata.recurrence;
+            if (rec.startDate) return new Date(`${rec.startDate}T${rec.time || '00:00'}`);
+        }
+        return null;
+    },
+
+    // Check if a date is today (same calendar day)
+    isToday(date) {
+        const now = new Date();
+        return date.getFullYear() === now.getFullYear() &&
+               date.getMonth() === now.getMonth() &&
+               date.getDate() === now.getDate();
+    },
+
+    // Check if a date is in the past (before today)
+    isPast(date) {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        return date < todayStart;
+    },
+
+    // Check if a date is tomorrow
+    isTomorrow(date) {
+        const now = new Date();
+        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        return date.getFullYear() === tomorrow.getFullYear() &&
+               date.getMonth() === tomorrow.getMonth() &&
+               date.getDate() === tomorrow.getDate();
+    },
+
     // Get pill background color based on spoke state
     getSchedulePillColor(spoke) {
         if (typeof spoke === 'string') return null;
@@ -129,15 +170,17 @@ const ChartRenderer = {
         const hasSchedule = spoke.scheduled && spoke.scheduled.date;
         const hasRecurrence = spoke.metadata && spoke.metadata.recurrence;
 
-        // Green for scheduled, blue for unscheduled/list
         if (type === 'single') {
-            return hasSchedule ? '#4CAF50' : '#2196F3';
+            if (!hasSchedule) return '#2196F3';
+            const date = this.getScheduledDate(spoke);
+            if (date && this.isPast(date)) return '#FF9800';
+            return '#4CAF50';
         }
         if (type === 'repeating') {
             return hasRecurrence ? '#4CAF50' : '#2196F3';
         }
         if (type === 'list') {
-            return '#2196F3';  // Blue for list type
+            return '#2196F3';
         }
 
         return null;
@@ -225,6 +268,9 @@ const ChartRenderer = {
         if (!icon && !pillText) return;
 
         const pillColor = this.getSchedulePillColor(spoke) || '#4CAF50';
+        const scheduledDate = this.getScheduledDate(spoke);
+        const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
+        const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
         const iconSize = 16;
 
         // Get name text bounding box after brief delay
@@ -273,7 +319,7 @@ const ChartRenderer = {
                         .text(pillText);
 
                     const pillTextBbox = pillTextEl.node().getBBox();
-                    pillGroup.insert('rect', 'text:last-of-type')
+                    const rect = pillGroup.insert('rect', 'text:last-of-type')
                         .attr('x', pillTextBbox.x - padding.x)
                         .attr('y', pillTextBbox.y - padding.y)
                         .attr('width', pillTextBbox.width + padding.x * 2)
@@ -281,6 +327,18 @@ const ChartRenderer = {
                         .attr('rx', 10)
                         .attr('ry', 10)
                         .attr('fill', pillColor);
+
+                    // Borders: orange today, black tomorrow, white otherwise
+                    if (isTodayEvent) {
+                        rect.attr('stroke', '#FF9800')
+                            .attr('stroke-width', 2);
+                    } else if (isTomorrowEvent) {
+                        rect.attr('stroke', '#000000')
+                            .attr('stroke-width', 2);
+                    } else {
+                        rect.attr('stroke', '#ffffff')
+                            .attr('stroke-width', 1.5);
+                    }
                 }
 
             } catch (e) {
@@ -307,8 +365,12 @@ const ChartRenderer = {
             }
 
             // Show branch expansion for spokes with children
-            const angle = sliceData.startAngle + ((sliceData.endAngle - sliceData.startAngle) / sliceData.data.subItems.length) * (spokeIndex + 0.5);
-            ChartRenderer.expandBranch(subItem, catData, sliceData, angle, categoryId, itemId, spokeIndex);
+            if (this.viewMode === 'tree') {
+                ChartRenderer.expandBranchTreemap(subItem, catData, sliceData, categoryId, itemId, spokeIndex);
+            } else {
+                const angle = sliceData.startAngle + ((sliceData.endAngle - sliceData.startAngle) / sliceData.data.subItems.length) * (spokeIndex + 0.5);
+                ChartRenderer.expandBranch(subItem, catData, sliceData, angle, categoryId, itemId, spokeIndex);
+            }
         } else if (spokeType === 'single') {
             // For single type, open date/time picker directly
             this.collapseIfBranchExpanded();
@@ -341,12 +403,21 @@ const ChartRenderer = {
         this.outerRadius = Math.min(containerWidth <= 1024 ? 350 : 550, minDimension * 0.33);
         this.innerRadius = containerWidth <= 1024 ? this.outerRadius - 40 : this.outerRadius - 40;
         
-        this.svg = container.append('svg')
-            .attr('width', this.width)
-            .attr('height', this.height)
-            .append('g')
-            .attr('transform', `translate(${this.width / 2}, ${(this.height / 2)})`);
-        
+        if (this.viewMode === 'tree') {
+            // Treemap: SVG fills container, no centering transform
+            this.svg = container.append('svg')
+                .attr('width', this.width)
+                .attr('height', this.height)
+                .append('g');
+        } else {
+            // Pie: centered coordinate system
+            this.svg = container.append('svg')
+                .attr('width', this.width)
+                .attr('height', this.height)
+                .append('g')
+                .attr('transform', `translate(${this.width / 2}, ${(this.height / 2)})`);
+        }
+
         // Create a group for highlighted/expanded slices (drawn on top)
         this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
     },
@@ -363,6 +434,14 @@ const ChartRenderer = {
     render(categories) {
         if (!this.svg) this.init('chart-container');
 
+        if (this.viewMode === 'tree') {
+            this.renderTreemap(categories);
+        } else {
+            this.renderPie(categories);
+        }
+    },
+
+    renderPie(categories) {
         this.svg.selectAll('*').remove();
         this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
 
@@ -736,7 +815,406 @@ const ChartRenderer = {
         this._wasExpanded = !!this.expandedView;
     },
 
+    renderTreemap(categories) {
+        this.svg.selectAll('*').remove();
+        this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
+
+        const totalItems = categories.reduce((sum, cat) => sum + cat.items.length, 0);
+
+        if (totalItems === 0) {
+            this.svg.append('text')
+                .attr('x', this.width / 2)
+                .attr('y', this.height / 2)
+                .attr('text-anchor', 'middle')
+                .attr('fill', '#999')
+                .attr('font-size', '16px')
+                .text('Add items to see your brain tree');
+            return;
+        }
+
+        // Calculate category percentages (same as renderPie)
+        let categoryData = categories.map(cat => ({
+            ...cat,
+            percentage: DataModel.getCategoryPercentage(cat.id)
+        })).filter(cat => cat.items.length > 0);
+
+        // Handle expanded view
+        if (this.expandedView) {
+            const ev = this.expandedView;
+            if (ev.type === 'slice') {
+                const parentCat = categoryData.find(c => c.id === ev.categoryId);
+                const targetSlice = parentCat && parentCat.items.find(item => item.id === ev.itemId);
+                if (parentCat && targetSlice) {
+                    categoryData = [{
+                        ...parentCat,
+                        percentage: 100,
+                        items: [{ ...targetSlice, percentage: 100 }]
+                    }];
+                } else {
+                    this.expandedView = null;
+                }
+            } else if (ev.type === 'category') {
+                const targetCat = categoryData.find(c => c.id === ev.categoryId);
+                if (targetCat) {
+                    categoryData = [{ ...targetCat, percentage: 100 }];
+                } else {
+                    this.expandedView = null;
+                }
+            }
+        }
+
+        // Build d3 hierarchy
+        const hierarchyData = {
+            name: 'root',
+            children: categoryData.map(cat => ({
+                name: cat.name,
+                color: cat.color,
+                id: cat.id,
+                categoryRef: cat,
+                children: cat.items.map(item => ({
+                    name: item.name,
+                    color: item.color,
+                    id: item.id,
+                    categoryId: cat.id,
+                    itemRef: item,
+                    value: Math.max(1, (item.percentage / 100) * cat.percentage),
+                    subItems: item.subItems || []
+                }))
+            }))
+        };
+
+        const margin = { top: 8, right: 8, bottom: 8, left: 8 };
+        const treemapWidth = this.width - margin.left - margin.right;
+        const treemapHeight = this.height - margin.top - margin.bottom;
+
+        const root = d3.hierarchy(hierarchyData)
+            .sum(d => d.value || 0)
+            .sort((a, b) => b.value - a.value);
+
+        d3.treemap()
+            .size([treemapWidth, treemapHeight])
+            .paddingTop(26)
+            .paddingRight(3)
+            .paddingBottom(3)
+            .paddingLeft(3)
+            .paddingInner(3)
+            .round(true)
+            (root);
+
+        const treemapG = this.svg.append('g')
+            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+        // --- Level 1: Category groups ---
+        const categoryNodes = root.children || [];
+
+        categoryNodes.forEach(catNode => {
+            const catW = catNode.x1 - catNode.x0;
+            const catH = catNode.y1 - catNode.y0;
+            if (catW < 2 || catH < 2) return;
+
+            const catGroup = treemapG.append('g')
+                .attr('class', 'treemap-category')
+                .attr('transform', `translate(${catNode.x0}, ${catNode.y0})`);
+
+            // Category background
+            catGroup.append('rect')
+                .attr('width', catW)
+                .attr('height', catH)
+                .attr('fill', catNode.data.color)
+                .attr('opacity', 0.2)
+                .attr('rx', 6)
+                .attr('stroke', catNode.data.color)
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .on('click', (event) => {
+                    event.stopPropagation();
+                    if (this.collapseIfBranchExpanded()) return;
+                    if (this.expandedView) {
+                        this.collapseToFullPie();
+                    } else {
+                        this.expandedView = { type: 'category', categoryId: catNode.data.id };
+                        App.render();
+                    }
+                });
+
+            // Category header label
+            const catTextColor = this.isColorDark(catNode.data.color) ? '#ffffff' : '#333333';
+            const maxCatChars = Math.floor((catW - 12) / 8);
+            const catLabel = catNode.data.name.length > maxCatChars
+                ? catNode.data.name.substring(0, Math.max(3, maxCatChars - 1)) + '...'
+                : catNode.data.name;
+
+            catGroup.append('text')
+                .attr('x', 6)
+                .attr('y', 17)
+                .attr('font-size', '13px')
+                .attr('font-weight', 'bold')
+                .attr('fill', catTextColor)
+                .text(catLabel)
+                .style('pointer-events', 'none');
+
+            // --- Level 2: Slice cells within category ---
+            if (!catNode.children) return;
+
+            catNode.children.forEach(sliceNode => {
+                const sliceW = sliceNode.x1 - sliceNode.x0;
+                const sliceH = sliceNode.y1 - sliceNode.y0;
+                if (sliceW < 2 || sliceH < 2) return;
+
+                const sliceGroup = treemapG.append('g')
+                    .attr('class', 'treemap-slice')
+                    .attr('transform', `translate(${sliceNode.x0}, ${sliceNode.y0})`);
+
+                // Slice rectangle
+                sliceGroup.append('rect')
+                    .attr('width', sliceW)
+                    .attr('height', sliceH)
+                    .attr('fill', sliceNode.data.color)
+                    .attr('opacity', 0.85)
+                    .attr('rx', 4)
+                    .style('cursor', 'pointer')
+                    .on('click', (event) => {
+                        event.stopPropagation();
+                        if (this.collapseIfBranchExpanded()) return;
+                        if (this.expandedView && this.expandedView.type === 'slice') {
+                            this.collapseToFullPie();
+                        } else {
+                            this.expandedView = {
+                                type: 'slice',
+                                categoryId: sliceNode.data.categoryId,
+                                itemId: sliceNode.data.id
+                            };
+                            App.render();
+                        }
+                    });
+
+                // Slice header label
+                const sliceTextColor = this.isColorDark(sliceNode.data.color) ? '#ffffff' : '#222222';
+                const maxSliceChars = Math.floor((sliceW - 8) / 7);
+                const sliceLabel = sliceNode.data.name.length > maxSliceChars
+                    ? sliceNode.data.name.substring(0, Math.max(3, maxSliceChars - 1)) + '...'
+                    : sliceNode.data.name;
+
+                sliceGroup.append('text')
+                    .attr('x', 4)
+                    .attr('y', 15)
+                    .attr('font-size', '11px')
+                    .attr('font-weight', '600')
+                    .attr('fill', sliceTextColor)
+                    .text(sliceLabel)
+                    .style('pointer-events', 'none');
+
+                // --- Level 3: Spokes as wrapped text rows ---
+                const subItems = sliceNode.data.subItems || [];
+                const spokeStartY = 22;
+                const lineHeight = 13;
+                const spokePadding = 3;  // Extra gap between spokes
+                const charWidth = 5.8;   // Approx width per char at 10px font
+                const maxY = sliceH - 4;
+                const categoryId = sliceNode.data.categoryId;
+                const itemId = sliceNode.data.id;
+
+                let cursorY = spokeStartY;
+
+                for (let idx = 0; idx < subItems.length; idx++) {
+                    if (cursorY >= maxY) {
+                        // Show overflow count
+                        const remaining = subItems.length - idx;
+                        if (remaining > 0) {
+                            sliceGroup.append('text')
+                                .attr('class', 'treemap-spoke-group')
+                                .attr('x', 5)
+                                .attr('y', cursorY)
+                                .attr('font-size', '9px')
+                                .attr('fill', sliceTextColor)
+                                .attr('opacity', 0.6)
+                                .text(`+${remaining} more`);
+                        }
+                        break;
+                    }
+
+                    const subItem = subItems[idx];
+                    const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
+                    const icon = this.getScheduleIcon(subItem);
+                    const textStyle = this.getSpokeTextStyle(subItem);
+                    const pillText = this.getSchedulePillText(subItem);
+                    const pillColor = this.getSchedulePillColor(subItem);
+                    const scheduledDate = this.getScheduledDate(subItem);
+                    const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
+                    const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
+
+                    const textStartX = icon ? 20 : 5;
+                    const textAvailableW = sliceW - textStartX - 6;
+                    const charsPerLine = Math.max(4, Math.floor(textAvailableW / charWidth));
+
+                    // Word-wrap the spoke name
+                    const words = spokeName.split(' ');
+                    const lines = [];
+                    let currentLine = '';
+                    for (const word of words) {
+                        const test = currentLine ? currentLine + ' ' + word : word;
+                        if (test.length > charsPerLine && currentLine) {
+                            lines.push(currentLine);
+                            currentLine = word;
+                        } else {
+                            currentLine = test;
+                        }
+                    }
+                    if (currentLine) lines.push(currentLine);
+
+                    // Check if this spoke fits
+                    const spokeHeight = lines.length * lineHeight + spokePadding;
+                    if (cursorY + spokeHeight > maxY + lineHeight) {
+                        // Only show if at least first line fits
+                        if (cursorY + lineHeight > maxY) {
+                            const remaining = subItems.length - idx;
+                            if (remaining > 0) {
+                                sliceGroup.append('text')
+                                    .attr('class', 'treemap-spoke-group')
+                                    .attr('x', 5)
+                                    .attr('y', cursorY)
+                                    .attr('font-size', '9px')
+                                    .attr('fill', sliceTextColor)
+                                    .attr('opacity', 0.6)
+                                    .text(`+${remaining} more`);
+                            }
+                            break;
+                        }
+                    }
+
+                    // Clickable spoke group
+                    const spokeGroup = sliceGroup.append('g')
+                        .attr('class', 'treemap-spoke-group')
+                        .style('cursor', 'pointer')
+                        .on('click', (event) => {
+                            event.stopPropagation();
+                            this.handleSpokeClick(
+                                event, subItem,
+                                { data: catNode.data.categoryRef },
+                                { data: sliceNode.data.itemRef, startAngle: 0, endAngle: 0 },
+                                idx, categoryId, itemId
+                            );
+                        });
+
+                    // Icon on first line
+                    if (icon) {
+                        spokeGroup.append('text')
+                            .attr('x', 5)
+                            .attr('y', cursorY)
+                            .attr('font-size', '10px')
+                            .text(icon);
+                    }
+
+                    // Wrapped text lines
+                    const nameEl = spokeGroup.append('text')
+                        .attr('x', textStartX)
+                        .attr('y', cursorY)
+                        .attr('font-size', '10px')
+                        .attr('fill', sliceTextColor);
+
+                    Object.keys(textStyle).forEach(key => {
+                        nameEl.style(key, textStyle[key]);
+                    });
+
+                    lines.forEach((line, lineIdx) => {
+                        if (lineIdx === 0) {
+                            nameEl.text(line);
+                        } else {
+                            nameEl.append('tspan')
+                                .attr('x', textStartX)
+                                .attr('dy', lineHeight)
+                                .text(line);
+                        }
+                    });
+
+                    const lastLineY = cursorY + (lines.length - 1) * lineHeight;
+
+                    // Inline schedule pill on last line
+                    if (pillText && pillColor) {
+                        setTimeout(() => {
+                            try {
+                                const lastLineWidth = lines[lines.length - 1].length * charWidth;
+                                const pillX = textStartX + lastLineWidth + 4;
+                                const pillPadX = 5;
+                                const pillPadY = 2;
+
+                                const pillTextEl = spokeGroup.append('text')
+                                    .attr('x', pillX + pillPadX)
+                                    .attr('y', lastLineY)
+                                    .attr('font-size', '8px')
+                                    .attr('fill', '#ffffff')
+                                    .attr('font-weight', 'bold')
+                                    .text(pillText);
+
+                                const pillBbox = pillTextEl.node().getBBox();
+                                const rect = spokeGroup.insert('rect', 'text:last-of-type')
+                                    .attr('x', pillBbox.x - pillPadX)
+                                    .attr('y', pillBbox.y - pillPadY)
+                                    .attr('width', Math.min(pillBbox.width + pillPadX * 2, sliceW - pillX - 4))
+                                    .attr('height', pillBbox.height + pillPadY * 2)
+                                    .attr('rx', 6)
+                                    .attr('fill', pillColor);
+
+                                if (isTodayEvent) {
+                                    rect.attr('stroke', '#FF9800').attr('stroke-width', 1.5);
+                                } else if (isTomorrowEvent) {
+                                    rect.attr('stroke', '#000000').attr('stroke-width', 1.5);
+                                } else {
+                                    rect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
+                                }
+                            } catch (e) { /* element may not be in DOM */ }
+                        }, 10);
+                    }
+
+                    cursorY += spokeHeight;
+                }
+            });
+        });
+
+        // Back button when expanded
+        if (this.expandedView) {
+            const backBtn = treemapG.append('g')
+                .attr('class', 'back-button')
+                .attr('transform', `translate(${treemapWidth - 25}, 13)`)
+                .style('cursor', 'pointer')
+                .on('click', (event) => {
+                    event.stopPropagation();
+                    this.collapseToFullPie();
+                });
+
+            backBtn.append('circle')
+                .attr('r', 14)
+                .attr('fill', '#666')
+                .attr('opacity', 0.8);
+
+            backBtn.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.35em')
+                .style('font-size', '14px')
+                .style('fill', '#fff')
+                .style('font-weight', 'bold')
+                .text('\u2715');
+        }
+
+        // Crossfade animation
+        if (this.expandedView || this._wasExpanded) {
+            this.svg.style('opacity', 0)
+                .transition().duration(300)
+                .style('opacity', 1);
+        }
+        this._wasExpanded = !!this.expandedView;
+    },
+
     collapseToFullPie() {
+        // Close any open branch and clean up its state
+        if (this.currentExpandedLocation) {
+            this.currentExpandedLocation = null;
+            this.highlightGroup.selectAll('*').remove();
+            if (this.branchClickOutsideHandler) {
+                document.removeEventListener('click', this.branchClickOutsideHandler);
+                this.branchClickOutsideHandler = null;
+            }
+        }
         this.expandedView = null;
         App.render();
     },
@@ -953,6 +1431,151 @@ const ChartRenderer = {
         }, 100);
     },
 
+    expandBranchTreemap(spokeData, categoryData, sliceData, categoryId, itemId, spokeIndex) {
+        if (!Debug.isActive('allowMultipleBranches') && this.currentExpandedLocation) {
+            this.collapseBranch();
+        }
+
+        this.currentExpandedLocation = { categoryId, itemId, spokeIndex };
+        const that = this;
+        const dataLocation = { categoryId, itemId, spokeIndex };
+        const children = spokeData.children || [];
+        if (children.length === 0) return;
+
+        const spokeName = spokeData.text || spokeData;
+        const sliceName = sliceData.data ? sliceData.data.name : '';
+        const categoryName = categoryData.data ? categoryData.data.name : '';
+
+        // Card dimensions
+        const rowHeight = 28;
+        const cardPadding = 12;
+        const headerHeight = 28;
+        const cardWidth = Math.min(280, this.width - 40);
+        const cardHeight = Math.min(headerHeight + children.length * rowHeight + cardPadding, this.height - 40);
+
+        // Center the card
+        const cardX = (this.width - cardWidth) / 2;
+        const cardY = (this.height - cardHeight) / 2;
+
+        const branchGroup = this.highlightGroup.append('g')
+            .attr('class', 'branch-view treemap-branch');
+
+        // Dimmer behind card
+        branchGroup.append('rect')
+            .attr('width', this.width)
+            .attr('height', this.height)
+            .attr('fill', '#000')
+            .attr('opacity', 0.2);
+
+        // Card background
+        branchGroup.append('rect')
+            .attr('x', cardX)
+            .attr('y', cardY)
+            .attr('width', cardWidth)
+            .attr('height', cardHeight)
+            .attr('rx', 8)
+            .attr('fill', '#ffffff')
+            .attr('stroke', '#ddd')
+            .attr('stroke-width', 1);
+
+        // Card header
+        branchGroup.append('text')
+            .attr('x', cardX + cardPadding)
+            .attr('y', cardY + 20)
+            .attr('font-size', '13px')
+            .attr('font-weight', 'bold')
+            .attr('fill', '#333')
+            .text(spokeName);
+
+        // Action rows
+        children.forEach((child, idx) => {
+            const rowY = cardY + headerHeight + idx * rowHeight;
+            const childText = child.text || child;
+            const hasSchedule = child.scheduled && child.scheduled.date;
+            const childDataLocation = { ...dataLocation, childIndex: idx };
+
+            const rowGroup = branchGroup.append('g')
+                .style('cursor', 'pointer')
+                .on('click', function(event) {
+                    event.stopPropagation();
+                    that.openCalendarForAction(child, spokeData, sliceName, categoryName, childDataLocation);
+                });
+
+            // Calendar indicator
+            if (hasSchedule) {
+                const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time || '00:00'}`);
+                const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                const timeStr = child.scheduled.time ? that.formatCompactTime(child.scheduled.time) : '';
+
+                rowGroup.append('circle')
+                    .attr('cx', cardX + cardPadding + 6)
+                    .attr('cy', rowY + 10)
+                    .attr('r', 6)
+                    .attr('fill', '#4CAF50');
+
+                rowGroup.append('text')
+                    .attr('x', cardX + cardPadding + 6)
+                    .attr('y', rowY + 13)
+                    .attr('text-anchor', 'middle')
+                    .attr('font-size', '8px')
+                    .attr('fill', '#fff')
+                    .text('✓');
+
+                // Date pill after text
+                const pillX = cardX + cardPadding + 18;
+                rowGroup.append('text')
+                    .attr('x', pillX)
+                    .attr('y', rowY + 14)
+                    .attr('font-size', '11px')
+                    .attr('fill', '#333')
+                    .text(childText);
+
+                const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
+                rowGroup.append('text')
+                    .attr('x', cardX + cardWidth - cardPadding)
+                    .attr('y', rowY + 14)
+                    .attr('text-anchor', 'end')
+                    .attr('font-size', '9px')
+                    .attr('fill', '#4CAF50')
+                    .attr('font-weight', 'bold')
+                    .text(pillLabel);
+            } else {
+                rowGroup.append('circle')
+                    .attr('cx', cardX + cardPadding + 6)
+                    .attr('cy', rowY + 10)
+                    .attr('r', 6)
+                    .attr('fill', '#4285F4');
+
+                rowGroup.append('text')
+                    .attr('x', cardX + cardPadding + 6)
+                    .attr('y', rowY + 14)
+                    .attr('text-anchor', 'middle')
+                    .attr('font-size', '8px')
+                    .attr('fill', '#fff')
+                    .text('📅');
+
+                rowGroup.append('text')
+                    .attr('x', cardX + cardPadding + 18)
+                    .attr('y', rowY + 14)
+                    .attr('font-size', '11px')
+                    .attr('fill', '#333')
+                    .text(childText);
+            }
+        });
+
+        this.highlightGroup.raise();
+
+        // Click outside to collapse
+        setTimeout(() => {
+            that.branchClickOutsideHandler = function(event) {
+                const branchView = document.querySelector('.treemap-branch');
+                if (branchView && branchView.contains(event.target)) return;
+                that.collapseBranch();
+            };
+            document.addEventListener('click', that.branchClickOutsideHandler);
+        }, 50);
+    },
+
     collapseBranch() {
         this.currentExpandedLocation = null;
         this.highlightGroup.selectAll('*').remove();
@@ -963,9 +1586,11 @@ const ChartRenderer = {
             this.branchClickOutsideHandler = null;
         }
 
-        // Restore main pie position and scale
-        this.svg.transition().duration(300)
-            .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
+        // Restore main pie position and scale (pie mode only)
+        if (this.viewMode === 'pie') {
+            this.svg.transition().duration(300)
+                .attr('transform', `translate(${this.width / 2}, ${this.height / 2}) scale(1)`);
+        }
     },
     openCalendarForAction(action, spokeData, itemData, categoryData, dataLocation = null) {
         const actionText = action.text || action;
