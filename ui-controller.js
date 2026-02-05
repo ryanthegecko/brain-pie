@@ -1572,7 +1572,7 @@ const UI = {
                 Debug.log('Calendar API failed, falling back to URL redirect');
                 const startDate = new Date(`${dateStr}T${timeStr}`);
                 const endDate = new Date(startDate.getTime() + duration * 60000);
-                this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+                this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location, notes);
             }
         } else if (provider === 'apple') {
             const startDate = new Date(`${dateStr}T${timeStr}`);
@@ -1582,7 +1582,7 @@ const UI = {
             // Google without API access - use URL redirect
             const startDate = new Date(`${dateStr}T${timeStr}`);
             const endDate = new Date(startDate.getTime() + duration * 60000);
-            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location, notes);
         }
 
         // Save scheduled time to the data
@@ -1631,20 +1631,32 @@ const UI = {
         }
     },
     
-    openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate) {
+    openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location = null, notes = null) {
         const formatDate = (date) => {
             return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         };
-        
+
         const dates = `${formatDate(startDate)}/${formatDate(endDate)}`;
-        
+
+        // Build description with notes first, then context
+        let details = '';
+        if (notes) {
+            details += notes + '\n\n---\n\n';
+        }
+        details += `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
+
         const params = new URLSearchParams({
             action: 'TEMPLATE',
             text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
-            details: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
+            details: details,
             dates: dates
         });
-        
+
+        // Add location if provided
+        if (location) {
+            params.set('location', location);
+        }
+
         const calendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
         window.open(calendarUrl, '_blank');
     },
