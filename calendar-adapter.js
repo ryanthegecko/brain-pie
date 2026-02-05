@@ -171,12 +171,17 @@ const CalendarAdapter = {
      * @returns {Object} Google Calendar API event object
      */
     buildEventPayload(eventData) {
-        const { title, date, time, duration, description, rrule, allDay } = eventData;
+        const { title, date, time, duration, description, rrule, allDay, location } = eventData;
 
         const payload = {
             summary: title,
             description: description || `Created by Brain Pie`
         };
+
+        // Add location if provided
+        if (location) {
+            payload.location = location;
+        }
 
         if (allDay) {
             // All-day event uses date (not dateTime)

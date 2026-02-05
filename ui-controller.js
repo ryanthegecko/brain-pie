@@ -1322,6 +1322,8 @@ const UI = {
             const roundedMinute = Math.round(parseInt(minute) / 5) * 5;
             document.getElementById('event-minute').value = String(roundedMinute).padStart(2, '0');
             document.getElementById('event-duration').value = existingSchedule.duration || '60';
+            document.getElementById('event-location').value = existingSchedule.location || '';
+            document.getElementById('event-notes').value = existingSchedule.notes || '';
         } else {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1329,6 +1331,8 @@ const UI = {
             document.getElementById('event-hour').value = '09';
             document.getElementById('event-minute').value = '00';
             document.getElementById('event-duration').value = '60';
+            document.getElementById('event-location').value = '';
+            document.getElementById('event-notes').value = '';
         }
 
         // Update button text and show reminder based on whether this is a reschedule
@@ -1384,12 +1388,14 @@ const UI = {
 
         const { actionText, spokeText, sliceName, categoryName, dataLocation } = this.pendingCalendarEvent;
 
-        // Get user-selected date/time
+        // Get user-selected date/time and optional fields
         const dateStr = document.getElementById('event-date').value;
         const hourStr = document.getElementById('event-hour').value;
         const minuteStr = document.getElementById('event-minute').value;
         const timeStr = `${hourStr}:${minuteStr}`;
         const duration = parseInt(document.getElementById('event-duration').value);
+        const location = document.getElementById('event-location').value.trim();
+        const notes = document.getElementById('event-notes').value.trim();
 
         if (!dateStr || !hourStr || !minuteStr) {
             alert('Please select date and time');
@@ -1418,10 +1424,19 @@ const UI = {
         const scheduledData = {
             date: dateStr,
             time: timeStr,
-            duration: duration
+            duration: duration,
+            location: location || null,
+            notes: notes || null
         };
 
         const provider = this.getCalendarProvider();
+
+        // Build description with user notes first, then action context
+        let description = '';
+        if (notes) {
+            description += notes + '\n\n---\n\n';
+        }
+        description += `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
 
         // For Google, try API first, fall back to URL redirect
         if (provider === 'google' && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
@@ -1430,7 +1445,8 @@ const UI = {
                 date: dateStr,
                 time: timeStr,
                 duration: duration,
-                description: `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`
+                location: location || null,
+                description: description
             };
 
             let event;
@@ -1468,7 +1484,7 @@ const UI = {
         } else if (provider === 'apple') {
             const startDate = new Date(`${dateStr}T${timeStr}`);
             const endDate = new Date(startDate.getTime() + duration * 60000);
-            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate);
+            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, null, location, notes);
         } else {
             // Google without API access - use URL redirect
             const startDate = new Date(`${dateStr}T${timeStr}`);
@@ -1522,7 +1538,7 @@ const UI = {
         window.open(calendarUrl, '_blank');
     },
     
-    downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, rrule = null) {
+    downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, rrule = null, location = null, notes = null) {
         // Format dates for iCalendar format (local time, not UTC)
         const formatICSDate = (date) => {
             const year = date.getFullYear();
@@ -1534,6 +1550,16 @@ const UI = {
             return `${year}${month}${day}T${hours}${minutes}${seconds}`;
         };
 
+        // Escape special characters for ICS format
+        const escapeICS = (str) => str ? str.replace(/[\\;,\n]/g, (m) => m === '\n' ? '\\n' : '\\' + m) : '';
+
+        // Build description with notes first, then context
+        let description = '';
+        if (notes) {
+            description += escapeICS(notes) + '\\n\\n---\\n\\n';
+        }
+        description += `Category: ${escapeICS(categoryName)}\\nSlice: ${escapeICS(sliceName)}\\nSpoke: ${escapeICS(spokeText)}\\nAction: ${escapeICS(actionText)}\\n\\nCreated from Brain Pie`;
+
         // Build event lines
         const eventLines = [
             'BEGIN:VCALENDAR',
@@ -1542,9 +1568,14 @@ const UI = {
             'BEGIN:VEVENT',
             `DTSTART:${formatICSDate(startDate)}`,
             `DTEND:${formatICSDate(endDate)}`,
-            `SUMMARY:${actionText} (${categoryName} - ${sliceName})`,
-            `DESCRIPTION:Category: ${categoryName}\\nSlice: ${sliceName}\\nSpoke: ${spokeText}\\nAction: ${actionText}\\n\\nCreated from Brain Pie`
+            `SUMMARY:${escapeICS(actionText)} (${escapeICS(categoryName)} - ${escapeICS(sliceName)})`,
+            `DESCRIPTION:${description}`
         ];
+
+        // Add location if provided
+        if (location) {
+            eventLines.push(`LOCATION:${escapeICS(location)}`);
+        }
 
         // Add RRULE for recurring events
         if (rrule) {

@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Brain Pie</title>
+    <link rel="icon" href="assets/favicon.svg" />
     <meta property="og:title" content="Brain Pie" />
     <meta property="og:description" content="A visualiser for your mind." />
     <meta property="og:type" content="website" />
-    
-
 
     <meta property="og:url" content="https://ryanthegecko.github.io/brain-pie/" />
     <meta property="og:image" content="https://ryanthegecko.github.io/brain-pie/assets/og.png" />
@@ -442,7 +441,17 @@
                     <option value="240">4 hours</option>
                 </select>
             </div>
-            
+
+            <div class="datetime-section">
+                <label for="event-location">Location <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <input type="text" id="event-location" placeholder="Address, Google Maps link, or meeting room" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+            </div>
+
+            <div class="datetime-section">
+                <label for="event-notes">Notes <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <textarea id="event-notes" placeholder="Phone numbers, URLs, or any details for the calendar event" rows="3" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
+            </div>
+
             <div id="reschedule-reminder" style="display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px; font-size: 13px; color: #856404;">
                 ⚠️ Remember to manually delete the old calendar entry if you no longer need it.
             </div>
