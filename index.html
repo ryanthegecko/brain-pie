@@ -192,7 +192,7 @@
                                 <input type="text" id="tab2-new-spoke" placeholder="Enter spoke name..."
                                        onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addSpokeFromTab2();}">
                             </div>
-                            <button onclick="UI.addSpokeFromTab2()">Add Spoke</button>
+                            <button style="background: #4CAF50;" onclick="UI.addSpokeFromTab2()">Add Spoke</button>
                         </div>
                     </div>
                 </div>
@@ -507,6 +507,12 @@
             <h2>Set Recurrence</h2>
 
             <div class="recurrence-section">
+                <label for="recurrence-start-date">Starting from</label>
+                <input type="date" id="recurrence-start-date"
+                       style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+            </div>
+
+            <div class="recurrence-section">
                 <label>Repeat every</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <input type="number" id="recurrence-interval" value="1" min="1" max="99"
@@ -798,15 +804,15 @@
                     <input type="radio" name="spoke-type" value="static" checked onchange="UI.updateSpokeTypeFields('static')">
                     <div class="spoke-type-label">
                         <span class="spoke-type-title">📌 Static</span>
-                        <span class="spoke-type-description">Stays on your mind indefinitely (e.g., "Call Mum regularly")</span>
+                        <span class="spoke-type-description">Persistent reminder (no calendar)</span>
                     </div>
                 </label>
 
                 <label class="radio-option spoke-type-option">
-                    <input type="radio" name="spoke-type" value="action" onchange="UI.updateSpokeTypeFields('action')">
+                    <input type="radio" name="spoke-type" value="single" onchange="UI.updateSpokeTypeFields('single')">
                     <div class="spoke-type-label">
-                        <span class="spoke-type-title">✓ Action(s)</span>
-                        <span class="spoke-type-description">One-time tasks to complete (can add to calendar)</span>
+                        <span class="spoke-type-title">📅 Single</span>
+                        <span class="spoke-type-description">One-time schedulable task</span>
                     </div>
                 </label>
 
@@ -814,19 +820,17 @@
                     <input type="radio" name="spoke-type" value="repeating" onchange="UI.updateSpokeTypeFields('repeating')">
                     <div class="spoke-type-label">
                         <span class="spoke-type-title">🔁 Repeating</span>
-                        <span class="spoke-type-description">Recurring task (daily, weekly, etc.)</span>
+                        <span class="spoke-type-description">Recurring schedulable task</span>
                     </div>
                 </label>
 
-                <!-- HIDDEN UNTIL COMPLETE
                 <label class="radio-option spoke-type-option">
-                    <input type="radio" name="spoke-type" value="pending" onchange="UI.updateSpokeTypeFields('pending')">
+                    <input type="radio" name="spoke-type" value="list" onchange="UI.updateSpokeTypeFields('list')">
                     <div class="spoke-type-label">
-                        <span class="spoke-type-title">⏸ Pending</span>
-                        <span class="spoke-type-description">Waiting for something to happen first</span>
+                        <span class="spoke-type-title">☑️ List</span>
+                        <span class="spoke-type-description">Container for multiple actions</span>
                     </div>
                 </label>
-                -->
             </div>
 
             <!-- Action(s) section -->
@@ -891,6 +895,45 @@
             <button onclick="UI.saveSpokeConfig()" style="margin-top: 20px; width: 100%;">
                 Save Configuration
             </button>
+        </div>
+    </div>
+
+    <!-- Spoke Type Picker Overlay (for changing spoke types) -->
+    <div class="spoke-type-picker-overlay" id="spoke-type-picker-overlay" onclick="UI.closeSpokeTypePicker()">
+        <div class="spoke-type-picker-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeSpokeTypePicker()">✕</button>
+            <h2>Spoke Type</h2>
+
+            <div id="spoke-type-picker-details" style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #666;">Spoke:</div>
+                <div id="spoke-type-picker-name" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+            </div>
+
+            <div class="spoke-type-picker-options">
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('static')">
+                    <span class="spoke-type-picker-icon">📌</span>
+                    <span class="spoke-type-picker-label">Static</span>
+                    <span class="spoke-type-picker-desc">Persistent reminder</span>
+                </button>
+
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('single')">
+                    <span class="spoke-type-picker-icon">📅</span>
+                    <span class="spoke-type-picker-label">Single</span>
+                    <span class="spoke-type-picker-desc">One-time schedulable task</span>
+                </button>
+
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('repeating')">
+                    <span class="spoke-type-picker-icon">🔁</span>
+                    <span class="spoke-type-picker-label">Repeating</span>
+                    <span class="spoke-type-picker-desc">Recurring schedulable task</span>
+                </button>
+
+                <button class="spoke-type-picker-btn" onclick="UI.selectSpokeType('list')">
+                    <span class="spoke-type-picker-icon">☑️</span>
+                    <span class="spoke-type-picker-label">List</span>
+                    <span class="spoke-type-picker-desc">Container for multiple actions</span>
+                </button>
+            </div>
         </div>
     </div>
 

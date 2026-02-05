@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.6
+**Current Version:** v0.7
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -76,8 +76,21 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
           subItems: [
             "Simple spoke string (legacy format)",
             {
-              text: "Spoke with type and actions",
-              type: "action",  // 'static', 'action', 'repeating', 'pending'
+              text: "Spoke with type",
+              type: "single",  // 'static', 'single', 'repeating', 'list'
+
+              // For Single type: spoke itself is the schedulable event
+              scheduled: {
+                date: "2026-02-15",
+                time: "09:00",
+                duration: 60,
+                calendarEventId: null
+              },
+
+              // For Repeating type: spoke has recurrence pattern
+              // (stored in metadata.recurrence)
+
+              // For List type only: children array with actions
               children: [
                 {
                   text: "Action 1",
@@ -90,10 +103,9 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
                 },
                 { text: "Action 2", children: [] }
               ],
+
               metadata: {
-                condition: null,        // For pending spokes
-                calendarEventId: null,  // For calendar sync
-                nextState: null,        // For pending → action transitions
+                calendarEventId: null,  // For calendar sync (repeating spokes)
                 recurrence: null        // For repeating spokes
               }
             }
@@ -174,17 +186,31 @@ Three ways to focus on specific areas:
 
 ### 4. Spoke Type System
 Spokes can have different types that affect their behavior:
-- **Static** (default) - Persistent reminders that stay on your mind
-- **Action** - One-time tasks with calendar integration and scheduling
-- **Repeating** - Recurring tasks (planned, not yet implemented)
-- **Pending** - Conditional tasks awaiting state change (planned, not yet implemented)
 
-**Action Scheduling Workflow:**
-1. Click on a spoke to open configuration popup
-2. Select "Action(s)" type
-3. Add action name → Schedule or Skip → Repeat for more actions
-4. Scheduled actions show date/time instead of calendar icon
-5. Clicking scheduled action opens reschedule popup with reminder to delete old calendar entry
+| Type | Purpose | Has Children? | Calendar Integration |
+|------|---------|---------------|---------------------|
+| **Static** | Persistent reminders | No | None |
+| **Single** | One-time schedulable task | No | Yes - spoke itself is the event |
+| **Repeating** | Recurring schedulable task | No | Yes - spoke itself is recurring event |
+| **List** | Container for multiple actions/steps | Yes | Actions have their own calendar events |
+
+**Spoke Workflow:**
+1. Add spoke using green "+" button → created as **Static** by default
+2. Click blue "Spoke type" button to change type
+3. Based on type selection:
+   - **Static**: No change, stays as reminder
+   - **Single**: Opens date/time picker to schedule spoke itself
+   - **Repeating**: Opens recurrence picker to set up recurring event
+   - **List**: Opens spoke config to manage multiple actions
+4. For Single/Repeating: Green button shows schedule, click to reschedule
+5. For List: Click "+" to add actions, each action has its own calendar button
+
+**Calendar Event Naming:**
+- **Single/Repeating spokes**: `Spoke Name (Category/Slice)`
+- **List actions**: `Action Name (Spoke/Slice/Category)`
+
+**Backwards Compatibility:**
+- Existing `type: 'action'` spokes are treated as 'list'
 
 ### 5. Calendar Integration
 - **Google Calendar** - Opens web interface with pre-filled event
@@ -261,6 +287,41 @@ Breakpoints:
 4. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.7 (February 2026)
+Spoke type restructure - spokes can now be actionable items themselves:
+
+**New Spoke Types:**
+| Type | Purpose | Has Children? | Calendar Integration |
+|------|---------|---------------|---------------------|
+| **Static** | Persistent reminders | No | None |
+| **Single** | One-time schedulable task | No | Yes - spoke itself is the event |
+| **Repeating** | Recurring schedulable task | No | Yes - spoke itself is recurring event |
+| **List** | Container for multiple actions/steps | Yes | Actions have their own calendar events |
+
+**Key Changes:**
+- Spokes now added as **Static** by default (not immediately prompted for type)
+- Blue "Spoke type" button appears next to new spokes to change type
+- **Single** type: spoke itself is the schedulable event (opens date/time picker)
+- **Repeating** type: spoke itself is the recurring event (opens recurrence picker)
+- **List** type: backwards compatible with old 'action' type, manages child actions
+- Recurrence picker now includes **start date** field (defaults to tomorrow)
+- Button colors: blue = unscheduled, green = scheduled/calendar types
+
+**Calendar Event Naming:**
+- Single/Repeating spokes: `Spoke Name (Category/Slice)`
+- List actions: `Action Name (Spoke/Slice/Category)`
+
+**Backwards Compatibility:**
+- Existing `type: 'action'` spokes automatically treated as 'list'
+- String spokes normalized to 'static' type
+
+**UI Updates:**
+- "Add spoke" button changed from blue to green
+- Spoke type picker overlay for selecting type after creation
+- Chart click behavior varies by spoke type (type picker, date picker, recurrence picker, or branch expansion)
+
+---
 
 ### v0.6 (February 2026)
 First-time user tutorial:
@@ -434,9 +495,11 @@ Initial public release with core functionality:
 
 ## Planned Features (Next Steps)
 
-### Priority 1: Complete Spoke Type System
+### Priority 1: Pending Spoke Type (potential 5th type)
 - **Pending** - Conditional tasks awaiting state change
-- State management for pending → action/static transitions
+- Would be 5th spoke type alongside Static, Single, Repeating, List
+- State management for pending → single/list transitions
+- UI for setting/clearing pending conditions
 
 ### Priority 2: Expansion Refactor
 Replace the "redraw expanded view" approach with:
@@ -521,14 +584,16 @@ Debug.log('message', data)
 - [ ] Responsive behavior
 - [ ] localStorage persistence
 - [ ] Example data for new users
-- [ ] Spoke type configuration (static ↔ action ↔ repeating)
-- [ ] Action scheduling workflow (add → schedule/skip)
-- [ ] Scheduled time display in branch view
-- [ ] Scheduled time display in list view
-- [ ] Reschedule existing actions
-- [ ] Legacy spoke format compatibility
-- [ ] Repeating spokes with recurrence picker
-- [ ] Recurring events in Google Calendar
+- [ ] **Spoke types**: Static, Single, Repeating, List
+- [ ] **Single spoke**: Schedule spoke itself, reschedule, calendar event
+- [ ] **Repeating spoke**: Set recurrence, calendar recurring event
+- [ ] **List spoke**: Add actions, schedule individual actions
+- [ ] Spoke type picker from chart click
+- [ ] Spoke type button colors (blue=unscheduled, green=scheduled)
+- [ ] Legacy 'action' type treated as 'list'
+- [ ] Calendar event naming: Single/Repeating = "Spoke (Category/Slice)"
+- [ ] Calendar event naming: List actions = "Action (Spoke/Slice/Category)"
+- [ ] Repeating events in Google Calendar with RRULE
 - [ ] RRULE in Apple Calendar .ics files
 - [ ] 2-way calendar sync (moved/deleted events)
 
