@@ -39,10 +39,10 @@ const UI = {
             content.classList.toggle('active', content.id === 'menu-tab-1');
         });
 
-        // Reset category mode to "new"
-        const newRadio = document.querySelector('input[name="category-mode"][value="new"]');
-        if (newRadio) newRadio.checked = true;
-        this.toggleCategoryMode('new');
+        // Reset category mode to "existing"
+        const existingRadio = document.querySelector('input[name="category-mode"][value="existing"]');
+        if (existingRadio) existingRadio.checked = true;
+        this.toggleCategoryMode('existing');
 
         // Reset slice section
         this.disableSliceSection();
@@ -440,7 +440,7 @@ const UI = {
             return;
         }
 
-        const { item } = data;
+        const { item, categoryId, itemId } = data;
 
         if (item.subItems.length === 0) {
             container.innerHTML = '<div class="tab2-spokes-empty">No spokes yet. Add one below.</div>';
@@ -1426,6 +1426,11 @@ const UI = {
             this.renderTab2Spokes();
             App.render();
         }
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('datetime-picker-closed');
+        }
     },
 
     skipScheduling() {
@@ -1441,6 +1446,11 @@ const UI = {
         } else {
             this.renderTab2Spokes();
             App.render();
+        }
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('datetime-picker-closed');
         }
     },
 
@@ -1627,10 +1637,16 @@ const UI = {
             document.getElementById('spoke-config-overlay').classList.add('active');
             this.renderExistingActions();
         } else {
+            this.renderTab2Spokes();
             App.render();
         }
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('datetime-picker-closed');
+        }
     },
-    
+
     openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location = null, notes = null) {
         const formatDate = (date) => {
             return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -2465,6 +2481,11 @@ const UI = {
         document.getElementById('spoke-type-picker-name').textContent = spokeName;
 
         document.getElementById('spoke-type-picker-overlay').classList.add('active');
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('spoke-type-picker-opened');
+        }
     },
 
     /**
@@ -2491,6 +2512,10 @@ const UI = {
 
         // Based on type, open appropriate follow-up UI
         if (type === 'single') {
+            // Notify tutorial before opening scheduler
+            if (typeof TutorialManager !== 'undefined') {
+                TutorialManager.notifyEvent('single-type-selected');
+            }
             // Open date/time picker for single spoke
             this.openSpokeScheduler(categoryId, itemId, spokeIndex);
         } else if (type === 'repeating') {
