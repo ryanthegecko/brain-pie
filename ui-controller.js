@@ -1417,7 +1417,8 @@ const UI = {
         const rescheduleReminder = document.getElementById('reschedule-reminder');
 
         if (titleEl) {
-            titleEl.textContent = existingSchedule ? 'Reschedule Action' : 'Schedule Action';
+            const name = actionText || '';
+            titleEl.textContent = existingSchedule ? `Reschedule: ${name}` : `Schedule: ${name}`;
         }
 
         if (addButton) {
@@ -1430,6 +1431,19 @@ const UI = {
 
         if (rescheduleReminder) {
             rescheduleReminder.style.display = existingSchedule ? 'block' : 'none';
+        }
+
+        // Update star button state
+        const dtStarBtn = document.getElementById('datetime-star-btn');
+        if (dataLocation) {
+            const starRef = dataLocation.childIndex != null
+                ? { type: 'action', categoryId: dataLocation.categoryId, itemId: dataLocation.itemId, spokeIndex: dataLocation.spokeIndex, childIndex: dataLocation.childIndex }
+                : { type: 'spoke', categoryId: dataLocation.categoryId, itemId: dataLocation.itemId, spokeIndex: dataLocation.spokeIndex };
+            if (dtStarBtn) dtStarBtn.style.display = '';
+            this.updateSchedulerStar('datetime-star-btn', starRef);
+        } else {
+            this.schedulerStarRef = null;
+            if (dtStarBtn) { dtStarBtn.classList.remove('active'); dtStarBtn.style.display = 'none'; }
         }
 
         // Show modal
@@ -1798,6 +1812,10 @@ const UI = {
         this.updateRecurrenceOptions();
         this.updateRecurrenceEndOptions();
 
+        // Hide star (no data location during initial creation)
+        const recStarBtn = document.getElementById('recurrence-star-btn');
+        if (recStarBtn) { recStarBtn.classList.remove('active'); recStarBtn.style.display = 'none'; }
+
         document.getElementById('recurrence-overlay').classList.add('active');
     },
 
@@ -2133,6 +2151,9 @@ const UI = {
             }
         };
 
+        // Update star button state for action
+        this.updateSchedulerStar('recurrence-star-btn', { type: 'action', categoryId, itemId, spokeIndex, childIndex });
+
         document.getElementById('recurrence-overlay').classList.add('active');
     },
 
@@ -2156,11 +2177,10 @@ const UI = {
         // Get current spoke type and metadata
         const spokeType = DataModel.getSpokeType(categoryId, itemId, spokeIndex) || 'static';
 
-        // Set radio button
-        const radio = document.querySelector(`input[name="spoke-type"][value="${spokeType}"]`);
-        if (radio) {
-            radio.checked = true;
-        }
+        // Highlight current type button
+        document.querySelectorAll('.spoke-config-content .spoke-type-picker-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.spokeType === spokeType);
+        });
 
         // Clear and populate existing actions
         this.renderExistingActions();
@@ -2171,6 +2191,9 @@ const UI = {
 
         // Show appropriate fields
         this.updateSpokeTypeFields(spokeType);
+
+        // Update star button state
+        this.updateSchedulerStar('spoke-config-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
 
         // Show modal
         document.getElementById('spoke-config-overlay').classList.add('active');
@@ -2183,8 +2206,9 @@ const UI = {
         this.pendingRecurrenceData = null;
 
         // Reset form
-        const staticRadio = document.querySelector('input[name="spoke-type"][value="static"]');
-        if (staticRadio) staticRadio.checked = true;
+        document.querySelectorAll('.spoke-config-content .spoke-type-picker-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.spokeType === 'static');
+        });
         document.getElementById('spoke-existing-actions').innerHTML = '';
         document.getElementById('spoke-actions-fields').style.display = 'none';
         document.getElementById('spoke-repeating-fields').style.display = 'none';
@@ -2198,6 +2222,13 @@ const UI = {
         }
 
         App.render();
+    },
+
+    selectSpokeConfigType(type) {
+        document.querySelectorAll('.spoke-config-content .spoke-type-picker-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.spokeType === type);
+        });
+        this.updateSpokeTypeFields(type);
     },
 
     updateSpokeTypeFields(type) {
@@ -2446,7 +2477,8 @@ const UI = {
     async saveSpokeConfig() {
         if (!this.pendingSpokeConfig) return;
 
-        const selectedType = document.querySelector('input[name="spoke-type"]:checked').value;
+        const selectedBtn = document.querySelector('.spoke-config-content .spoke-type-picker-btn.selected');
+        const selectedType = selectedBtn ? selectedBtn.dataset.spokeType : 'static';
         const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
 
         // Build metadata based on type
@@ -2522,6 +2554,15 @@ const UI = {
 
         // Show spoke name in picker
         document.getElementById('spoke-type-picker-name').textContent = spokeName;
+
+        // Highlight current spoke type
+        const currentType = DataModel.getSpokeType(categoryId, itemId, spokeIndex);
+        document.querySelectorAll('.spoke-type-picker-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.spokeType === currentType);
+        });
+
+        // Update star button state
+        this.updateSchedulerStar('spoke-type-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
 
         document.getElementById('spoke-type-picker-overlay').classList.add('active');
 
@@ -2632,7 +2673,7 @@ const UI = {
         const rescheduleReminder = document.getElementById('reschedule-reminder');
 
         if (titleEl) {
-            titleEl.textContent = isReschedule ? 'Reschedule Action' : 'Schedule Action';
+            titleEl.textContent = isReschedule ? `Reschedule: ${spokeName}` : `Schedule: ${spokeName}`;
         }
         if (addButton) {
             addButton.textContent = isReschedule ? '📅 Reschedule' : '📅 Add to Calendar';
@@ -2643,6 +2684,11 @@ const UI = {
 
         // Clear action-level pending data and set spoke-level
         this.pendingCalendarEvent = null;
+
+        // Update star button state for spoke
+        const spokeStarBtn = document.getElementById('datetime-star-btn');
+        if (spokeStarBtn) spokeStarBtn.style.display = '';
+        this.updateSchedulerStar('datetime-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
 
         document.getElementById('datetime-overlay').classList.add('active');
     },
@@ -2729,7 +2775,7 @@ const UI = {
         const recTitleEl = document.getElementById('recurrence-picker-title');
         const recSubmitBtn = document.getElementById('recurrence-submit-btn');
         if (recTitleEl) {
-            recTitleEl.textContent = existingRecurrence ? 'Update Recurrence' : 'Set Recurrence';
+            recTitleEl.textContent = existingRecurrence ? `Update Recurrence: ${spokeName}` : `Set Recurrence: ${spokeName}`;
         }
         if (recSubmitBtn) {
             recSubmitBtn.textContent = existingRecurrence ? '🔁 Update Recurrence' : '🔁 Set Recurrence';
@@ -2782,6 +2828,9 @@ const UI = {
                 App.render();
             }
         };
+
+        // Update star button state for spoke
+        this.updateSchedulerStar('recurrence-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
 
         document.getElementById('recurrence-overlay').classList.add('active');
     },
@@ -4095,7 +4144,11 @@ const UI = {
     },
 
     isPrioritised(ref) {
-        return DataModel.priorityList.some(p =>
+        return this.getPriorityIndex(ref) >= 0;
+    },
+
+    getPriorityIndex(ref) {
+        return DataModel.priorityList.findIndex(p =>
             p.type === ref.type &&
             p.categoryId === ref.categoryId &&
             p.itemId === ref.itemId &&
@@ -4105,15 +4158,33 @@ const UI = {
     },
 
     addToPriorities(ref) {
-        const added = DataModel.addPriority(ref);
-        if (added) {
+        const result = DataModel.addPriority(ref);
+        if (result === 'added') {
             Storage.showStatus('Added to priorities');
-            this.openPrioritiser();
-        } else {
-            Storage.showStatus('Already in priorities');
+        } else if (result === 'moved') {
+            Storage.showStatus('Moved to top');
         }
-        // Re-render cards to update star button state
+        this.openPrioritiser();
         App.render();
+    },
+
+    // Scheduler star support
+    schedulerStarRef: null,
+
+    updateSchedulerStar(btnId, ref) {
+        this.schedulerStarRef = ref;
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.style.display = '';
+        btn.classList.toggle('active', this.isPrioritised(ref));
+    },
+
+    toggleSchedulerStar(type) {
+        if (!this.schedulerStarRef) return;
+        const btnIds = { 'datetime': 'datetime-star-btn', 'recurrence': 'recurrence-star-btn', 'spoke-type': 'spoke-type-star-btn', 'spoke-config': 'spoke-config-star-btn' };
+        const btn = document.getElementById(btnIds[type]);
+        this.addToPriorities(this.schedulerStarRef);
+        if (btn) btn.classList.toggle('active', this.isPrioritised(this.schedulerStarRef));
     },
 
     renderPriorityList() {
@@ -4145,16 +4216,18 @@ const UI = {
             return `
                 <div class="prioritiser-item" draggable="true"
                     data-priority-index="${idx}"
+                    onclick="UI.navigateToPriority(${idx})"
                     ondragstart="UI.handlePriorityDragStart(event, ${idx})"
                     ondragend="UI.handlePriorityDragEnd(event)"
                     ondragover="UI.handlePriorityDragOver(event)"
                     ondrop="UI.handlePriorityDrop(event, ${idx})">
                     <span class="priority-rank">${idx + 1}</span>
                     <span class="priority-color" style="background: ${resolved.color}"></span>
-                    <div class="priority-info">
+                    <div class="priority-info" style="cursor: pointer">
                         <div class="priority-name">${resolved.displayName}</div>
                         <div class="priority-context">${resolved.context}</div>
                     </div>
+                    <button class="priority-star-btn active" onclick="event.stopPropagation(); UI.bumpPriority(${idx})" title="Move to top">&#9733;</button>
                     <button class="priority-remove" onclick="event.stopPropagation(); UI.removePriority(${idx})" title="Remove from priorities">&#10005;</button>
                 </div>
             `;
@@ -4170,6 +4243,36 @@ const UI = {
         DataModel.removePriority(index);
         this.renderPriorityList();
         App.render();
+    },
+
+    bumpPriority(index) {
+        if (index === 0) return;
+        DataModel.reorderPriority(index, 0);
+        this.renderPriorityList();
+    },
+
+    navigateToPriority(index) {
+        const ref = DataModel.priorityList[index];
+        if (!ref) return;
+
+        // Expand the slice in the pie view
+        ChartRenderer.expandedView = { type: 'slice', categoryId: ref.categoryId, itemId: ref.itemId };
+        App.render();
+
+        // For action or spoke refs on list spokes, open the action popup after render
+        if ((ref.type === 'action' || ref.type === 'spoke') && ref.spokeIndex != null) {
+            const category = DataModel.categories.find(c => c.id === ref.categoryId);
+            if (!category) return;
+            const item = category.items.find(i => i.id === ref.itemId);
+            if (!item) return;
+            const spoke = (item.subItems || [])[ref.spokeIndex];
+            if (!spoke || typeof spoke !== 'object' || !spoke.children || spoke.children.length === 0) return;
+            const categoryName = category.name;
+            const sliceName = item.name;
+            requestAnimationFrame(() => {
+                ChartRenderer.showActionPopup(null, spoke, categoryName, sliceName, ref.categoryId, ref.itemId, ref.spokeIndex);
+            });
+        }
     },
 
     // Priority item drag-to-reorder

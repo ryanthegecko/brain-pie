@@ -1,7 +1,7 @@
 ---
 name: dcpr
 description: Document changes, update CLAUDE.md changelog & roadmap, bump version, commit, push, and create PR
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "[version-bump: patch|minor]"
 ---
 
