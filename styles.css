@@ -524,12 +524,15 @@ textarea {
 }
 
 .item-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     /* fill: #333; */
     pointer-events: none;
     @media (max-width: 960px) {
         font-size: 10px;
+    }
+    @media (min-width: 1920px) {
+        font-size: 13px;
     }
 }
 
@@ -2272,5 +2275,39 @@ select:focus {
 
     .tutorial-btn {
         width: 100%;
+    }
+}
+
+/* Tutorial Resume Button (shown during explore mode) */
+.tutorial-resume-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    z-index: 2999;
+    transition: all 0.2s ease;
+    display: none;
+}
+
+.tutorial-resume-btn:hover {
+    background: #43A047;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
+}
+
+@media (max-width: 768px) {
+    .tutorial-resume-btn {
+        bottom: 80px;
+        right: 10px;
+        padding: 10px 16px;
+        font-size: 13px;
     }
 }

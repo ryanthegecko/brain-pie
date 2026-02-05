@@ -1,7 +1,16 @@
 /**
  * TutorialManager - Guides first-time users through Brain Pie
  *
- * Flow: Welcome → Create Slice → Add Spoke → Add Action → Schedule → Calendar Sync → Complete
+ * Flow:
+ * 1. Welcome
+ * 2. Show "Life Pie" (ExampleData) - explain whole-life organization
+ * 3. Show "Team Pie" (ExampleData2) - explain team/project usage
+ * 4. Offer calendar login for 2-way sync
+ * 5. Load "Health Pie" (ExampleData3) - simple pie for hands-on learning
+ * 6. Guide: Add new "Yoga" slice
+ * 7. Guide: Add spoke "Trial class"
+ * 8. Guide: Schedule action for next Wednesday 6:45pm
+ * 9. Complete
  */
 const TutorialManager = {
     COMPLETED_KEY: 'brainPieTutorialCompleted',
@@ -11,24 +20,73 @@ const TutorialManager = {
         {
             id: 'welcome',
             type: 'modal',
-            title: 'Welcome to Brain Pie!',
-            content: 'Let me show you how to organize your mind in a few simple steps.',
-            nextAction: 'click-next'
+            title: 'Welcome to Brain Pie! 🥧',
+            content: "I'll show you different ways people use Brain Pie, then we'll create something together.",
+            buttons: [
+                { text: 'Skip Tutorial', action: 'skip', class: 'secondary' },
+                { text: "Let's Go!", action: 'next', class: 'primary' }
+            ]
+        },
+        {
+            id: 'life-pie',
+            type: 'modal',
+            title: 'The Life Pie',
+            content: 'This is a "whole life" pie. Categories like Home, Health, Learning, and Social help organize everything on your mind. Each slice breaks down into spokes (tasks) and actions.',
+            onEnter: 'loadLifePie',
+            buttons: [
+                { text: 'Skip', action: 'skip', class: 'secondary' },
+                { text: 'Explore', action: 'explore', class: '' },
+                { text: 'Next', action: 'next', class: 'primary' }
+            ]
+        },
+        {
+            id: 'team-pie',
+            type: 'modal',
+            title: 'The Team Pie',
+            content: "This is a project pie for a team. Each category is a team member (PM, Designer, Developer). It's clear who's doing what, what's done, and what's in progress. Everyone can add and update.",
+            onEnter: 'loadTeamPie',
+            buttons: [
+                { text: 'Skip', action: 'skip', class: 'secondary' },
+                { text: 'Explore', action: 'explore', class: '' },
+                { text: 'Next', action: 'next', class: 'primary' }
+            ]
+        },
+        {
+            id: 'calendar-login',
+            type: 'modal',
+            title: 'Calendar Sync',
+            content: 'Sign in with Google to enable 2-way sync. When you move an event in Google Calendar, Brain Pie updates automatically. Without sign-in, events still go to your calendar, just one-way.',
+            buttons: [
+                { text: 'Skip', action: 'skip', class: 'secondary' },
+                { text: 'Maybe Later', action: 'next', class: '' },
+                { text: 'Sign In', action: 'signIn', class: 'primary' }
+            ]
+        },
+        {
+            id: 'health-pie-intro',
+            type: 'modal',
+            title: "Let's Build Together",
+            content: "Now let's try adding something. Here's a simple Health pie. Imagine you saw an ad for a yoga class and want to try it out.",
+            onEnter: 'loadHealthPie',
+            buttons: [
+                { text: 'Skip', action: 'skip', class: 'secondary' },
+                { text: "Let's Add It!", action: 'next', class: 'primary' }
+            ]
         },
         {
             id: 'open-menu',
             type: 'spotlight',
             title: 'Open the Menu',
-            content: 'Click the "+ Add" button to create your first slice.',
+            content: 'Click "+ Add" to create a new slice for Yoga.',
             highlight: '.top-bar-right button:first-child',
             mobileHighlight: '.top-bar-right-mobile button:first-child',
             nextEvent: 'menu-opened'
         },
         {
-            id: 'create-slice',
+            id: 'create-yoga-slice',
             type: 'spotlight',
-            title: 'Create a Slice',
-            content: 'Select a category (or create one), then type a slice name like "Morning Routine" and click "Add Slice".',
+            title: 'Add a Yoga Slice',
+            content: 'Select the "Health" category, then type "Yoga" as the slice name and click "Add Slice".',
             highlight: '#menu-tab-1',
             nextEvent: 'slice-added'
         },
@@ -36,15 +94,15 @@ const TutorialManager = {
             id: 'close-menu',
             type: 'spotlight',
             title: 'Close the Menu',
-            content: 'Great! Now close the menu by clicking the X or outside the menu.',
+            content: 'Great! Close the menu to see your new Yoga slice.',
             highlight: '.menu-close',
             nextEvent: 'menu-closed'
         },
         {
             id: 'add-spoke',
             type: 'spotlight',
-            title: 'Add a Spoke',
-            content: 'Find your new slice in the list below and type a spoke (task) in the input field.',
+            title: 'Add a Task',
+            content: 'Find your Yoga slice below and type "Trial class" in the input field, then press Enter.',
             highlight: '.add-spoke-input',
             highlightDynamic: true,
             nextEvent: 'spoke-added'
@@ -53,7 +111,7 @@ const TutorialManager = {
             id: 'add-action',
             type: 'spotlight',
             title: 'Add an Action',
-            content: 'Click the + button next to your spoke to add a specific action.',
+            content: 'Click the + button to add a specific action to schedule.',
             highlight: '.spoke-add-btn',
             highlightDynamic: true,
             nextEvent: 'action-added'
@@ -61,42 +119,42 @@ const TutorialManager = {
         {
             id: 'schedule-action',
             type: 'spotlight',
-            title: 'Schedule Your Action',
-            content: 'Choose "One-time" to add this action to your calendar.',
+            title: 'Schedule It',
+            content: 'Choose "One-time" to schedule this for your calendar. The trial class is next Wednesday at 6:45pm!',
             highlight: '.action-type-btn-onetime',
             nextEvent: 'action-scheduled'
         },
         {
-            id: 'calendar-sync',
+            id: 'calendar-done',
             type: 'modal',
-            title: 'Calendar Magic!',
-            content: 'Your action is now on your calendar! Try moving it in Google Calendar - when you come back, Brain Pie will detect the change automatically.',
-            nextAction: 'click-next',
-            showSyncButton: true
+            title: 'Calendar Integration',
+            content: "Set the date to next Wednesday, time to 6:45pm, and you can add the studio's address in the Location field. Click 'Add to Calendar' when ready!",
+            buttons: [
+                { text: 'Got It!', action: 'next', class: 'primary' }
+            ]
         },
         {
             id: 'complete',
             type: 'modal',
-            title: "You're All Set!",
-            content: 'You now know the basics. Explore categories, slices, spokes, and actions to organize your mind your way. You can restart this tutorial anytime from Settings.',
-            nextAction: 'finish'
+            title: "You're All Set! 🎉",
+            content: "You've learned the basics: categories, slices, spokes, actions, and calendar sync. Restart this tutorial anytime from Settings. Now go organize your mind!",
+            buttons: [
+                { text: 'Finish', action: 'finish', class: 'primary' }
+            ]
         }
     ],
 
     currentStepIndex: 0,
     isActive: false,
-    createdSliceId: null,  // Track the slice user creates for highlighting
+    isExploring: false,  // True when user clicked "Explore"
 
     /**
      * Check if tutorial should start
      */
     shouldStartTutorial() {
-        // Don't start if already completed
         if (localStorage.getItem(this.COMPLETED_KEY)) {
             return false;
         }
-        // Only start for first-time users (no stored data before example loaded)
-        // This is indicated by DataModel having example data
         return true;
     },
 
@@ -104,11 +162,9 @@ const TutorialManager = {
      * Start the tutorial
      */
     start() {
-        // Check for saved progress
         const savedStep = localStorage.getItem(this.STEP_KEY);
         if (savedStep) {
             this.currentStepIndex = parseInt(savedStep, 10);
-            // Validate saved step
             if (this.currentStepIndex >= this.steps.length) {
                 this.currentStepIndex = 0;
             }
@@ -117,6 +173,7 @@ const TutorialManager = {
         }
 
         this.isActive = true;
+        this.isExploring = false;
         this.renderCurrentStep();
     },
 
@@ -125,9 +182,9 @@ const TutorialManager = {
      */
     nextStep() {
         this.hideAll();
+        this.isExploring = false;
         this.currentStepIndex++;
 
-        // Save progress
         localStorage.setItem(this.STEP_KEY, this.currentStepIndex.toString());
 
         if (this.currentStepIndex >= this.steps.length) {
@@ -144,8 +201,11 @@ const TutorialManager = {
     skip() {
         this.hideAll();
         this.isActive = false;
+        this.isExploring = false;
         localStorage.setItem(this.COMPLETED_KEY, 'true');
         localStorage.removeItem(this.STEP_KEY);
+        // Load the life pie as default for new users
+        this.loadLifePie();
     },
 
     /**
@@ -154,6 +214,7 @@ const TutorialManager = {
     complete() {
         this.hideAll();
         this.isActive = false;
+        this.isExploring = false;
         localStorage.setItem(this.COMPLETED_KEY, 'true');
         localStorage.removeItem(this.STEP_KEY);
         Storage.showStatus('Tutorial complete!', 'success');
@@ -167,8 +228,52 @@ const TutorialManager = {
         localStorage.removeItem(this.STEP_KEY);
         this.currentStepIndex = 0;
         this.isActive = false;
-        this.createdSliceId = null;
+        this.isExploring = false;
         this.start();
+    },
+
+    /**
+     * Let user explore current data (hide modal, show resume button)
+     */
+    explore() {
+        this.hideModal();
+        this.isExploring = true;
+        this.showResumeButton();
+    },
+
+    /**
+     * Resume from exploration
+     */
+    resumeFromExplore() {
+        this.hideResumeButton();
+        this.isExploring = false;
+        this.renderCurrentStep();
+    },
+
+    /**
+     * Show a floating "Continue Tutorial" button
+     */
+    showResumeButton() {
+        let btn = document.getElementById('tutorial-resume-btn');
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.id = 'tutorial-resume-btn';
+            btn.className = 'tutorial-resume-btn';
+            btn.innerHTML = '📖 Continue Tutorial';
+            btn.onclick = () => TutorialManager.resumeFromExplore();
+            document.body.appendChild(btn);
+        }
+        btn.style.display = 'block';
+    },
+
+    /**
+     * Hide the resume button
+     */
+    hideResumeButton() {
+        const btn = document.getElementById('tutorial-resume-btn');
+        if (btn) {
+            btn.style.display = 'none';
+        }
     },
 
     /**
@@ -177,6 +282,11 @@ const TutorialManager = {
     renderCurrentStep() {
         const step = this.steps[this.currentStepIndex];
         if (!step) return;
+
+        // Execute onEnter action if defined
+        if (step.onEnter) {
+            this[step.onEnter]();
+        }
 
         if (step.type === 'modal') {
             this.showModal(step);
@@ -197,29 +307,33 @@ const TutorialManager = {
         title.textContent = step.title;
         text.textContent = step.content;
 
-        // Build buttons
+        // Build buttons from step config
         let buttonsHtml = '';
+        for (const btn of (step.buttons || [])) {
+            const btnClass = btn.class ? `tutorial-btn ${btn.class}` : 'tutorial-btn';
+            let onclick = '';
 
-        if (step.nextAction === 'finish') {
-            buttonsHtml = `
-                <button class="tutorial-btn primary" onclick="TutorialManager.complete()">Finish</button>
-            `;
-        } else {
-            buttonsHtml = `
-                <button class="tutorial-btn secondary" onclick="TutorialManager.skip()">Skip Tutorial</button>
-            `;
-
-            if (step.showSyncButton) {
-                buttonsHtml += `
-                    <button class="tutorial-btn" onclick="TutorialManager.checkCalendarSync()">Check for Changes</button>
-                `;
+            switch (btn.action) {
+                case 'next':
+                    onclick = 'TutorialManager.nextStep()';
+                    break;
+                case 'skip':
+                    onclick = 'TutorialManager.skip()';
+                    break;
+                case 'finish':
+                    onclick = 'TutorialManager.complete()';
+                    break;
+                case 'explore':
+                    onclick = 'TutorialManager.explore()';
+                    break;
+                case 'signIn':
+                    onclick = 'TutorialManager.signInForCalendar()';
+                    break;
+                default:
+                    onclick = 'TutorialManager.nextStep()';
             }
 
-            buttonsHtml += `
-                <button class="tutorial-btn primary" onclick="TutorialManager.nextStep()">
-                    ${this.currentStepIndex === 0 ? "Let's Go!" : 'Next'}
-                </button>
-            `;
+            buttonsHtml += `<button class="${btnClass}" onclick="${onclick}">${btn.text}</button>`;
         }
 
         buttons.innerHTML = buttonsHtml;
@@ -247,29 +361,23 @@ const TutorialManager = {
         const content = document.getElementById('tutorial-content');
         const buttons = document.getElementById('tutorial-buttons');
 
-        // Find the element to highlight
         let selector = step.highlight;
 
-        // Use mobile selector if on mobile
         if (step.mobileHighlight && window.innerWidth <= 768) {
             selector = step.mobileHighlight;
         }
 
-        // For dynamic highlights (e.g., newly created elements)
         if (step.highlightDynamic) {
             selector = this.getDynamicSelector(step.id);
         }
 
-        const targetEl = document.querySelector(selector);
+        const targetEl = selector ? document.querySelector(selector) : null;
         if (!targetEl) {
-            // Element not found, skip to next step or wait
             console.warn('Tutorial: Target element not found:', selector);
-            // For some steps, we can just show the tooltip without spotlight
             this.showFloatingTooltip(step);
             return;
         }
 
-        // Position spotlight over target
         const rect = targetEl.getBoundingClientRect();
         const padding = 8;
 
@@ -278,16 +386,13 @@ const TutorialManager = {
         spotlight.style.width = (rect.width + padding * 2) + 'px';
         spotlight.style.height = (rect.height + padding * 2) + 'px';
 
-        // Set tooltip content
         title.textContent = step.title;
         content.textContent = step.content;
         buttons.innerHTML = `
             <button class="tutorial-btn secondary" onclick="TutorialManager.skip()">Skip</button>
         `;
 
-        // Position tooltip near spotlight
         this.positionTooltip(tooltip, rect);
-
         overlay.classList.add('active');
     },
 
@@ -296,14 +401,13 @@ const TutorialManager = {
      */
     getDynamicSelector(stepId) {
         if (stepId === 'add-spoke') {
-            // Find the last category's last item's input
+            // Find the Yoga slice's input (last slice added)
             const inputs = document.querySelectorAll('.add-spoke-input');
             if (inputs.length > 0) {
-                return '.category-section:last-child .add-spoke-input';
+                return '.category-section .add-spoke-input';
             }
         }
         if (stepId === 'add-action') {
-            // Find the last spoke's + button
             const btns = document.querySelectorAll('.spoke-add-btn');
             if (btns.length > 0) {
                 return '.spoke-item:last-child .spoke-add-btn';
@@ -323,17 +427,14 @@ const TutorialManager = {
         const content = document.getElementById('tutorial-content');
         const buttons = document.getElementById('tutorial-buttons');
 
-        // Hide spotlight
         spotlight.style.display = 'none';
 
-        // Set tooltip content
         title.textContent = step.title;
         content.textContent = step.content;
         buttons.innerHTML = `
             <button class="tutorial-btn secondary" onclick="TutorialManager.skip()">Skip</button>
         `;
 
-        // Center tooltip
         tooltip.style.left = '50%';
         tooltip.style.top = '30%';
         tooltip.style.transform = 'translate(-50%, -50%)';
@@ -346,35 +447,27 @@ const TutorialManager = {
      */
     positionTooltip(tooltip, targetRect) {
         const tooltipWidth = 320;
-        const tooltipHeight = 150; // Approximate
+        const tooltipHeight = 150;
         const margin = 20;
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
 
         let left, top;
 
-        // Prefer positioning below the target
         if (targetRect.bottom + margin + tooltipHeight < viewportHeight) {
             top = targetRect.bottom + margin;
             left = targetRect.left;
-        }
-        // Try above
-        else if (targetRect.top - margin - tooltipHeight > 0) {
+        } else if (targetRect.top - margin - tooltipHeight > 0) {
             top = targetRect.top - margin - tooltipHeight;
             left = targetRect.left;
-        }
-        // Try to the right
-        else if (targetRect.right + margin + tooltipWidth < viewportWidth) {
+        } else if (targetRect.right + margin + tooltipWidth < viewportWidth) {
             top = targetRect.top;
             left = targetRect.right + margin;
-        }
-        // Try to the left
-        else {
+        } else {
             top = targetRect.top;
             left = targetRect.left - margin - tooltipWidth;
         }
 
-        // Keep within viewport
         left = Math.max(margin, Math.min(left, viewportWidth - tooltipWidth - margin));
         top = Math.max(margin, Math.min(top, viewportHeight - tooltipHeight - margin));
 
@@ -403,42 +496,73 @@ const TutorialManager = {
     hideAll() {
         this.hideModal();
         this.hideSpotlight();
+        this.hideResumeButton();
     },
 
     /**
      * Called by app code when events happen
      */
     notifyEvent(eventType, data) {
-        if (!this.isActive) return;
+        if (!this.isActive || this.isExploring) return;
 
         const step = this.steps[this.currentStepIndex];
         if (!step || step.type !== 'spotlight') return;
 
-        // Check if this event advances the current step
         if (step.nextEvent === eventType) {
-            // Store context if needed
-            if (eventType === 'slice-added' && data && data.itemId) {
-                this.createdSliceId = data.itemId;
-            }
-
-            // Small delay to let UI update before advancing
             setTimeout(() => this.nextStep(), 300);
         }
     },
 
+    // === Data Loading Methods ===
+
     /**
-     * Check calendar for changes (calendar sync step)
+     * Load the "Life Pie" example data
      */
-    async checkCalendarSync() {
-        if (typeof App !== 'undefined' && App.syncCalendarEvents) {
-            Storage.showStatus('Checking calendar...', 'default');
-            const results = await App.syncCalendarEvents();
-            if (results && (results.updated > 0 || results.deleted > 0)) {
-                Storage.showStatus(`Found ${results.updated + results.deleted} change(s)!`, 'success');
-            } else {
-                Storage.showStatus('No changes found', 'default');
-            }
+    loadLifePie() {
+        if (typeof ExampleData !== 'undefined') {
+            const data = ExampleData.get();
+            DataModel.setCategories(data.categories);
+            DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+            DataModel.saveToStorage();
+            App.render();
         }
-        this.nextStep();
+    },
+
+    /**
+     * Load the "Team Pie" example data
+     */
+    loadTeamPie() {
+        if (typeof ExampleData2 !== 'undefined') {
+            const data = ExampleData2.get();
+            DataModel.setCategories(data.categories);
+            DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+            DataModel.saveToStorage();
+            App.render();
+        }
+    },
+
+    /**
+     * Load the "Health Pie" example data
+     */
+    loadHealthPie() {
+        if (typeof ExampleData3 !== 'undefined') {
+            const data = ExampleData3.get();
+            DataModel.setCategories(data.categories);
+            DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+            DataModel.saveToStorage();
+            App.render();
+        }
+    },
+
+    /**
+     * Sign in for calendar (wrapper for UI method)
+     */
+    signInForCalendar() {
+        this.hideModal();
+        if (typeof UI !== 'undefined' && UI.signInForCalendar) {
+            UI.signInForCalendar();
+        }
+        // Move to next step after a delay
+        setTimeout(() => this.nextStep(), 500);
     }
 };
