@@ -27,7 +27,7 @@ const DataModel = {
             }
         }
 
-        // First time: load example data
+        // First time: load example data (Life Pie)
         const example = ExampleData.get();
         this.categories = example.categories;
         this.categoryPercentageOverrides = example.categoryPercentageOverrides || {};
