@@ -106,14 +106,15 @@ const ChartRenderer = {
         // Get container dimensions
         const containerNode = document.getElementById(containerId);
         const containerWidth = containerNode.clientWidth;
-        const containerHeight = Math.max(containerNode.clientHeight, 600);
+        const containerHeight = Math.max(containerNode.clientHeight, 660);
         
         // Calculate responsive dimensions
         const minDimension = Math.min(containerWidth, containerHeight);
         this.width = containerWidth;
-        this.height = containerWidth > 1024 ? containerHeight : containerHeight / 1.3;
+        this.height = containerHeight;
+        // this.height = containerWidth > 1024 ? containerHeight : containerHeight / 1.3;
         this.outerRadius = Math.min(containerWidth <= 1024 ? 350 : 550, minDimension * 0.33);
-        this.innerRadius = containerWidth <= 1024 ? this.outerRadius - 40 : this.outerRadius - 60;
+        this.innerRadius = containerWidth <= 1024 ? this.outerRadius - 40 : this.outerRadius - 40;
         
         this.svg = container.append('svg')
             .attr('width', this.width)
@@ -309,8 +310,8 @@ const ChartRenderer = {
             // Item labels - RADIAL TEXT along the wedge angle
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
-                const midAngle = (d.startAngle + d.endAngle) / 2;
-                const labelRadius = this.innerRadius / 1.3;
+                let midAngle = (d.startAngle + d.endAngle) / 1.995;
+                const labelRadius = this.innerRadius / 1.7;
 
                 // Show labels for items with enough space
                 if ((d.endAngle - d.startAngle) > 0.06) {
