@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.7
+**Current Version:** v0.8
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -124,17 +124,23 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Renders the D3.js visualization
 - Handles responsive sizing
 - Manages interactive states (hover, click, expand)
-- Implements three expansion modes:
-  - **Slice expansion** - Click an inner slice to expand it
-  - **Category expansion** - Click an outer ring to expand category
+- Implements full-pie takeover expansion:
+  - **Slice takeover** - Click inner slice → re-renders as full 360° pie with that single slice
+  - **Category takeover** - Click outer ring → re-renders showing only that category's slices across 360°
+  - **Drill-down** - In category view, click a slice to drill into slice takeover
   - **Branch expansion** - Click spoke with children to show action tree
+- Back button (✕) and click-anywhere to collapse back to full pie
+- Crossfade animation (300ms) between views
 
 **Key Features:**
 - Curved text along category arcs
 - Radial text for slice labels
 - Exponential spoke extension (longer near vertical axis)
 - Dynamic color contrast detection for text readability
+- Schedule pills on chart spokes with icon + text separation
+- Compact time formatting (9AM, 1:30PM) and recurrence summaries (Mon, Wed, 5PM)
 - Smooth transitions and animations
+- Inline editable spoke names in summary cards
 
 #### 3. **UI Controller** (`ui-controller.js`)
 - Manages all overlay states (menu, settings, datetime picker, spoke config, disclaimer)
@@ -178,11 +184,14 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - **Color pickers** for customization
 - **Percentage adjustments** with automatic redistribution
 
-### 3. Expansion Modes
-Three ways to focus on specific areas:
-- Click a **slice** to expand it (30-60% of view)
-- Click a **category** to expand it with all slices
-- Click a **spoke with actions** to show branch tree
+### 3. Expansion Modes (Full-Pie Takeover)
+Focus on specific areas with full 360° takeover:
+- Click a **slice** → entire pie becomes that single slice at 360°, spokes radiate all around
+- Click a **category** → pie shows only that category's slices across full 360°, outer ring is that category
+- In category view, click a **slice** to drill down into slice takeover
+- Click **✕ back button** or anywhere on expanded chart to return to full pie
+- Click a **spoke with actions** to show branch tree (unchanged)
+- All transitions use 300ms crossfade animation
 
 ### 4. Spoke Type System
 Spokes can have different types that affect their behavior:
@@ -281,12 +290,68 @@ Breakpoints:
 5. **Recurring event sync is one-way** - Changes made to recurring events in Google Calendar (moving single instances, moving all following events) won't sync back to Brain Pie. The app will continue showing the original recurrence pattern. Deleting the entire series from Google Calendar will remove the action locally.
 
 ### Known Behaviors
-1. **Expansion can feel cluttered** with many spokes/actions
-2. **Percentage normalization** sometimes unintuitive for users
-3. **Mobile chart interactions** can be tricky with small slices
-4. **Text overflow** on small slices not handled gracefully
+1. **Percentage normalization** sometimes unintuitive for users
+2. **Mobile chart interactions** can be tricky with small slices
+3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.8 (February 2026)
+Full-pie takeover expansion, UI polish, and editable spokes:
+
+**Full-Pie Takeover Expansion:**
+- Replaced overlay-based expansion with full 360° pie re-render approach
+- Click a slice → entire pie becomes that single slice filling 360°, all spokes radiate around
+- Click a category → pie re-renders showing only that category's slices across 360°
+- Drill-down: in category view, clicking a slice expands it to full takeover
+- Back button (✕) at top-center of chart when expanded
+- Click anywhere on expanded chart to collapse back to full pie
+- 300ms crossfade animation between views
+- Removed old `expandSlice()`, `expandCategory()`, `collapseSlice()` overlay system
+- New `expandedView` state replaces `currentExpanded`
+- Branch expansion (expandBranch/collapseBranch) unchanged
+
+**Chart Schedule Pills Redesign:**
+- Schedule icon rendered outside the pill (separate SVG element)
+- Pill shows text-only (date/time or recurrence summary)
+- Icons: calendar (single), repeat (repeating), checkmark (list)
+- Icons rendered at 16px for better visibility
+- 8px gap between icon and pill
+- Compact time formatting: "09:00" → "9AM", "13:30" → "1:30PM"
+- Recurrence pill text: short format like "Mon, Wed, 5PM"
+- Single scheduled pills now show time
+- Pills hidden when "hide spokes" toggle is active
+
+**Editable Spoke Names:**
+- Spoke names in summary cards are now `contenteditable`
+- Click to edit, blur to save
+- Drag-safe: blur handler checks `UI.draggedData` to prevent conflicts during drag-and-drop
+- New `DataModel.renameSpoke()` method handles both string and object spoke formats
+- New `App.renameSpoke()` pass-through
+
+**Dynamic Scheduler Titles:**
+- Date/time picker shows "Reschedule Action" when editing existing schedule
+- Recurrence picker shows "Update Recurrence" / "Update" when editing existing pattern
+- New schedule shows "Schedule Action" / "Set Recurrence" / "Save"
+
+**Branch View Cleanup:**
+- Removed trunk line from branch view
+- Single child branches positioned 20px from spoke label (closer, cleaner)
+
+**Tutorial Improvements:**
+- "Continue With This Pie" option at tutorial completion (primary button)
+- "Start Fresh" demoted to secondary option
+- New "Click Done" spotlight step highlighting Tab 1 Done button
+- Both tutorial delays set to 2500ms
+- Delay fires before `onEnter` hooks (not after)
+- Summary cards step uses transparent backdrop (no page fade)
+- Scroll target changed to `.categories-section` so h2 title is visible
+
+**Add Slices Menu:**
+- Done button on Tab 1 now always visible (not just during tutorial)
+- Allows adding slices without proceeding to spoke creation
+
+---
 
 ### v0.7 (February 2026)
 Spoke type restructure - spokes can now be actionable items themselves:
@@ -501,18 +566,12 @@ Initial public release with core functionality:
 - State management for pending → single/list transitions
 - UI for setting/clearing pending conditions
 
-### Priority 2: Expansion Refactor
-Replace the "redraw expanded view" approach with:
-- Smart hiding of non-relevant slices
-- Transform/zoom on selected slice
-- Reuse existing DOM elements (no duplication)
-
-### Priority 3: Enhanced Repeating Spokes
+### Priority 2: Enhanced Repeating Spokes
 - Edit recurrence pattern after creation
 - Update/delete recurring calendar events
 - Sync recurring event changes from calendar
 
-### Priority 4: Responsive Label Sizing
+### Priority 3: Responsive Label Sizing
 Improve text sizing for better readability across screen sizes:
 
 **Slice Labels:**
@@ -526,6 +585,9 @@ Improve text sizing for better readability across screen sizes:
 - Longer labels need less offset to appear centered
 - Apply offset adjustment per individual label based on character count
 - Keep to two sets of values (short vs long) for reliable responsive behavior
+
+### Completed
+- ~~Expansion Refactor~~ - Implemented as full-pie takeover in v0.8 (re-render approach with data override, not DOM transform)
 
 ## Development Notes
 
@@ -596,6 +658,26 @@ Debug.log('message', data)
 - [ ] Repeating events in Google Calendar with RRULE
 - [ ] RRULE in Apple Calendar .ics files
 - [ ] 2-way calendar sync (moved/deleted events)
+- [ ] **Full-pie takeover**: Click slice → 360° single slice view
+- [ ] **Full-pie takeover**: Click category → 360° category view with all slices
+- [ ] **Full-pie takeover**: Drill-down from category view to slice view
+- [ ] **Full-pie takeover**: Back button (✕) collapses to full pie
+- [ ] **Full-pie takeover**: Click anywhere on expanded chart collapses
+- [ ] **Full-pie takeover**: Crossfade animation between views
+- [ ] **Full-pie takeover**: Spokes/pills work correctly in expanded view
+- [ ] **Full-pie takeover**: Branch expansion still works from expanded view
+- [ ] **Schedule pills**: Icon outside pill, text inside pill
+- [ ] **Schedule pills**: Compact time format (9AM, 1:30PM)
+- [ ] **Schedule pills**: Recurrence summary text (Mon, Wed, 5PM)
+- [ ] **Schedule pills**: Hidden when "hide spokes" toggle is active
+- [ ] **Editable spokes**: Click spoke name in summary card to edit
+- [ ] **Editable spokes**: Blur saves changes
+- [ ] **Editable spokes**: No conflicts during drag-and-drop
+- [ ] **Dynamic titles**: "Reschedule Action" vs "Schedule Action" in date picker
+- [ ] **Dynamic titles**: "Update Recurrence" vs "Set Recurrence" in recurrence picker
+- [ ] **Tutorial**: "Continue With This Pie" option at completion
+- [ ] **Tutorial**: "Click Done" spotlight step works
+- [ ] **Tab 1 Done button**: Always visible (not just tutorial)
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
