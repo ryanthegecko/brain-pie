@@ -27,7 +27,7 @@ const DataModel = {
             }
         }
 
-        // First time: load example data
+        // First time: load example data (Life Pie)
         const example = ExampleData.get();
         this.categories = example.categories;
         this.categoryPercentageOverrides = example.categoryPercentageOverrides || {};
@@ -282,14 +282,16 @@ const DataModel = {
         if (!item) return;
 
         // Create spoke object with type
+        // Types: 'static', 'single', 'repeating', 'list'
         const spoke = {
             text: subItemText,
-            type: spokeType, // 'static', 'action', 'repeating', 'pending'
+            type: spokeType,
             children: [],
+            scheduled: null, // For single/repeating: spoke-level scheduling
             metadata: {
-                condition: null,        // For pending spokes
+                condition: null,        // For pending spokes (future)
                 calendarEventId: null,  // For syncing with calendar
-                nextState: null,        // For pending → action/static/repeating
+                nextState: null,        // For pending → other type transitions (future)
                 recurrence: null        // For repeating spokes
             }
         };
@@ -314,6 +316,7 @@ const DataModel = {
                 text: spoke,
                 type: spokeType,
                 children: [],
+                scheduled: null,
                 metadata: {
                     condition: metadata.condition || null,
                     calendarEventId: metadata.calendarEventId || null,
@@ -322,7 +325,23 @@ const DataModel = {
                 }
             };
         } else {
+            // Handle type migration: clear irrelevant data when type changes
+            const oldType = spoke.type;
             spoke.type = spokeType;
+
+            // If changing from list to single/repeating, clear children
+            if ((oldType === 'list' || oldType === 'action') &&
+                (spokeType === 'single' || spokeType === 'repeating')) {
+                // Children are no longer relevant for single/repeating
+                // Keep them but they won't be displayed
+            }
+
+            // If changing from single/repeating to list/static, clear spoke-level schedule
+            if ((oldType === 'single' || oldType === 'repeating') &&
+                (spokeType === 'list' || spokeType === 'static')) {
+                spoke.scheduled = null;
+            }
+
             spoke.metadata = {
                 ...(spoke.metadata || {}),
                 ...metadata
@@ -343,7 +362,11 @@ const DataModel = {
         if (!spoke) return null;
 
         if (typeof spoke === 'string') return 'static'; // Legacy spokes
-        return spoke.type || 'static';
+
+        // Backwards compat: 'action' → 'list'
+        let type = spoke.type || 'static';
+        if (type === 'action') type = 'list';
+        return type;
     },
 
     getSpokeMetadata(categoryId, itemId, spokeIndex) {
@@ -404,8 +427,9 @@ const DataModel = {
         if (typeof item.subItems[spokeIndex] === 'string') {
             item.subItems[spokeIndex] = {
                 text: item.subItems[spokeIndex],
-                type: 'action', // Has children, so it's an action spoke
+                type: 'list', // Has children, so it's a list spoke
                 children: [],
+                scheduled: null,
                 metadata: {
                     condition: null,
                     calendarEventId: null,
@@ -418,6 +442,12 @@ const DataModel = {
         // Ensure children array exists
         if (!item.subItems[spokeIndex].children) {
             item.subItems[spokeIndex].children = [];
+        }
+
+        // If spoke was single/repeating, convert to list now that it has children
+        if (item.subItems[spokeIndex].type === 'single' ||
+            item.subItems[spokeIndex].type === 'repeating') {
+            item.subItems[spokeIndex].type = 'list';
         }
 
         item.subItems[spokeIndex].children.push({
@@ -525,6 +555,8 @@ const DataModel = {
 
     /**
      * Normalize a spoke to object format (handles legacy string format)
+     * New types: 'static', 'single', 'repeating', 'list'
+     * Backwards compat: 'action' type treated as 'list'
      */
     normalizeSpoke(spoke) {
         if (typeof spoke === 'string') {
@@ -532,6 +564,7 @@ const DataModel = {
                 text: spoke,
                 type: 'static',
                 children: [],
+                scheduled: null,
                 metadata: {
                     condition: null,
                     calendarEventId: null,
@@ -540,11 +573,19 @@ const DataModel = {
                 }
             };
         }
+
+        // Backwards compatibility: treat 'action' as 'list'
+        let type = spoke.type || 'static';
+        if (type === 'action') {
+            type = 'list';
+        }
+
         // Ensure all expected fields exist
         return {
             text: spoke.text || '',
-            type: spoke.type || 'static',
+            type: type,
             children: spoke.children || [],
+            scheduled: spoke.scheduled || null, // For single/repeating: spoke-level scheduling
             metadata: {
                 condition: spoke.metadata?.condition || null,
                 calendarEventId: spoke.metadata?.calendarEventId || null,
@@ -552,6 +593,41 @@ const DataModel = {
                 recurrence: spoke.metadata?.recurrence || null
             }
         };
+    },
+
+    /**
+     * Get spoke-level schedule data (for single/repeating spokes)
+     */
+    getSpokeSchedule(categoryId, itemId, spokeIndex) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return null;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return null;
+
+        const spoke = item.subItems[spokeIndex];
+        if (!spoke || typeof spoke === 'string') return null;
+
+        return spoke.scheduled || null;
+    },
+
+    /**
+     * Set spoke-level schedule data (for single/repeating spokes)
+     */
+    setSpokeSchedule(categoryId, itemId, spokeIndex, scheduleData) {
+        const category = this.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+
+        const item = category.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        // Convert spoke to object if needed
+        if (typeof item.subItems[spokeIndex] === 'string') {
+            item.subItems[spokeIndex] = this.normalizeSpoke(item.subItems[spokeIndex]);
+        }
+
+        item.subItems[spokeIndex].scheduled = scheduleData;
+        this.saveToStorage();
     },
 
     /**

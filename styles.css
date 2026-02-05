@@ -108,22 +108,23 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 800px;
-    height: 100vh;
-    margin: -3vh 0 -3vw 0;
+    height: 93vh;
+    min-height: 700px;
+    margin: 1vh 0 -1vw 0;
     width: 100%;
     max-width: 80vw;
     overflow: hidden;
     @media (min-height: 1024) and (min-width: 1440px) {
-        margin: -7vh 0 -5vw 0;
+        height: 96vh;
     }
     @media (max-width: 1024px) {
         margin: 0vw 0 -8vw 0;
         min-height: 120vw;
         height: auto;
     }
-    @media (min-width: 1440px) {
-        margin: -3vh 0 -3vh 0;
+    @media (min-width: 1580px) and (min-width: 2048px) {
+        margin: -4vh 0 0 0;
+        min-height: 800px;
     }
 }
 
@@ -524,20 +525,27 @@ textarea {
 }
 
 .item-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     /* fill: #333; */
     pointer-events: none;
     @media (max-width: 960px) {
         font-size: 10px;
     }
+    @media (min-width: 1920px) {
+        font-size: 13px;
+    }
 }
 
 .sub-item-label {
-    font-size: 14px;
-    letter-spacing: 0.4px;
+    font-size: 12px;
+    letter-spacing: -0.4px;
     @media (max-width: 1024px) {
         font-size: 10px;
+    }
+    @media (min-height: 1580px) {
+        letter-spacing: 0.4px;
+        font-size: 14px;
     }
 }
 
@@ -1231,6 +1239,103 @@ select:focus {
 
     .spoke-action-entry input[type="text"] {
         font-size: 18px;
+    }
+}
+
+/* Spoke Type Picker Overlay (simple type selection) */
+.spoke-type-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2003;
+}
+
+.spoke-type-picker-overlay.active {
+    display: flex;
+}
+
+.spoke-type-picker-content {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    max-width: 400px;
+    width: 90%;
+    position: relative;
+}
+
+.spoke-type-picker-content h2 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+
+.spoke-type-picker-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.spoke-type-picker-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.spoke-type-picker-btn:hover {
+    border-color: #4CAF50;
+    background: #f5fff5;
+}
+
+.spoke-type-picker-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.spoke-type-picker-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.spoke-type-picker-desc {
+    font-size: 12px;
+    color: #666;
+    margin-left: auto;
+}
+
+@media (max-width: 1024px) {
+    .spoke-type-picker-content {
+        width: 96vw;
+        max-width: 96vw;
+        padding: 20px;
+    }
+
+    .spoke-type-picker-btn {
+        flex-wrap: wrap;
+    }
+
+    .spoke-type-picker-label {
+        font-size: 20px;
+    }
+
+    .spoke-type-picker-desc {
+        font-size: 14px;
+        width: 100%;
+        margin-left: 36px;
+        margin-top: 4px;
     }
 }
 
@@ -2081,4 +2186,230 @@ select:focus {
 
 .export-summary-count {
     font-weight: 600;
+}
+
+/* ===========================================
+   TUTORIAL STYLES
+   =========================================== */
+
+/* Tutorial Spotlight Overlay */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3000;
+    pointer-events: none;
+    display: none;
+}
+
+.tutorial-overlay.active {
+    display: block;
+}
+
+.tutorial-spotlight {
+    position: absolute;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+    border-radius: 8px;
+    pointer-events: none; /* Allow clicks to pass through to the element underneath */
+    animation: tutorial-pulse 1.5s ease-in-out infinite;
+    transition: all 0.3s ease;
+}
+
+.tutorial-tooltip {
+    position: absolute;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 320px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    pointer-events: all;
+    z-index: 3001;
+}
+
+.tutorial-tooltip h3 {
+    color: #4CAF50;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.tutorial-tooltip p {
+    color: #333;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.tutorial-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Tutorial Modal Overlay */
+.tutorial-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 3001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.tutorial-modal-overlay.active {
+    display: flex;
+}
+
+.tutorial-modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    max-width: 420px;
+    text-align: center;
+    animation: tutorial-modal-appear 0.3s ease;
+}
+
+.tutorial-modal-content h2 {
+    color: #4CAF50;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+.tutorial-modal-content p {
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+.tutorial-modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Tutorial Buttons */
+.tutorial-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tutorial-btn.primary {
+    background: #4CAF50;
+    color: white;
+}
+
+.tutorial-btn.primary:hover {
+    background: #43A047;
+}
+
+.tutorial-btn.secondary {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.tutorial-btn.secondary:hover {
+    background: #e0e0e0;
+}
+
+/* Tutorial Animations */
+@keyframes tutorial-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 0 4px rgba(76, 175, 80, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 0 8px rgba(76, 175, 80, 0.4);
+    }
+}
+
+@keyframes tutorial-modal-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tutorial-tooltip {
+        max-width: 280px;
+        padding: 15px;
+    }
+
+    .tutorial-tooltip h3 {
+        font-size: 16px;
+    }
+
+    .tutorial-tooltip p {
+        font-size: 14px;
+    }
+
+    .tutorial-modal-content {
+        margin: 20px;
+        padding: 30px;
+    }
+
+    .tutorial-modal-content h2 {
+        font-size: 20px;
+    }
+
+    .tutorial-modal-content p {
+        font-size: 14px;
+    }
+
+    .tutorial-modal-buttons {
+        flex-direction: column;
+    }
+
+    .tutorial-btn {
+        width: 100%;
+    }
+}
+
+/* Tutorial Resume Button (shown during explore mode) */
+.tutorial-resume-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    z-index: 2999;
+    transition: all 0.2s ease;
+    display: none;
+}
+
+.tutorial-resume-btn:hover {
+    background: #43A047;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5);
+}
+
+@media (max-width: 768px) {
+    .tutorial-resume-btn {
+        bottom: 80px;
+        right: 10px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
 }
