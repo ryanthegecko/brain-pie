@@ -529,20 +529,10 @@ textarea {
 
 .outer-slice {
     cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.outer-slice:hover {
-    opacity: 0.85;
 }
 
 .inner-slice {
     cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.inner-slice:hover {
-    opacity: 0.9;
 }
 
 .sub-item-line {

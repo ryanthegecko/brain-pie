@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.9
+**Current Version:** v0.10
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -149,6 +149,8 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Smooth transitions and animations
 - Inline editable spoke names in summary cards
 - Priority stars on chart spokes (gold ★, larger for top-5 items, clickable to bump)
+- Hover fill lightening on slices (D3 mouseover, no CSS opacity — see SVG Opacity Pitfall)
+- Spoke lines start at outer ring edge (only external portion visible)
 - ViewBox scaling for smaller viewports (see Responsive Design section)
 
 #### 3. **UI Controller** (`ui-controller.js`)
@@ -325,6 +327,67 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.10 (February 2026)
+ViewBox responsive scaling, priority stars on chart, hover rework, and UI polish:
+
+**ViewBox Responsive Scaling:**
+- Viewports <1920px: render pie at 1920px virtual canvas, scale down via SVG `viewBox` attribute
+- Viewports ≥1920px: render at actual dimensions (unchanged behavior)
+- Treemap always renders at actual dimensions (no scaling needed)
+- Uniformly shrinks pie, text, pills, stars, and spoke lines together
+- Previous approaches (radius shrinking, dynamic viewBox calculation) removed
+- See Responsive Design section for full technical details
+
+**Slice Hover Rework:**
+- Replaced CSS `opacity` hover with D3 `mouseover`/`mouseout` fill-color lightening
+- Categories lighten by 25%, inner slices by 20%, with 200ms D3 transitions
+- New `lightenColor(hex, factor)` helper method
+- Root cause: CSS opacity on SVG `<g>` elements creates compositing layers that cause text aliasing on hover (see SVG Opacity Pitfall in Development Notes)
+
+**Spoke Lines:**
+- Lines now start at outer ring edge instead of center
+- Only the portion extending beyond the pie is visible (cleaner look)
+
+**Priority Stars on Chart:**
+- Gold stars (★) on prioritised spokes in both pie and treemap views
+- Pie: star on inner side of spoke label (right-side: left of text, left-side: right of text)
+- Treemap: star before icon/text, shifts content right by 12px
+- Clickable to bump priority (same as star button elsewhere)
+- Top-5 items get larger stars (pie: 16px vs 12px, treemap: 14px vs 10px)
+
+**Prioritiser Enhancements:**
+- Click star button to bump item to top of priority list
+- Click priority item to navigate: expands parent slice, opens action popup for list spokes
+- `addPriority()` now returns 'added', 'moved', or 'already-top' (bump-to-top on re-add)
+
+**Scheduler Star Buttons:**
+- Star buttons (★) on datetime picker, recurrence picker, spoke type picker, and spoke config overlays
+- Positioned left of close button, grey when inactive, gold when active
+- Hidden when no data location available (e.g. during initial recurrence creation)
+
+**Spoke Config Redesign:**
+- Replaced radio buttons with button-style type picker (matching spoke type picker popup)
+- Blue border + light blue background for selected type
+- `selectSpokeConfigType()` method for button toggle behavior
+
+**Action Popup Enhancements:**
+- Checkbox for action completion (green when checked, line-through on text)
+- Star button for prioritiser (gold when active)
+- Trash icon with red pill background
+- Calendar schedule pill (green rounded pill with white text)
+- Wider card (320px), taller rows (32px)
+- Programmatic open support (centers popup when no mouse event)
+
+**Dynamic Scheduler Titles:**
+- Titles now include spoke/action name: "Schedule: {name}", "Reschedule: {name}"
+- Recurrence: "Set Recurrence: {name}", "Update Recurrence: {name}"
+
+**Crossfade Cleanup:**
+- D3 crossfade transitions now clean up inline opacity via `.on('end')` callback
+- Prevents stale compositing layers from persisting after view transitions
+
+---
 
 ### v0.9 (February 2026)
 Treemap polish, unified action popup, and prioritiser system:
@@ -675,6 +738,24 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 5. Wire up in **app.js**
 6. Test storage persistence
 
+### SVG Opacity Pitfall — NO CSS opacity hover on SVG groups
+CSS `opacity` changes on SVG `<g>` elements (e.g. `.outer-slice:hover { opacity: 0.85 }`) cause **visible text aliasing/shifting** because the browser creates a compositing layer for the group and re-rasterizes all text within it on every hover.
+
+**Never do:** Use CSS `:hover { opacity }` or CSS `transition: opacity` on SVG `<g>` elements that contain text.
+
+**Instead:** Use D3 `mouseover`/`mouseout` to change the `fill` attribute of the child `<path>` directly. This modifies pixel color without creating compositing layers:
+```javascript
+group.on('mouseover', (event, d) => {
+    d3.select(event.currentTarget).select('path')
+        .attr('fill', ChartRenderer.lightenColor(d.data.color, 0.25));
+}).on('mouseout', (event, d) => {
+    d3.select(event.currentTarget).select('path')
+        .attr('fill', d.data.color);
+});
+```
+
+**Also:** When using D3 opacity transitions on parent `<g>` elements (e.g. crossfade animations), always clean up the inline style after completion with `.on('end', () => { el.style('opacity', null); })` to avoid leaving a compositing layer active.
+
 ### Code Style
 - ES6+ JavaScript
 - No build process (runs directly in browser)
@@ -775,6 +856,25 @@ Debug.log('message', data)
 - [ ] **Prioritiser**: Orphan cleanup on load (deleted items removed)
 - [ ] **Prioritiser**: Persists across page reload
 - [ ] **Prioritiser**: Syncs via Firebase
+- [ ] **ViewBox scaling**: Pie renders correctly at 1440px, 1600px, 1920px+ widths
+- [ ] **ViewBox scaling**: Text, pills, stars all scale proportionally at <1920px
+- [ ] **ViewBox scaling**: Treemap unaffected (no scaling)
+- [ ] **Slice hover**: Categories lighten on hover (fill change, no aliasing)
+- [ ] **Slice hover**: Inner slices lighten on hover (fill change, no aliasing)
+- [ ] **Slice hover**: 200ms smooth transition in and out
+- [ ] **Spoke lines**: Only visible outside the pie (no line through slices)
+- [ ] **Priority stars (chart)**: Gold stars on prioritised spokes in pie view
+- [ ] **Priority stars (chart)**: Gold stars on prioritised spokes in treemap view
+- [ ] **Priority stars (chart)**: Top-5 items have larger stars
+- [ ] **Priority stars (chart)**: Click star to bump priority
+- [ ] **Prioritiser**: Click item to navigate to chart location
+- [ ] **Prioritiser**: Click star to bump item to top
+- [ ] **Scheduler stars**: Star button on datetime picker, recurrence picker, spoke type picker, spoke config
+- [ ] **Spoke config**: Button-style type picker (not radio buttons)
+- [ ] **Spoke config**: Blue border on selected type
+- [ ] **Action popup**: Checkbox for completion
+- [ ] **Action popup**: Star for prioritiser
+- [ ] **Action popup**: Programmatic open (from prioritiser navigation)
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
