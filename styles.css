@@ -135,7 +135,8 @@ h2 {
     transform: scale(1.6);
     }
     .sub-item-label,
-    .sub-item-line {
+    .sub-item-line,
+    .schedule-pill {
         display: none;
     }
 }
