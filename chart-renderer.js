@@ -261,6 +261,41 @@ const ChartRenderer = {
         }
     },
 
+    // Add priority star before spoke name text element
+    addPriorityStar(group, nameTextElement, isRightSide, spokeRef) {
+        const priorityIdx = UI.getPriorityIndex(spokeRef);
+        const isTop5 = priorityIdx >= 0 && priorityIdx < 5;
+        const starSize = isTop5 ? 16 : 12;
+
+        setTimeout(() => {
+            try {
+                const nameBbox = nameTextElement.node().getBBox();
+                const gap = 4;
+                const starX = isRightSide
+                    ? nameBbox.x - gap
+                    : nameBbox.x + nameBbox.width + gap;
+                const starY = nameBbox.y + nameBbox.height - 2;
+
+                group.append('text')
+                    .attr('x', starX)
+                    .attr('y', starY)
+                    .attr('text-anchor', isRightSide ? 'end' : 'start')
+                    .attr('font-size', starSize + 'px')
+                    .attr('fill', '#FFD700')
+                    .attr('stroke', '#B8960C')
+                    .attr('stroke-width', 0.3)
+                    .style('cursor', 'pointer')
+                    .text('\u2605')
+                    .on('click', (event) => {
+                        event.stopPropagation();
+                        UI.addToPriorities(spokeRef);
+                    });
+            } catch (e) {
+                // Text element may not be in DOM yet
+            }
+        }, 10);
+    },
+
     // Add schedule icon and pill after spoke name text element
     addSchedulePill(group, nameTextElement, spoke, isRightSide, fontSize = 12) {
         const icon = this.getScheduleIcon(spoke);
@@ -271,7 +306,7 @@ const ChartRenderer = {
         const scheduledDate = this.getScheduledDate(spoke);
         const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
         const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
-        const iconSize = 16;
+        const iconSize = 14;
 
         // Get name text bounding box after brief delay
         setTimeout(() => {
@@ -386,33 +421,60 @@ const ChartRenderer = {
     init(containerId) {
         const container = d3.select(`#${containerId}`);
         container.selectAll('*').remove();
-        
-        // Get container dimensions
+
+        // Get actual container dimensions
         const containerNode = document.getElementById(containerId);
-        const containerWidth = containerNode.clientWidth;
-        const containerHeight = Math.max(containerNode.clientHeight, 660);
-        
-        // Calculate responsive dimensions
-        const minDimension = Math.min(containerWidth, containerHeight);
-        this.width = containerWidth;
-        this.height = containerHeight;
-        // this.height = containerWidth > 1024 ? containerHeight : containerHeight / 1.3;
-        this.outerRadius = Math.min(containerWidth <= 1024 ? 350 : 550, minDimension * 0.33);
-        this.innerRadius = containerWidth <= 1024 ? this.outerRadius - 40 : this.outerRadius - 40;
-        
+        const actualWidth = containerNode.clientWidth;
+        const actualHeight = Math.max(containerNode.clientHeight, 660);
+
         if (this.viewMode === 'tree') {
-            // Treemap: SVG fills container, no centering transform
+            // Treemap: use actual dimensions, no scaling
+            this.width = actualWidth;
+            this.height = actualHeight;
+            const minDimension = Math.min(this.width, this.height);
+            this.outerRadius = Math.min(actualWidth <= 1024 ? 350 : 550, minDimension * 0.33);
+            this.baseOuterRadius = this.outerRadius;
+            this.innerRadius = this.outerRadius - 40;
+            this.baseCategoryRingWidth = this.outerRadius - this.innerRadius;
+
             this.svg = container.append('svg')
                 .attr('width', this.width)
                 .attr('height', this.height)
                 .append('g');
-        } else {
-            // Pie: centered coordinate system
+        } else if (actualWidth >= 1920) {
+            // Pie: large screens — render at actual size, no scaling needed
+            this.width = actualWidth;
+            this.height = actualHeight;
+            const minDimension = Math.min(this.width, this.height);
+            this.outerRadius = Math.min(550, minDimension * 0.33);
+            this.baseOuterRadius = this.outerRadius;
+            this.innerRadius = this.outerRadius - 40;
+            this.baseCategoryRingWidth = this.outerRadius - this.innerRadius;
+
             this.svg = container.append('svg')
                 .attr('width', this.width)
                 .attr('height', this.height)
                 .append('g')
-                .attr('transform', `translate(${this.width / 2}, ${(this.height / 2)})`);
+                .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
+        } else {
+            // Pie: smaller screens — render at 1920px virtual canvas, scale down via viewBox
+            const virtualWidth = 1920;
+            const virtualHeight = Math.round(actualHeight * (virtualWidth / actualWidth));
+            this.width = virtualWidth;
+            this.height = virtualHeight;
+
+            const minDimension = Math.min(virtualWidth, virtualHeight);
+            this.outerRadius = Math.min(550, minDimension * 0.33);
+            this.baseOuterRadius = this.outerRadius;
+            this.innerRadius = this.outerRadius - 40;
+            this.baseCategoryRingWidth = this.outerRadius - this.innerRadius;
+
+            this.svg = container.append('svg')
+                .attr('width', actualWidth)
+                .attr('height', actualHeight)
+                .attr('viewBox', `0 0 ${virtualWidth} ${virtualHeight}`)
+                .append('g')
+                .attr('transform', `translate(${virtualWidth / 2}, ${virtualHeight / 2})`);
         }
 
         // Create a group for highlighted/expanded slices (drawn on top)
@@ -489,6 +551,10 @@ const ChartRenderer = {
             }
         }
 
+        // Restore base radius (in case expanded view changed it)
+        this.outerRadius = this.baseOuterRadius;
+        this.innerRadius = this.outerRadius - this.baseCategoryRingWidth;
+
         // Outer ring (categories)
         const outerPie = d3.pie()
             .value(d => d.percentage)
@@ -515,6 +581,10 @@ const ChartRenderer = {
             .attr('stroke', 'white')
             .attr('stroke-width', 3)
             .attr('opacity', 0.7);
+
+        categorySlices
+            .on('mouseover', function() { d3.select(this).selectAll('.category-label, .category-percentage').style('font-weight', 'bold'); })
+            .on('mouseout', function() { d3.select(this).selectAll('.category-label, .category-percentage').style('font-weight', null); });
 
         // Add click effect for categories
         categorySlices.on('click', (event, d) => {
@@ -643,6 +713,10 @@ const ChartRenderer = {
                 }
             });
 
+            itemSlices
+                .on('mouseover', function() { d3.select(this).selectAll('.item-label').style('font-weight', 'bold'); })
+                .on('mouseout', function() { d3.select(this).selectAll('.item-label').style('font-weight', null); });
+
             // Item labels - RADIAL TEXT along the wedge angle
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
@@ -740,6 +814,8 @@ const ChartRenderer = {
                     const indicator = ChartRenderer.getSpokeIndicatorWithoutSchedule(subItem);
                     const textStyle = ChartRenderer.getSpokeTextStyle(subItem);
                     const isRightSide = extendX > 0;
+                    const spokeRef = { type: 'spoke', categoryId: catData.data.id, itemId: d.data.id, spokeIndex: idx };
+                    const isPriority = UI.isPrioritised(spokeRef);
 
                     // Put indicator on outside edge: right side = text+indicator, left side = indicator+text
                     const labelText = isRightSide ? spokeName + indicator : indicator + spokeName;
@@ -770,6 +846,11 @@ const ChartRenderer = {
                     Object.keys(textStyle).forEach(key => {
                         spokeLabel.style(key, textStyle[key]);
                     });
+
+                    // Add priority star before spoke name
+                    if (isPriority) {
+                        ChartRenderer.addPriorityStar(labelGroup, spokeLabel, isRightSide, spokeRef);
+                    }
 
                     // Add green pill for scheduled spokes (just the date/time portion)
                     ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide);
@@ -1039,8 +1120,11 @@ const ChartRenderer = {
                     const scheduledDate = this.getScheduledDate(subItem);
                     const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
                     const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
+                    const treeSpokeRef = { type: 'spoke', categoryId, itemId, spokeIndex: idx };
+                    const isTreePriority = UI.isPrioritised(treeSpokeRef);
 
-                    const textStartX = icon ? 20 : 5;
+                    const starOffset = isTreePriority ? 12 : 0;
+                    const textStartX = (icon ? 20 : 5) + starOffset;
                     const textAvailableW = sliceW - textStartX - 6;
                     const charsPerLine = Math.max(4, Math.floor(textAvailableW / charWidth));
 
@@ -1093,10 +1177,29 @@ const ChartRenderer = {
                             );
                         });
 
+                    // Priority star on first line
+                    if (isTreePriority) {
+                        const treeStarIdx = UI.getPriorityIndex(treeSpokeRef);
+                        const treeStarSize = (treeStarIdx >= 0 && treeStarIdx < 5) ? 14 : 10;
+                        spokeGroup.append('text')
+                            .attr('x', 5)
+                            .attr('y', cursorY)
+                            .attr('font-size', treeStarSize + 'px')
+                            .attr('fill', '#FFD700')
+                            .attr('stroke', '#B8960C')
+                            .attr('stroke-width', 0.3)
+                            .style('cursor', 'pointer')
+                            .text('\u2605')
+                            .on('click', (event) => {
+                                event.stopPropagation();
+                                UI.addToPriorities(treeSpokeRef);
+                            });
+                    }
+
                     // Icon on first line
                     if (icon) {
                         spokeGroup.append('text')
-                            .attr('x', 5)
+                            .attr('x', 5 + starOffset)
                             .attr('y', cursorY)
                             .attr('font-size', '10px')
                             .text(icon);
@@ -1228,21 +1331,28 @@ const ChartRenderer = {
 
         const spokeName = spokeData.text || spokeData;
 
-        // Convert click position to SVG coordinates
-        const svgNode = this.svg.node().ownerSVGElement || this.svg.node();
-        const svgRect = svgNode.getBoundingClientRect();
-        let clickSvgX = event.clientX - svgRect.left;
-        let clickSvgY = event.clientY - svgRect.top;
-        if (this.viewMode === 'pie') {
-            clickSvgX -= this.width / 2;
-            clickSvgY -= this.height / 2;
+        // Convert click position to SVG coordinates (or center if no event)
+        let clickSvgX, clickSvgY;
+        if (event && event.clientX != null) {
+            const svgNode = this.svg.node().ownerSVGElement || this.svg.node();
+            const svgRect = svgNode.getBoundingClientRect();
+            clickSvgX = event.clientX - svgRect.left;
+            clickSvgY = event.clientY - svgRect.top;
+            if (this.viewMode === 'pie') {
+                clickSvgX -= this.width / 2;
+                clickSvgY -= this.height / 2;
+            }
+        } else {
+            // Programmatic open: center of SVG
+            clickSvgX = this.viewMode === 'pie' ? 0 : this.width / 2;
+            clickSvgY = this.viewMode === 'pie' ? 0 : this.height / 2;
         }
 
         // Card dimensions
-        const rowHeight = 28;
+        const rowHeight = 32;
         const cardPadding = 12;
         const headerHeight = 32;
-        const cardWidth = Math.min(280, this.width - 40);
+        const cardWidth = Math.min(320, this.width - 40);
         const cardHeight = Math.min(headerHeight + children.length * rowHeight + cardPadding, this.height - 40);
 
         // Position near click, clamped within SVG bounds
@@ -1319,16 +1429,117 @@ const ChartRenderer = {
             .attr('font-weight', 'bold')
             .text('\u2715');
 
-        // Action rows
+        // Action rows: checkbox | title | calendar/schedule | star | trash
         children.forEach((child, idx) => {
             const rowY = cardY + headerHeight + idx * rowHeight;
             const childText = child.text || child;
             const hasSchedule = child.scheduled && child.scheduled.date;
+            const isCompleted = child.completed || false;
             const childDataLocation = { ...dataLocation, childIndex: idx };
+            const rightEdge = cardX + cardWidth - cardPadding;
+            let cursorX = cardX + cardPadding;
 
-            const rowGroup = branchGroup.append('g')
+            const rowGroup = branchGroup.append('g');
+
+            // Row background for hover
+            rowGroup.append('rect')
+                .attr('x', cardX + 2)
+                .attr('y', rowY - 2)
+                .attr('width', cardWidth - 4)
+                .attr('height', rowHeight)
+                .attr('fill', 'transparent')
+                .attr('rx', 4);
+
+            // 1) Checkbox
+            const checkSize = 14;
+            const checkX = cursorX;
+            const checkY = rowY + (rowHeight - checkSize) / 2 - 2;
+            const checkGroup = rowGroup.append('g')
                 .style('cursor', 'pointer')
-                .on('click', function(event) {
+                .on('click', (event) => {
+                    event.stopPropagation();
+                    UI.toggleActionCompleted(categoryId, itemId, spokeIndex, idx);
+                    that.collapseBranch();
+                });
+            checkGroup.append('rect')
+                .attr('x', checkX)
+                .attr('y', checkY)
+                .attr('width', checkSize)
+                .attr('height', checkSize)
+                .attr('rx', 2)
+                .attr('fill', isCompleted ? '#4CAF50' : '#fff')
+                .attr('stroke', isCompleted ? '#4CAF50' : '#ccc')
+                .attr('stroke-width', 1.5);
+            if (isCompleted) {
+                checkGroup.append('text')
+                    .attr('x', checkX + checkSize / 2)
+                    .attr('y', checkY + checkSize / 2 + 1)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'central')
+                    .attr('font-size', '10px')
+                    .attr('fill', '#fff')
+                    .attr('font-weight', 'bold')
+                    .text('\u2713');
+            }
+            cursorX += checkSize + 8;
+
+            // 2) Title
+            rowGroup.append('text')
+                .attr('x', cursorX)
+                .attr('y', rowY + 14)
+                .attr('font-size', '11px')
+                .attr('fill', isCompleted ? '#999' : '#333')
+                .style('text-decoration', isCompleted ? 'line-through' : 'none')
+                .text(childText);
+
+            // Right-side buttons (laid out right-to-left)
+            let btnX = rightEdge;
+
+            // 5) Trash icon (rightmost)
+            btnX -= 14;
+            const trashGroup = rowGroup.append('g')
+                .attr('transform', `translate(${btnX}, ${rowY + 6})`)
+                .style('cursor', 'pointer')
+                .on('click', (event) => {
+                    event.stopPropagation();
+                    App.removeSpokeChild(categoryId, itemId, spokeIndex, idx);
+                    that.collapseBranch();
+                });
+            trashGroup.append('rect')
+                .attr('x', -4).attr('y', -2)
+                .attr('width', 18).attr('height', 18)
+                .attr('fill', '#ffeaea').attr('rx', 3);
+            trashGroup.append('text')
+                .attr('x', 5).attr('y', 11)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '12px')
+                .attr('fill', '#f44336')
+                .text('\uD83D\uDDD1');
+            btnX -= 10;
+
+            // 4) Star for prioritiser
+            btnX -= 14;
+            const isPrioritised = UI.isPrioritised({ type: 'action', categoryId, itemId, spokeIndex, childIndex: idx });
+            const starGroup = rowGroup.append('g')
+                .attr('transform', `translate(${btnX}, ${rowY + 6})`)
+                .style('cursor', 'pointer')
+                .on('click', (event) => {
+                    event.stopPropagation();
+                    UI.addToPriorities({ type: 'action', categoryId, itemId, spokeIndex, childIndex: idx });
+                    that.collapseBranch();
+                });
+            starGroup.append('text')
+                .attr('x', 5).attr('y', 12)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '14px')
+                .attr('fill', isPrioritised ? '#FFD700' : '#ccc')
+                .text('\u2733');
+            btnX -= 8;
+
+            // 3) Calendar icon / schedule pill
+            const calGroup = rowGroup.append('g')
+                .style('cursor', 'pointer')
+                .on('click', (event) => {
                     event.stopPropagation();
                     that.openCalendarForAction(child, spokeData, sliceName, categoryName, childDataLocation);
                 });
@@ -1337,58 +1548,33 @@ const ChartRenderer = {
                 const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time || '00:00'}`);
                 const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 const timeStr = child.scheduled.time ? that.formatCompactTime(child.scheduled.time) : '';
-
-                rowGroup.append('circle')
-                    .attr('cx', cardX + cardPadding + 6)
-                    .attr('cy', rowY + 10)
-                    .attr('r', 6)
-                    .attr('fill', '#4CAF50');
-
-                rowGroup.append('text')
-                    .attr('x', cardX + cardPadding + 6)
-                    .attr('y', rowY + 13)
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', '8px')
-                    .attr('fill', '#fff')
-                    .text('\u2713');
-
-                rowGroup.append('text')
-                    .attr('x', cardX + cardPadding + 18)
-                    .attr('y', rowY + 14)
-                    .attr('font-size', '11px')
-                    .attr('fill', '#333')
-                    .text(childText);
-
                 const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
-                rowGroup.append('text')
-                    .attr('x', cardX + cardWidth - cardPadding)
-                    .attr('y', rowY + 14)
-                    .attr('text-anchor', 'end')
+                const pillW = pillLabel.length * 7 + 12;
+                btnX -= pillW;
+                calGroup.append('rect')
+                    .attr('x', btnX)
+                    .attr('y', rowY + 2)
+                    .attr('width', pillW)
+                    .attr('height', 20)
+                    .attr('rx', 10)
+                    .attr('fill', '#4CAF50');
+                calGroup.append('text')
+                    .attr('x', btnX + pillW / 2)
+                    .attr('y', rowY + 15)
+                    .attr('text-anchor', 'middle')
                     .attr('font-size', '9px')
-                    .attr('fill', '#4CAF50')
+                    .attr('fill', '#fff')
                     .attr('font-weight', 'bold')
                     .text(pillLabel);
             } else {
-                rowGroup.append('circle')
-                    .attr('cx', cardX + cardPadding + 6)
-                    .attr('cy', rowY + 10)
-                    .attr('r', 6)
-                    .attr('fill', '#4285F4');
-
-                rowGroup.append('text')
-                    .attr('x', cardX + cardPadding + 6)
-                    .attr('y', rowY + 14)
+                btnX -= 20;
+                calGroup.append('text')
+                    .attr('x', btnX + 10)
+                    .attr('y', rowY + 15)
                     .attr('text-anchor', 'middle')
-                    .attr('font-size', '8px')
-                    .attr('fill', '#fff')
+                    .attr('font-size', '16px')
+                    .attr('fill', '#4285F4')
                     .text('\uD83D\uDCC5');
-
-                rowGroup.append('text')
-                    .attr('x', cardX + cardPadding + 18)
-                    .attr('y', rowY + 14)
-                    .attr('font-size', '11px')
-                    .attr('fill', '#333')
-                    .text(childText);
             }
         });
 

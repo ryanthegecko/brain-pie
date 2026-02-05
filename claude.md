@@ -148,6 +148,8 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Compact time formatting (9AM, 1:30PM) and recurrence summaries (Mon, Wed, 5PM)
 - Smooth transitions and animations
 - Inline editable spoke names in summary cards
+- Priority stars on chart spokes (gold ★, larger for top-5 items, clickable to bump)
+- ViewBox scaling for smaller viewports (see Responsive Design section)
 
 #### 3. **UI Controller** (`ui-controller.js`)
 - Manages all overlay states (menu, settings, datetime picker, spoke config, disclaimer)
@@ -257,8 +259,27 @@ Optional real-time sync using Firebase Realtime Database:
 - **Visual indicator** - Shows project name and sync status in main UI
 
 ### 7. Responsive Design
-Breakpoints:
-- Desktop: Full features, larger chart
+
+**Pie ViewBox Scaling (key technique):**
+
+The pie chart renders spoke labels, schedule pills, priority stars, and icons that extend well beyond the outer ring. At large viewport widths (≥1920px), everything fits naturally. At smaller widths, spoke text clips against the SVG edges.
+
+The solution is **virtual canvas rendering with viewBox scaling** — the same technique browsers use for zoom. Rather than shrinking the pie radius (which keeps text at full size and creates a tiny pie with large text), we render the entire pie at a generous virtual size (1920px wide) and use the SVG `viewBox` attribute to scale everything down proportionally to fit the actual viewport. This shrinks the pie, text, pills, and stars together, maintaining the same visual proportions as a wider screen.
+
+**How it works in `init()`:**
+- **≥1920px wide**: Render at actual dimensions, no `viewBox` — everything fits naturally
+- **<1920px wide**: Set internal `this.width`/`this.height` to a 1920px-wide virtual canvas (height scaled proportionally). The SVG element's `width`/`height` stay at actual container size, but `viewBox` is set to the virtual dimensions. The browser then scales the entire SVG coordinate system down to fit, shrinking all content uniformly
+- **Treemap view**: Always renders at actual dimensions (no viewBox scaling needed since treemap content is bounded by slice rectangles)
+
+**Why this approach was chosen:**
+- Previous attempt: `autoResizeRadius()` — shrank the pie radius based on estimated text widths. Failed because text stayed at 12px while the pie shrank, creating a visual imbalance. The text width estimation was also fragile and hard to tune across different content.
+- Previous attempt: `autoScaleViewBox()` — dynamically calculated needed viewBox from content reach. Worked but was over-engineered; the fixed 1920px virtual width is simpler and produces better results.
+- The viewBox approach is simple, robust, and handles any content length. If a spoke has a very long name + schedule pill + priority star, it all just scales down together.
+
+**TODO:** May need revisiting for mobile viewports (≤768px) where the scaling factor becomes large and text may become too small to read. Consider a different virtual width or a minimum font size at mobile breakpoints.
+
+**CSS Breakpoints:**
+- Desktop (>1024px): Full features, larger chart
 - Tablet (≤1024px): Adjusted sizing, single-column lists
 - Mobile (≤768px): Simplified layout, touch-friendly
 
@@ -620,8 +641,8 @@ Initial public release with core functionality:
 - Update/delete recurring calendar events
 - Sync recurring event changes from calendar
 
-### Priority 3: Responsive Label Sizing
-Improve text sizing for better readability across screen sizes:
+### Priority 3: Responsive Label Sizing (partially addressed)
+The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller viewports by rendering at 1920px virtual width and scaling down. This uniformly shrinks all text. Remaining work:
 
 **Slice Labels:**
 - Detect max character count across ALL slices in the pie
@@ -635,9 +656,14 @@ Improve text sizing for better readability across screen sizes:
 - Apply offset adjustment per individual label based on character count
 - Keep to two sets of values (short vs long) for reliable responsive behavior
 
+**Mobile (≤768px):**
+- ViewBox scaling may make text too small at mobile widths
+- May need a smaller virtual width or alternative approach for mobile
+
 ### Completed
 - ~~Expansion Refactor~~ - Implemented as full-pie takeover in v0.8 (re-render approach with data override, not DOM transform)
 - ~~Prioritiser System~~ - Implemented in v0.9 (separate `priorityList` array, draggable window UI, star buttons)
+- ~~Spoke Label Clipping~~ - Implemented as ViewBox scaling in v0.10 (render at 1920px virtual canvas, scale down via SVG viewBox for viewports <1920px)
 
 ## Development Notes
 

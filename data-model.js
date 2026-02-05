@@ -846,19 +846,27 @@ const DataModel = {
 
     addPriority(ref) {
         // Check for duplicates
-        const isDuplicate = this.priorityList.some(p =>
+        const existingIdx = this.priorityList.findIndex(p =>
             p.type === ref.type &&
             p.categoryId === ref.categoryId &&
             p.itemId === ref.itemId &&
             p.spokeIndex === ref.spokeIndex &&
             p.childIndex === ref.childIndex
         );
-        if (isDuplicate) return false;
+
+        if (existingIdx >= 0) {
+            // Already exists — move to top
+            if (existingIdx === 0) return 'already-top';
+            this.priorityList.splice(existingIdx, 1);
+            this.priorityList.unshift(ref);
+            this.saveToStorage();
+            return 'moved';
+        }
 
         // Add to top of list
         this.priorityList.unshift(ref);
         this.saveToStorage();
-        return true;
+        return 'added';
     },
 
     removePriority(index) {
