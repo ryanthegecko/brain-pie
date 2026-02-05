@@ -92,10 +92,18 @@ const TutorialManager = {
             nextEvent: 'slice-added'
         },
         {
+            id: 'click-done',
+            type: 'spotlight',
+            noSpotlight: true,
+            highlight: '#tab1-done-btn',
+            title: 'Close the Menu',
+            content: 'Click "Done" to close the menu and see your pie!',
+            nextEvent: 'menu-closed'
+        },
+        {
             id: 'slice-added-pause',
             type: 'modal',
-            delay: 3000,
-            onEnter: 'closeMenuForTutorial',
+            delay: 2500,
             title: 'Nice Work! 🌙',
             content: "You just added your first Slice! Ready to add a Spoke?",
             buttons: [
@@ -151,7 +159,8 @@ const TutorialManager = {
         {
             id: 'summary-cards',
             type: 'modal',
-            delay: 500,
+            delay: 2500,
+            noBackdrop: true,
             onEnter: 'scrollToSummaryCards',
             title: 'Edit From Here Too',
             content: "Scroll down to see summary cards for each category. From here you can remove spokes, slices, or whole categories, reorder items, and adjust percentages.",
@@ -319,17 +328,21 @@ const TutorialManager = {
 
         console.log(`[Tutorial] renderCurrentStep: ${step.id} (type: ${step.type}, delay: ${step.delay || 0})`);
 
-        // Execute onEnter action if defined
-        if (step.onEnter) {
-            console.log(`[Tutorial]   onEnter: ${step.onEnter}`);
-            this[step.onEnter]();
-        }
-
         // Support optional delay before showing the step
         if (step.delay) {
-            console.log(`[Tutorial]   delaying showStep by ${step.delay}ms`);
-            setTimeout(() => this.showStep(step), step.delay);
+            console.log(`[Tutorial]   delaying by ${step.delay}ms`);
+            setTimeout(() => {
+                if (step.onEnter) {
+                    console.log(`[Tutorial]   onEnter: ${step.onEnter}`);
+                    this[step.onEnter]();
+                }
+                this.showStep(step);
+            }, step.delay);
         } else {
+            if (step.onEnter) {
+                console.log(`[Tutorial]   onEnter: ${step.onEnter}`);
+                this[step.onEnter]();
+            }
             this.showStep(step);
         }
     },
@@ -400,6 +413,7 @@ const TutorialManager = {
         }
 
         buttons.innerHTML = buttonsHtml;
+        overlay.style.background = step.noBackdrop ? 'transparent' : '';
         overlay.classList.add('active');
     },
 
@@ -602,7 +616,7 @@ const TutorialManager = {
      * Scroll to the summary cards section at the bottom
      */
     scrollToSummaryCards() {
-        const el = document.getElementById('categories-list');
+        const el = document.querySelector('.categories-section');
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
