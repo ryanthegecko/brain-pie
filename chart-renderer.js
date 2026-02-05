@@ -424,7 +424,7 @@ const ChartRenderer = {
                     const textStyle = ChartRenderer.getSpokeTextStyle(subItem);
 
                     // Put indicator on outside edge: right side = text+indicator, left side = indicator+text
-                    const labelText = extendX > 0 ? spokeName + indicator : indicator + spokeName;
+                    const labelText = extendX > 0 ? spokeName + indicator : indicator + ' ' + spokeName;
                     const spokeLabel = group.append('text')
                         .attr('class', 'sub-item-label')
                         .attr('transform', `translate(${labelX}, ${labelY}) rotate(${textRotation})`)
@@ -572,7 +572,7 @@ const ChartRenderer = {
                         .attr('stroke-width', 2);
 
                     // Label with spoke type indicator (indicator on outside edge)
-                    const labelText = extendX > 0 ? spokeName + indicator : indicator + spokeName;
+                    const labelText = extendX > 0 ? spokeName + indicator : indicator + ' ' + spokeName;
                     const spokeLabel = expandedGroup.append('text')
                         .attr('class', 'sub-item-label')
                         .style('font-size', '13px')
@@ -739,7 +739,7 @@ const ChartRenderer = {
                                 .attr('stroke-width', 2);
 
                             // Label with spoke type indicator (indicator on outside edge)
-                            const labelText = extendX > 0 ? spokeName + indicator : indicator + spokeName;
+                            const labelText = extendX > 0 ? spokeName + indicator : indicator + ' ' + spokeName;
                             const spokeLabel = expandedGroup.append('text')
                                 .attr('class', 'sub-item-label')
                                 .style('font-size', '13px')
