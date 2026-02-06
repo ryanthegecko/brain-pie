@@ -804,7 +804,10 @@ const UI = {
                             ondrop="UI.handleItemDrop(event)"
                              >
                             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; gap: 10px;">
-                                <h3 contenteditable="true" 
+                                <button class="priority-star-btn ${UI.isPrioritised({type:'slice', categoryId:category.id, itemId:item.id}) ? 'active' : ''}"
+                                    onclick="event.stopPropagation(); UI.addToPriorities({type:'slice', categoryId:'${category.id}', itemId:'${item.id}'})"
+                                    title="Add to priorities" style="flex-shrink:0;margin-top:2px;">&#9733;</button>
+                                <h3 contenteditable="true"
                                     onblur="App.updateItemName('${category.id}', '${item.id}', this.textContent)"
                                     style="flex: 1; outline: none; padding: 2px; border-radius: 3px;"
                                     onfocus="this.style.background='#f0f0f0'"
@@ -876,6 +879,9 @@ const UI = {
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;width: 100%; min-width: 50%;">
+                                            <button class="priority-star-btn ${UI.isPrioritised({type:'spoke', categoryId:category.id, itemId:item.id, spokeIndex:idx}) ? 'active' : ''}"
+                                                onclick="event.stopPropagation(); UI.addToPriorities({type:'spoke', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}})"
+                                                title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
                                             <span class="sub-item-text" contenteditable="true"
                                                 style="flex: 1;padding-right:1em;outline:none;border-radius:3px;"
                                                 onfocus="this.style.background='#f0f0f0'"
@@ -885,9 +891,6 @@ const UI = {
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
                                                 ${spokeTypeBtn}
-                                                <button class="priority-star-btn ${UI.isPrioritised({type:'spoke', categoryId:category.id, itemId:item.id, spokeIndex:idx}) ? 'active' : ''}"
-                                                    onclick="event.stopPropagation(); UI.addToPriorities({type:'spoke', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}})"
-                                                    title="Add to priorities">&#9733;</button>
                                                 <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">
                                                     <img width="15" height="15" src="./assets/trash.svg" />
                                                 </button>
@@ -920,8 +923,11 @@ const UI = {
 
                                                     const isActionCompleted = child.completed || false;
                                                     return `
-                                                    <li style="cursor: default; display: flex; flex-direction: column; margin-bottom: 4px; padding: 4px; background: #f5f5f5; border-radius: 3px;">
-                                                        <div style="display: flex; justify-content: space-between; align-items: center;width: 100%;">
+                                                    <li style="cursor: default; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+                                                        <button class="priority-star-btn ${UI.isPrioritised({type:'action', categoryId:category.id, itemId:item.id, spokeIndex:idx, childIndex:childIdx}) ? 'active' : ''}"
+                                                            onclick="event.stopPropagation(); UI.addToPriorities({type:'action', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}, childIndex:${childIdx}})"
+                                                            title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
+                                                        <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 4px; background: #f5f5f5; border-radius: 3px;">
                                                             <input type="checkbox" class="action-checkbox"
                                                                 onchange="UI.toggleActionCompleted('${category.id}', '${item.id}', ${idx}, ${childIdx})"
                                                                 ${isActionCompleted ? 'checked' : ''}>
@@ -931,9 +937,6 @@ const UI = {
                                                                         style="${buttonStyle}"
                                                                         onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${idx}, ${childIdx})"
                                                                         title="${buttonTitle}">${scheduleDisplay}</button>
-                                                                <button class="priority-star-btn ${UI.isPrioritised({type:'action', categoryId:category.id, itemId:item.id, spokeIndex:idx, childIndex:childIdx}) ? 'active' : ''}"
-                                                                    onclick="event.stopPropagation(); UI.addToPriorities({type:'action', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}, childIndex:${childIdx}})"
-                                                                    title="Add to priorities">&#9733;</button>
                                                                 <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
                                                                     <img width="15" height="20" src="./assets/trash.svg" />
                                                                 </button>
@@ -4221,6 +4224,39 @@ const UI = {
         list.innerHTML = visible.map((ref, idx) => {
             const resolved = DataModel.resolvePriority(ref);
             if (!resolved) return '';
+
+            // Build action button based on spoke type
+            let actionBtn = '';
+            if (ref.type === 'spoke' || ref.type === 'action') {
+                const category = DataModel.categories.find(c => c.id === ref.categoryId);
+                const item = category ? category.items.find(i => i.id === ref.itemId) : null;
+                if (item && item.subItems && ref.spokeIndex != null && ref.spokeIndex < item.subItems.length) {
+                    const spoke = item.subItems[ref.spokeIndex];
+                    const spokeType = DataModel.getSpokeType(ref.categoryId, ref.itemId, ref.spokeIndex);
+                    if (spokeType === 'single') {
+                        const sched = typeof spoke === 'object' ? spoke.scheduled : null;
+                        if (sched && sched.date) {
+                            const d = new Date(sched.date + 'T' + (sched.time || '00:00'));
+                            const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                            const timeStr = sched.time ? ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Reschedule">${dateStr}${timeStr}</button>`;
+                        } else {
+                            actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Schedule">📅</button>`;
+                        }
+                    } else if (spokeType === 'repeating') {
+                        const recurrence = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.recurrence : null;
+                        if (recurrence) {
+                            const recText = UI.formatRecurrenceDescriptionCompact(recurrence);
+                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeRecurrenceScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Edit recurrence">${recText}</button>`;
+                        } else {
+                            actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeRecurrenceScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Set recurrence">🔁</button>`;
+                        }
+                    } else if (spokeType === 'list') {
+                        actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.navigateToPriority(${idx})" title="Edit actions">✏️</button>`;
+                    }
+                }
+            }
+
             return `
                 <div class="prioritiser-item" draggable="true"
                     data-priority-index="${idx}"
@@ -4235,6 +4271,7 @@ const UI = {
                         <div class="priority-name">${resolved.displayName}</div>
                         <div class="priority-context">${resolved.context}</div>
                     </div>
+                    ${actionBtn}
                     <button class="priority-star-btn active" onclick="event.stopPropagation(); UI.bumpPriority(${idx})" title="Move to top">&#9733;</button>
                     <button class="priority-remove" onclick="event.stopPropagation(); UI.removePriority(${idx})" title="Remove from priorities">&#10005;</button>
                 </div>

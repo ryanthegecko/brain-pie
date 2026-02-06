@@ -8,6 +8,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: #f5f5f5;
     padding: 20px;
+
     @media (max-width: 1024px) {
         padding: 5px;
     }
@@ -15,10 +16,20 @@ body {
 
 h1 {
     font-size: 38px;
-     @media (max-width: 1024px) {
-        font-size: 34px;
-    }   
+
+    @media (max-width: 1920px) {
+        font-size: 32px;
+    }
+
+    @media (max-width: 1024px) {
+        font-size: 30px;
+    }
+
+    @media (max-width: 960px) {
+        font-size: 24px;
+    }
 }
+
 h2 {
     @media (max-width: 1024px) {
         font-size: 42px;
@@ -27,25 +38,28 @@ h2 {
 
 .mobile-only {
     display: none;
+
     @media (max-width: 1024px) {
         display: block;
     }
 }
+
 .top-bar-left {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 0px;
+    left: 0px;
     z-index: 100;
-    /* background: white; */
+    background: white;
     padding: 10px 15px;
-    /* border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.top-bar-right, .top-bar-right-mobile {
+.top-bar-right,
+.top-bar-right-mobile {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 0px;
+    right: 0px;
     z-index: 100;
     background: white;
     padding: 15px;
@@ -58,42 +72,78 @@ h2 {
     font-size: 18px;
 }
 
-.top-bar-right, .top-bar-right-mobile {
+.top-bar-right,
+.top-bar-right-mobile {
     text-align: left;
+
     @media (max-width: 1024x) {
         flex-wrap: wrap;
     }
 }
-.top-bar-right{
+
+.top-bar-right {
     display: flex;
+
     @media (max-width: 1024px) {
         display: none;
     }
 }
+
 .top-bar-right-mobile {
-    
     display: none;
+    position: fixed;
+    @media (max-width: 1024px) {
+        padding: 5px;
+        top: 15px;   
+    }
+    >div{
+        gap: 15px;
+    }
+    
+    button {
+        min-height: 43px;
+        @media (max-width: 1024px) {
+            min-height: 23px;
+            padding: 6px 20px;
+        }
+        @media (min-width: 1920px) {
+            min-height: 48px;
+        }
+    }
 }
 
 @media (max-width: 1024px) {
     .top-bar-right {
         font-size: 22px;
     }
+
     .top-bar-right-mobile {
         display: flex;
     }
 }
+
 .main {
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     scroll-snap-type: y mandatory;
 }
+
 .container {
     max-width: 100%;
     margin: 0 auto;
     background: white;
     padding: 20px;
+    @media (max-width: 1024px){
+        padding: 55px 0 0 0px;
+    }
+    @media (max-width: 960px){
+        padding: 25px 0 0 0px;
+    }
+    @media (max-width: 768px) {
+        padding: 5px;
+    }
 }
+
 #chart-outer {
     display: flex;
     flex-wrap: wrap;
@@ -101,9 +151,14 @@ h2 {
     overflow: hidden;
     scroll-snap-align: end;
 }
+
 #cards-outer {
     scroll-snap-align: start;
+    @media (max-width: 960px) {
+        padding: 5px 15px;
+    }
 }
+
 #chart-container {
     display: flex;
     justify-content: center;
@@ -114,9 +169,11 @@ h2 {
     width: 100%;
     max-width: 80vw;
     overflow: hidden;
+
     @media (min-height: 1024) and (min-width: 1440px) {
         height: 96vh;
     }
+
     @media (max-width: 1024px) {
         margin: 0vw 0 -8vw 0;
         min-height: 120vw;
@@ -129,12 +186,14 @@ h2 {
 #chart-container.hide-subitem-labels:not(.tree-view) {
     transform: scale(1.3);
     transform-origin: center center;
+
     @media (max-width: 1024px) {
-    transform: scale(1.6);
+        transform: scale(1.6);
     }
 }
 
 #chart-container.hide-subitem-labels {
+
     .sub-item-label,
     .sub-item-line,
     .schedule-pill,
@@ -147,15 +206,23 @@ h2 {
 .treemap-category rect {
     transition: opacity 0.2s;
 }
+
 .treemap-category rect:hover {
     opacity: 0.3 !important;
 }
+
+.treemap-slice {
+    font-size: 18px;
+}
+
 .treemap-slice rect {
     transition: opacity 0.2s;
 }
+
 .treemap-slice rect:hover {
     opacity: 0.95 !important;
 }
+
 .treemap-spoke-group:hover text {
     text-decoration: underline;
 }
@@ -173,6 +240,7 @@ h2 {
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 18px;
+
     @media (max-width: 1024px) {
         font-size: 24px;
     }
@@ -180,7 +248,8 @@ h2 {
 }
 
 .add-spoke-input-container input {
-        font-size: 14px;
+    font-size: 14px;
+
     @media (max-width: 1024px) {
         font-size: 28px;
     }
@@ -248,9 +317,6 @@ h2 {
 }
 
 @media (max-width: 768px) {
-    .container {
-        padding: 15px;
-    }
 
     #chart-container {
         min-height: 400px;
@@ -290,10 +356,6 @@ h2 {
     h1 {
         font-size: 24px;
     }
-
-    .category-card {
-        padding: 15px;
-    }
 }
 
 h1 {
@@ -310,9 +372,11 @@ button {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
+
     @media (max-width: 1024px) {
         font-size: 18px;
         padding: 20px 30px;
+
     }
 }
 
@@ -339,12 +403,28 @@ button.tertiary:hover {
 button.warn {
     background: #f05252;
 }
+
 button.warn:hover {
     background: #f04040;
 }
+
+button.blank {
+    font-size: 18px;
+    background: transparent;
+    color: black;
+    padding: 5px;
+    padding: 0;
+    font-weight: normal;
+
+    @media (max-width: 1024px) {
+        font-size: 16px;
+    }
+}
+
 button.small {
     padding: 4px 8px;
     font-size: 14px;
+
     @media (max-width: 1024px) {
         font-size: 20px;
         padding: 12px 16px;
@@ -367,6 +447,7 @@ input[type="file"] {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+
     @media (max-width: 1024px) {
         align-items: flex-start;
     }
@@ -384,6 +465,7 @@ input[type="file"] {
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
+
     @media (max-width: 1024px) {
         padding: 20px;
         width: 96vw;
@@ -456,6 +538,7 @@ input[type="file"] {
     font-size: 14px;
     color: #666;
     font-weight: 500;
+
     @media (max-width: 1024px) {
         font-size: 18px;
     }
@@ -470,19 +553,22 @@ select {
     border-radius: 6px;
     font-size: 18px;
     transition: border-color 0.2s;
+
     @media (max-width: 1024px) {
         font-size: 24px;
     }
 }
 
-input[type="text"]{
+input[type="text"] {
     padding: 10px 12px;
     font-size: 18px;
+
     @media (max-width: 1024px) {
         font-size: 24px;
         padding: 12px 8px;
     }
 }
+
 select {
     cursor: pointer;
     min-width: 150px;
@@ -543,9 +629,11 @@ textarea {
     font-weight: 700;
     /* fill: #333; */
     pointer-events: none;
+
     @media (max-width: 1024px) {
         font-size: 10px;
     }
+
     @media (max-width: 768px) {
         font-size: 14px;
     }
@@ -563,9 +651,11 @@ textarea {
     font-weight: 600;
     /* fill: #333; */
     pointer-events: none;
+
     @media (max-width: 960px) {
         font-size: 10px;
     }
+
     @media (min-width: 1920px) {
         font-size: 13px;
     }
@@ -574,9 +664,11 @@ textarea {
 .sub-item-label {
     font-size: 12px;
     letter-spacing: -0.4px;
+
     @media (max-width: 1024px) {
         font-size: 10px;
     }
+
     @media (min-height: 1580px) {
         letter-spacing: 0.4px;
         font-size: 14px;
@@ -591,9 +683,10 @@ textarea {
 
 .categories-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
     gap: 22px;
     margin-top: 20px;
+
     @media (max-width: 1024px) {
         gap: 28px;
     }
@@ -604,6 +697,9 @@ textarea {
     padding: 20px;
     border-radius: 8px;
     border-left: 4px solid #4CAF50;
+    @media (max-width: 768px) {
+        padding: 5px 15px;
+    }
 }
 
 .category-header {
@@ -615,6 +711,7 @@ textarea {
 
 .category-percentage-input-container input {
     font-size: 14px;
+
     @media (max-width: 1024px) {
         font-size: 28px;
     }
@@ -623,9 +720,11 @@ textarea {
 .category-card h2 {
     color: #333;
     font-size: 18px;
+
     @media (max-width: 1024px) {
         font-size: 34px;
     }
+
     @media (min-width: 1920px) {
         font-size: 34px;
     }
@@ -635,9 +734,11 @@ textarea {
     color: #666;
     font-size: 14px;
     font-weight: 600;
+
     @media (max-width: 1024px) {
         font-size: 28px;
     }
+
     @media (min-width: 1920px) {
         font-size: 20px;
     }
@@ -647,6 +748,7 @@ textarea {
     display: flex;
     flex-direction: column;
     gap: 16px;
+
     @media (max-width: 1024px) {
         gap: 22px;
     }
@@ -661,6 +763,7 @@ textarea {
 
 .item-percentage input {
     font-size: 14px;
+
     @media (max-width: 1024px) {
         font-size: 28px;
     }
@@ -670,9 +773,11 @@ textarea {
     color: #333;
     margin-bottom: 6px;
     font-size: 14px;
+
     @media (max-width: 1024px) {
         font-size: 24px;
     }
+
     @media (min-width: 1920px) {
         font-size: 24px;
     }
@@ -682,6 +787,7 @@ textarea {
     color: #666;
     font-size: 12px;
     margin-bottom: 10px;
+
     @media (max-width: 1024px) {
         margin-bottom: 12px;
         font-size: 28px;
@@ -701,11 +807,13 @@ textarea {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+
     @media (max-width: 1024px) {
         padding: 6px 0;
         font-size: 24px;
     }
 }
+
 .item-card .spoke-list li .action-list {
     width: 100%;
 }
@@ -714,18 +822,16 @@ textarea {
     width: 100%;
     max-width: 100%;
     flex-wrap: wrap;
+
     span {
         max-width: 100%;
         overflow: hidden;
     }
-    
+
 }
 
 .item-card li .sub-item-text:before {
-    content: "• ";
-    color: #2196F3;
-    font-weight: bold;
-    margin-right: 8px;
+    content: none;
 }
 
 .empty-category {
@@ -742,6 +848,7 @@ textarea {
     margin-top: 5px;
     top: 25px;
     right: 200px;
+
     @media (max-width: 1024px) {
         right: 260px;
         top: 35px;
@@ -770,6 +877,13 @@ textarea {
     margin-left: 10px;
     font-weight: normal;
     transition: background 0.2s;
+
+    @media (max-width: 1440px) {
+        width: 18px;
+        height: 18px;
+        font-size: 14px;
+        line-height: 18px;
+    }
 }
 
 .info-icon:hover {
@@ -825,6 +939,7 @@ textarea {
     justify-content: center;
     align-items: center;
     z-index: 2000;
+
     @media (max-width: 1024px) {
         align-items: flex-start;
     }
@@ -842,6 +957,7 @@ textarea {
     max-height: 80vh;
     overflow-y: auto;
     position: relative;
+
     @media (max-width: 1024px) {
         width: 96vw;
         max-width: 96vw;
@@ -869,6 +985,13 @@ textarea {
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 6px;
+}
+
+.settings-section.settings-section-mobile {
+    display: none;
+    @media (max-width: 1024px) {
+        display: block;
+    }
 }
 
 .radio-option {
@@ -899,7 +1022,7 @@ textarea {
     color: #333;
 }
 
-.radio-option input[type="radio"]:checked + span {
+.radio-option input[type="radio"]:checked+span {
     font-weight: 600;
     color: #2196F3;
 }
@@ -915,6 +1038,7 @@ textarea {
     justify-content: center;
     align-items: center;
     z-index: 2001;
+
     @media (max-width: 1024px) {
         align-items: flex-start;
     }
@@ -931,6 +1055,7 @@ textarea {
     max-width: 400px;
     width: 90%;
     position: relative;
+
     @media (max-width: 1024px) {
         width: 96vw;
         max-width: 96vw;
@@ -1113,7 +1238,7 @@ select:focus {
     transition: all 0.2s;
 }
 
-.weekday-option input[type="checkbox"]:checked + span {
+.weekday-option input[type="checkbox"]:checked+span {
     background: #4285F4;
     border-color: #4285F4;
     color: white;
@@ -1187,7 +1312,7 @@ select:focus {
     background: #f5fff5;
 }
 
-.spoke-type-option input[type="radio"]:checked ~ .spoke-type-label .spoke-type-title {
+.spoke-type-option input[type="radio"]:checked~.spoke-type-label .spoke-type-title {
     color: #4CAF50;
     font-weight: 700;
 }
@@ -1724,8 +1849,15 @@ select:focus {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.4;
+    }
 }
 
 .sync-text {
@@ -1743,7 +1875,7 @@ select:focus {
     padding: 4px 10px;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .cloud-sync-badge .sync-icon {
@@ -2045,8 +2177,8 @@ select:focus {
 }
 
 /* Apply opacity only to headers, not the whole container (so children can override) */
-.import-tree-category.deselected > .import-tree-category-header,
-.import-tree-item.deselected > .import-tree-item-header,
+.import-tree-category.deselected>.import-tree-category-header,
+.import-tree-item.deselected>.import-tree-item-header,
 .import-tree-spoke.deselected {
     opacity: 0.4;
 }
@@ -2251,7 +2383,8 @@ select:focus {
     position: absolute;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
     border-radius: 8px;
-    pointer-events: none; /* Allow clicks to pass through to the element underneath */
+    pointer-events: none;
+    /* Allow clicks to pass through to the element underneath */
     animation: tutorial-pulse 1.5s ease-in-out infinite;
     transition: all 0.3s ease;
 }
@@ -2363,9 +2496,12 @@ select:focus {
 
 /* Tutorial Animations */
 @keyframes tutorial-pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 0 4px rgba(76, 175, 80, 0.7);
     }
+
     50% {
         box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 0 8px rgba(76, 175, 80, 0.4);
     }
@@ -2376,6 +2512,7 @@ select:focus {
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -2461,6 +2598,7 @@ select:focus {
     cursor: pointer;
     flex-shrink: 0;
     accent-color: #4CAF50;
+
     @media (max-width: 1024px) {
         width: 22px;
         height: 22px;
@@ -2479,7 +2617,7 @@ select:focus {
     position: fixed;
     top: 100px;
     right: 20px;
-    width: 260px;
+    width: 320px;
     max-height: 70vh;
     background: #fff;
     border-radius: 12px;
@@ -2648,7 +2786,7 @@ select:focus {
 
 @media (max-width: 768px) {
     .prioritiser-window {
-        width: 220px;
+        width: 280px;
         right: 10px;
         top: 80px;
         max-height: 60vh;

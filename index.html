@@ -27,48 +27,33 @@
     <main class="main">
         <div id="chart-outer" class="container">
             <div class="top-bar-left">
-                <h1>Brain Pie 🥧 <span class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></h1>
+                <div style="display:flex;">
+                    <h1><span style="vertical-align:bottom;margin-right: 15px;">🥧</span>Brain Pie</h1>
+                    <button class="blank"><span style="vertical-align:bottom;margin-left: 15px;position:relative;top:4px;" class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></button> 
+                </div>
+                
+                
+                
             </div>
             <div class="top-bar-right">
                 <div>
-                    <button style="width: 100%;" onclick="UI.showMenu()"><span style="font-size: 20px;">+</span> Add</button>
-                    <p>&nbsp;</p>
-                    <p><button class="tertiary" onclick="UI.togglePrioritiser()">&#9733; Priorities</button></p>
+                    <button style="width: 100%;margin-bottom: 10px" onclick="UI.showMenu()"><span style="font-size: 20px;vertical-align: middle;position: relative;top: -1px;left: -4px;">+</span> Add</button>    
+                    <p><button class="tertiary" onclick="UI.togglePrioritiser()">&#9733; <span style="vertical-align: middle;">Priorities</span></button></p>
+                    <div style="display:flex;padding-top: 10px;">
+                        <button class="secondary" onclick="UI.showSettings()"><span style="font-size: 22px;vertical-align: middle;position: relative;top: 0px;left: -4px;">⚙️</span>Settings</button>
+                    </div>
                 </div>
-                <hr>
+                <hr style="width: 100%;margin-bottom: 1px">
                 <div>
-                    <button class="secondary" onclick="UI.showSettings()">⚙️ Settings</button>
-                    <p>&nbsp;</p>
-                    <hr>
-                    <small>&nbsp;</small>
-                    <p style="margin-top: -5px;margin-bottom: 8px;">Hide spokes <input style="float:right;position:relative;top:5px;" class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"></p>
+                    <p style="margin-bottom: 8px;">Hide spokes <input style="float:right;position:relative;top:5px;" class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"></p>
                     <p>Tree view <input style="float:right;position:relative;top:5px;" class="view-mode-toggle" id="view-mode-toggle" type="checkbox" name="view-mode-toggle"></p>
                 </div>
             </div>
             <div class="top-bar-right-mobile">
-                <div>
+                <div style="display:flex;">
                     <button onclick="UI.showMenu()"><span style="font-size: 24px;">+</span></button>
+                    <button class="tertiary" onclick="UI.togglePrioritiser()">&#9733;</button>
                     <button class="secondary" onclick="UI.showSettings()">⚙️</button>
-                </div>
-                <div>
-                    <p>&nbsp;</p>
-                    <p style="position: relative; display: flex; flex-direction: row; width: 100%;">Hide spokes
-                        <input
-                        style="position: absolute;right: 0px;bottom: 3px;width: 20px;height: 20px;"
-                        class="hide-labels"
-                        id="hide-labels-mobile"
-                        type="checkbox"
-                        name="hide-labels">
-                    </p>
-                    <p style="position: relative; display: flex; flex-direction: row; width: 100%;">Tree view
-                        <input
-                        style="position: absolute;right: 0px;bottom: 3px;width: 20px;height: 20px;"
-                        class="view-mode-toggle"
-                        id="view-mode-toggle-mobile"
-                        type="checkbox"
-                        name="view-mode-toggle">
-                    </p>
-                    <p><button class="tertiary small" onclick="UI.togglePrioritiser()">&#9733; Priorities</button></p>
                 </div>
             </div>
             <div class="storage-status" id="storage-status"></div>
@@ -264,7 +249,12 @@
         <div class="settings-content" onclick="event.stopPropagation()">
             <button class="menu-close" onclick="UI.closeSettings()">✕</button>
             <h2>Settings</h2>
-            
+            <div class="settings-section settings-section-mobile">
+                                <div>
+                    <p style="margin-bottom: 8px;">Hide spokes <input style="float:right;position:relative;top:5px;" class="hide-labels" id="hide-labels-mobile" type="checkbox" name="hide-labels-mobile"></p>
+                    <p>Tree view <input style="float:right;position:relative;top:5px;" class="view-mode-toggle" id="view-mode-toggle-mobile" type="checkbox" name="view-mode-toggle-mobile"></p>
+                </div>
+            </div>
             <div class="settings-section">
                 <h3>Calendar Provider</h3>
                 <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Choose which calendar to use when creating events from actions</p>

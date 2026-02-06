@@ -947,7 +947,7 @@ const ChartRenderer = {
                 .attr('y', this.height / 2)
                 .attr('text-anchor', 'middle')
                 .attr('fill', '#999')
-                .attr('font-size', '16px')
+                .attr('font-size', '18px')
                 .text('Add items to see your brain tree');
             return;
         }
@@ -1110,15 +1110,15 @@ const ChartRenderer = {
 
                 // Slice header label
                 const sliceTextColor = this.isColorDark(sliceNode.data.color) ? '#ffffff' : '#222222';
-                const maxSliceChars = Math.floor((sliceW - 8) / 8.5);
+                const maxSliceChars = Math.floor((sliceW - 8) / 9.5);
                 const sliceLabel = sliceNode.data.name.length > maxSliceChars
                     ? sliceNode.data.name.substring(0, Math.max(3, maxSliceChars - 1)) + '...'
                     : sliceNode.data.name;
 
                 sliceGroup.append('text')
                     .attr('x', 4)
-                    .attr('y', 18)
-                    .attr('font-size', '14px')
+                    .attr('y', 20)
+                    .attr('font-size', '16px')
                     .attr('font-weight', 'bold')
                     .attr('fill', sliceTextColor)
                     .text(sliceLabel)
@@ -1126,9 +1126,9 @@ const ChartRenderer = {
 
                 // --- Level 3: Spokes as wrapped text rows ---
                 const subItems = sliceNode.data.subItems || [];
-                const spokeStartY = 30;
-                const lineHeight = 13;
-                const spokePadding = 3;  // Extra gap between spokes
+                const spokeStartY = 36;
+                const lineHeight = 15;
+                const spokePadding = 6;  // Extra gap between spokes
                 const charWidth = 5.8;   // Approx width per char at 10px font
                 const maxY = sliceH - 4;
                 const categoryId = sliceNode.data.categoryId;
@@ -1145,7 +1145,7 @@ const ChartRenderer = {
                                 .attr('class', 'treemap-spoke-group')
                                 .attr('x', 5)
                                 .attr('y', cursorY)
-                                .attr('font-size', '9px')
+                                .attr('font-size', '12px')
                                 .attr('fill', sliceTextColor)
                                 .attr('opacity', 0.6)
                                 .text(`+${remaining} more`);
@@ -1493,7 +1493,26 @@ const ChartRenderer = {
                 .attr('fill', 'transparent')
                 .attr('rx', 4);
 
-            // 1) Checkbox
+            // 1) Star for prioritiser (far left)
+            const isPrioritised = UI.isPrioritised({ type: 'action', categoryId, itemId, spokeIndex, childIndex: idx });
+            const starGroup = rowGroup.append('g')
+                .attr('transform', `translate(${cursorX}, ${rowY + 6})`)
+                .style('cursor', 'pointer')
+                .on('click', (event) => {
+                    event.stopPropagation();
+                    const ref = { type: 'action', categoryId, itemId, spokeIndex, childIndex: idx };
+                    UI.addToPriorities(ref);
+                    starGroup.select('text').attr('fill', UI.isPrioritised(ref) ? '#FFD700' : '#ccc');
+                });
+            starGroup.append('text')
+                .attr('x', 5).attr('y', 12)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '14px')
+                .attr('fill', isPrioritised ? '#FFD700' : '#ccc')
+                .text('\u2605');
+            cursorX += 18;
+
+            // 2) Checkbox
             const checkSize = 14;
             const checkX = cursorX;
             const checkY = rowY + (rowHeight - checkSize) / 2 - 2;
@@ -1526,7 +1545,7 @@ const ChartRenderer = {
             }
             cursorX += checkSize + 8;
 
-            // 2) Title
+            // 3) Title
             rowGroup.append('text')
                 .attr('x', cursorX)
                 .attr('y', rowY + 14)
@@ -1538,7 +1557,7 @@ const ChartRenderer = {
             // Right-side buttons (laid out right-to-left)
             let btnX = rightEdge;
 
-            // 5) Trash icon (rightmost)
+            // 4) Trash icon (rightmost)
             btnX -= 14;
             const trashGroup = rowGroup.append('g')
                 .attr('transform', `translate(${btnX}, ${rowY + 6})`)
@@ -1560,28 +1579,8 @@ const ChartRenderer = {
                 .text('\uD83D\uDDD1');
             btnX -= 10;
 
-            // 4) Star for prioritiser
-            btnX -= 14;
-            const isPrioritised = UI.isPrioritised({ type: 'action', categoryId, itemId, spokeIndex, childIndex: idx });
-            const starGroup = rowGroup.append('g')
-                .attr('transform', `translate(${btnX}, ${rowY + 6})`)
-                .style('cursor', 'pointer')
-                .on('click', (event) => {
-                    event.stopPropagation();
-                    const ref = { type: 'action', categoryId, itemId, spokeIndex, childIndex: idx };
-                    DataModel.addPriority(ref);
-                    UI.renderPriorityList();
-                    starGroup.select('text').attr('fill', UI.isPrioritised(ref) ? '#FFD700' : '#ccc');
-                });
-            starGroup.append('text')
-                .attr('x', 5).attr('y', 12)
-                .attr('text-anchor', 'middle')
-                .attr('font-size', '14px')
-                .attr('fill', isPrioritised ? '#FFD700' : '#ccc')
-                .text('\u2733');
-            btnX -= 8;
 
-            // 3) Calendar icon / schedule pill
+            // 5) Calendar icon / schedule pill
             const calGroup = rowGroup.append('g')
                 .style('cursor', 'pointer')
                 .on('click', (event) => {
