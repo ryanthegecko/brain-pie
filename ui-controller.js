@@ -1697,14 +1697,24 @@ const UI = {
 
         // Build description with notes first, then context
         let details = '';
+        let textString = '';
+        const isAction = actionText !== spokeText;
         if (notes) {
             details += notes + '\n\n---\n\n';
+        } if (isAction) {
+            // Action
+            details += `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
+            textString += `${actionText} (${spokeText}/${sliceName}/${categoryName})`;
+        } else {
+            // Spoke
+            details += `Spoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
+            textString += `${spokeText} (${sliceName}/${categoryName})`;
         }
-        details += `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
+        
 
         const params = new URLSearchParams({
             action: 'TEMPLATE',
-            text: `${actionText} (${spokeText}/${sliceName}/${categoryName})`,
+            text: textString,
             details: details,
             dates: dates
         });
