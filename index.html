@@ -32,14 +32,17 @@
             <div class="top-bar-right">
                 <div>
                     <button style="width: 100%;" onclick="UI.showMenu()"><span style="font-size: 20px;">+</span> Add</button>
+                    <p>&nbsp;</p>
+                    <p><button class="tertiary" onclick="UI.togglePrioritiser()">&#9733; Priorities</button></p>
                 </div>
                 <hr>
                 <div>
                     <button class="secondary" onclick="UI.showSettings()">⚙️ Settings</button>
                     <p>&nbsp;</p>
-                    <p>Hide spokes <input class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"></p>
-                    <p>Tree view <input class="view-mode-toggle" id="view-mode-toggle" type="checkbox" name="view-mode-toggle"></p>
-                    <p><button class="tertiary small" onclick="UI.togglePrioritiser()">&#9733; Priorities</button></p>
+                    <hr>
+                    <small>&nbsp;</small>
+                    <p style="margin-top: -5px;margin-bottom: 8px;">Hide spokes <input style="float:right;position:relative;top:5px;" class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"></p>
+                    <p>Tree view <input style="float:right;position:relative;top:5px;" class="view-mode-toggle" id="view-mode-toggle" type="checkbox" name="view-mode-toggle"></p>
                 </div>
             </div>
             <div class="top-bar-right-mobile">
@@ -382,7 +385,7 @@
                 <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
                 <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">
                 <button class="warn" style="margin-left: 5px;" onclick="App.removeAllData()">
-                    Remove all Data (Fresh Pie)<img width="25" height="27" src="./assets/trash.svg">
+                    Fresh Pie<img width="25" height="27" style="vertical-align: middle;" src="./assets/trash.svg">
                 </button>
             </div>
 

@@ -84,7 +84,7 @@ const Controls = {
     const container = document.getElementById('chart-container');
 
     const stored = localStorage.getItem(this.VIEW_MODE_KEY);
-    const isTree = stored === 'tree';
+    const isTree = stored ? stored === 'tree' : window.innerWidth < 960;
 
     if (checkboxDesktop) checkboxDesktop.checked = isTree;
     if (checkboxMobile) checkboxMobile.checked = isTree;
