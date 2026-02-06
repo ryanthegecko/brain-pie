@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.10
+**Current Version:** v0.10.1
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -327,6 +327,23 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.10.1 (February 2026)
+Prioritiser interaction fixes:
+
+**Action Popup Star:**
+- Clicking star in action popup no longer closes the popup
+- Star toggles fill color in place (gold/grey) without triggering full chart re-render
+
+**Priority Bump/Remove:**
+- Clicking star on #1 priority item now removes it from the list (can't bump what's already at top)
+- All other positions still bump to top
+
+**Completed Action Deprioritisation:**
+- Checking off a list action (tickbox) automatically removes it from the priority list
+- Unchecking does not re-add it
+
+---
 
 ### v0.10 (February 2026)
 ViewBox responsive scaling, priority stars on chart, hover rework, and UI polish:
