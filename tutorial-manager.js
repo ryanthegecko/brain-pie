@@ -16,6 +16,7 @@
 const TutorialManager = {
     COMPLETED_KEY: 'brainPieTutorialCompleted',
     STEP_KEY: 'brainPieTutorialStep',
+    STASH_KEY: 'brainPieTutorialStash',
 
     steps: [
         {
@@ -173,12 +174,19 @@ const TutorialManager = {
             type: 'modal',
             title: "You're All Set! 🎉",
             content: "You've learned the basics! Your data is saved to your browser's local storage only—completely private. For cloud sync across devices, you can connect your own Firebase project in Settings. You can start fresh, or load one of the example pies below.",
-            buttons: [
-                { text: 'Load Life Pie', action: 'loadLifePie', class: 'secondary' },
-                { text: 'Load Team Pie', action: 'loadTeamPie', class: 'secondary' },
-                { text: 'Continue With This Pie', action: 'continuePie', class: 'primary' },
-                { text: 'Start Fresh', action: 'startFresh', class: 'secondary' }
-            ]
+            getButtons: () => {
+                const buttons = [
+                    { text: 'Load Life Pie', action: 'loadLifePie', class: 'secondary' },
+                    { text: 'Load Team Pie', action: 'loadTeamPie', class: 'secondary' }
+                ];
+                if (TutorialManager.hasStashedData()) {
+                    buttons.push({ text: 'Back to Your Pie', action: 'restorePie', class: 'primary' });
+                } else {
+                    buttons.push({ text: 'Continue With This Pie', action: 'continuePie', class: 'primary' });
+                }
+                buttons.push({ text: 'Start Fresh', action: 'startFresh', class: 'secondary' });
+                return buttons;
+            }
         }
     ],
 
@@ -246,8 +254,12 @@ const TutorialManager = {
         this.isExploring = false;
         localStorage.setItem(this.COMPLETED_KEY, 'true');
         localStorage.removeItem(this.STEP_KEY);
-        // Load the life pie as default for new users
-        this.loadLifePie();
+        if (this.hasStashedData()) {
+            this.restoreStashedPie();
+        } else {
+            // First-time user: load the life pie as default
+            this.loadLifePie();
+        }
     },
 
     /**
@@ -259,6 +271,7 @@ const TutorialManager = {
         this.isExploring = false;
         localStorage.setItem(this.COMPLETED_KEY, 'true');
         localStorage.removeItem(this.STEP_KEY);
+        localStorage.removeItem(this.STASH_KEY);
         Storage.showStatus('Tutorial complete!', 'success');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     },
@@ -373,7 +386,8 @@ const TutorialManager = {
 
         // Build buttons from step config
         let buttonsHtml = '';
-        for (const btn of (step.buttons || [])) {
+        const stepButtons = step.getButtons ? step.getButtons() : (step.buttons || []);
+        for (const btn of stepButtons) {
             const btnClass = btn.class ? `tutorial-btn ${btn.class}` : 'tutorial-btn';
             let onclick = '';
 
@@ -401,6 +415,9 @@ const TutorialManager = {
                     break;
                 case 'continuePie':
                     onclick = 'TutorialManager.continuePie()';
+                    break;
+                case 'restorePie':
+                    onclick = 'TutorialManager.finishWithRestore()';
                     break;
                 case 'startFresh':
                     onclick = 'TutorialManager.startFresh()';
@@ -587,9 +604,52 @@ const TutorialManager = {
     // === Data Loading Methods ===
 
     /**
+     * Stash the user's current data before loading example pies.
+     * Only stashes once (first call) and only if user has real data.
+     */
+    stashUserData() {
+        if (localStorage.getItem(this.STASH_KEY)) return; // already stashed
+        if (!DataModel.categories || DataModel.categories.length === 0) return; // nothing to stash
+        const stash = {
+            categories: DataModel.categories,
+            categoryPercentageOverrides: DataModel.categoryPercentageOverrides || {},
+            priorityList: DataModel.priorityList || []
+        };
+        localStorage.setItem(this.STASH_KEY, JSON.stringify(stash));
+    },
+
+    hasStashedData() {
+        return !!localStorage.getItem(this.STASH_KEY);
+    },
+
+    /**
+     * Restore the user's stashed data and clear the stash
+     */
+    restoreStashedPie() {
+        const raw = localStorage.getItem(this.STASH_KEY);
+        if (!raw) return;
+        const stash = JSON.parse(raw);
+        DataModel.setCategories(stash.categories);
+        DataModel.categoryPercentageOverrides = stash.categoryPercentageOverrides || {};
+        DataModel.priorityList = stash.priorityList || [];
+        DataModel.saveToStorage();
+        localStorage.removeItem(this.STASH_KEY);
+        App.render();
+    },
+
+    /**
+     * Complete tutorial and restore the user's original data
+     */
+    finishWithRestore() {
+        this.restoreStashedPie();
+        this.complete();
+    },
+
+    /**
      * Load the "Life Pie" example data
      */
     loadLifePie() {
+        this.stashUserData();
         if (typeof ExampleData !== 'undefined') {
             const data = ExampleData.get();
             DataModel.setCategories(data.categories);
@@ -603,6 +663,7 @@ const TutorialManager = {
      * Load the "Team Pie" example data
      */
     loadTeamPie() {
+        this.stashUserData();
         if (typeof ExampleData2 !== 'undefined') {
             const data = ExampleData2.get();
             DataModel.setCategories(data.categories);
@@ -654,6 +715,7 @@ const TutorialManager = {
      * Load the "Health Pie" example data
      */
     loadHealthPie() {
+        this.stashUserData();
         if (typeof ExampleData3 !== 'undefined') {
             const data = ExampleData3.get();
             DataModel.setCategories(data.categories);
