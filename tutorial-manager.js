@@ -256,6 +256,11 @@ const TutorialManager = {
         localStorage.removeItem(this.STEP_KEY);
         if (this.hasStashedData()) {
             this.restoreStashedPie();
+        } else if (DataModel.categories && DataModel.categories.length > 0) {
+            // User has existing data but no stash (skipped before example data loaded)
+            // Just re-render their current pie
+            localStorage.removeItem(this.STASH_KEY);
+            App.render();
         } else {
             // First-time user: load the life pie as default
             this.loadLifePie();

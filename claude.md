@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.10.1
+**Current Version:** v0.11
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -164,10 +164,10 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 
 **Overlays:**
 - Add Slices Menu
-- Settings (calendar provider selection)
+- Settings (calendar provider selection, mobile: hide spokes + tree view toggles)
 - Date/Time Picker (for scheduling actions)
 - Spoke Configuration (set spoke type, add/schedule actions)
-- Prioritiser Window (fixed, draggable, narrow sidebar)
+- Prioritiser Window (fixed, draggable, with action buttons per spoke type)
 - Disclaimer/About
 
 #### 4. **Storage** (`storage.js`)
@@ -327,6 +327,70 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.11 (February 2026)
+Responsive layout overhaul, prioritiser enhancements, star consistency, and tutorial safety:
+
+**Responsive Layout Overhaul:**
+- Top-bar panels flush to corners (top: 0, left/right: 0) with white background and box-shadow
+- H1 responsive scaling: 38px → 32px (≤1920) → 30px (≤1024) → 24px (≤960)
+- Emoji pie icon moved before title text with vertical alignment
+- Info icon (ⓘ) wrapped in transparent `.blank` button class
+- Container padding adjusts per breakpoint: 20px (desktop) → 55px top (≤1024) → 25px top (≤960) → 5px (≤768)
+- Cards outer section gets horizontal padding on small screens (≤960px)
+- Categories grid min-width increased from 460px to 500px
+- Category cards reduced padding on mobile (≤768px)
+- Mobile top bar: fixed position, compact button row with flexbox and gap spacing
+- Mobile "Hide spokes" and "Tree view" toggles moved from top bar into Settings overlay (new `.settings-section-mobile` block, hidden on desktop)
+- Mobile Priorities button moved into compact top bar row (star icon only)
+- Info icon scales down at ≤1440px (18px)
+
+**Treemap Improvements:**
+- Slice header font increased from 14px → 16px bold
+- More padding below slice headers (spokeStartY 30 → 36)
+- Increased spoke line height (13 → 15) and spacing between spokes (3 → 6)
+- Overflow "+N more" text enlarged from 9px to 12px
+- Character width estimate for title truncation updated for larger font (8.5 → 9.5)
+- Empty state message font increased (16px → 18px)
+- `.treemap-slice` CSS rule with 18px base font size
+
+**Prioritiser Window:**
+- Width increased from 260px → 320px (mobile: 220px → 280px)
+- Action buttons added between info and star for each priority item:
+  - **Single unscheduled**: 📅 calendar icon → opens scheduler
+  - **Single scheduled**: green pill with date/time → opens rescheduler
+  - **Repeating unscheduled**: 🔁 icon → opens recurrence scheduler
+  - **Repeating scheduled**: green pill with recurrence text → opens editor
+  - **List spoke/action**: ✏️ pencil → navigates to spoke (opens action popup)
+  - **Static/slice**: no action button
+
+**Summary Card Stars:**
+- Spoke stars moved to far left of row (before text), replacing the blue dot pseudo-element
+- Slice headers now have a priority star before the slice name
+- Action stars moved outside the grey `#f5f5f5` background to the left
+- Blue dot pseudo-element removed (`content: none` on `.sub-item-text:before`)
+
+**Action Popup Star:**
+- Star moved to far left of each action row (before checkbox)
+- Star character changed from ✳ (`\u2733`) to ★ (`\u2605`) for consistency with rest of app
+- Row order: Star → Checkbox → Title → Trash → Calendar (was: Checkbox → Title → Calendar → Star → Trash)
+- Star now calls `UI.addToPriorities()` (was calling `DataModel.addPriority()` directly)
+
+**Auto-Open Prioritiser:**
+- Clicking any star to add a priority now opens the prioritiser window if not already visible
+- All star click paths now flow through `UI.addToPriorities()` which calls `openPrioritiser()`
+
+**Tutorial Skip Safety:**
+- Skipping tutorial before example data loads no longer overwrites existing localStorage data
+- New check: if user has categories but no stash (skipped before `loadLifePie` ran), re-renders their existing pie instead of loading example data
+
+**CSS Cleanup:**
+- Consistent formatting throughout (whitespace before nested `@media`, proper indentation)
+- Removed commented-out background/border-radius on top-bar-left
+- Compact CSS selectors (`+span`, `>` child combinators)
+- Expanded keyframe animations for readability
+
+---
 
 ### v0.10.1 (February 2026)
 Prioritiser interaction fixes:
@@ -892,6 +956,18 @@ Debug.log('message', data)
 - [ ] **Action popup**: Checkbox for completion
 - [ ] **Action popup**: Star for prioritiser
 - [ ] **Action popup**: Programmatic open (from prioritiser navigation)
+- [ ] **Prioritiser**: Action buttons show correct state per spoke type (single/repeating/list)
+- [ ] **Prioritiser**: Action buttons open correct scheduler/navigator
+- [ ] **Summary card stars**: Spoke star on far left (no blue dot)
+- [ ] **Summary card stars**: Slice header has star before name
+- [ ] **Summary card stars**: Action star outside grey background
+- [ ] **Action popup star**: Star on far left (before checkbox), uses ★ character
+- [ ] **Auto-open prioritiser**: Adding any priority opens the prioritiser window
+- [ ] **Tutorial skip**: Skipping before example data preserves existing localStorage
+- [ ] **Responsive**: Top bar panels flush to corners at all breakpoints
+- [ ] **Responsive**: Mobile toggles in Settings overlay, not top bar
+- [ ] **Responsive**: Container padding correct at 1024px, 960px, 768px breakpoints
+- [ ] **Treemap**: Larger slice titles (16px), more spoke spacing, readable at all sizes
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
