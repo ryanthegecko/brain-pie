@@ -293,9 +293,24 @@ const UI = {
         list.innerHTML = '';
 
         category.items.forEach(item => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:8px;';
+
+            const star = document.createElement('button');
+            star.className = `priority-star-btn ${this.isPrioritised({type:'slice', categoryId, itemId:item.id}) ? 'active' : ''}`;
+            star.innerHTML = '&#9733;';
+            star.title = 'Add to priorities';
+            star.style.flexShrink = '0';
+            star.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.addToPriorities({type:'slice', categoryId, itemId:item.id});
+                star.classList.toggle('active', this.isPrioritised({type:'slice', categoryId, itemId:item.id}));
+            });
+
             const li = document.createElement('li');
             const isNew = this.newlyAddedSliceIds.includes(item.id);
             if (isNew) li.classList.add('newly-added');
+            li.style.cssText = 'flex:1;cursor:pointer;';
 
             li.innerHTML = `
                 <span class="slice-name">${item.name}</span>
@@ -304,13 +319,13 @@ const UI = {
                 <span class="slice-edit-hint">Edit →</span>
             `;
 
-            // Click to jump to Tab 2 with this slice selected
-            li.style.cursor = 'pointer';
             li.addEventListener('click', () => {
                 this.selectSliceAndGoToTab2(categoryId, item.id);
             });
 
-            list.appendChild(li);
+            row.appendChild(star);
+            row.appendChild(li);
+            list.appendChild(row);
         });
     },
 
@@ -462,9 +477,23 @@ const UI = {
 
             const wrapper = document.createElement('div');
             wrapper.className = 'tab2-spoke-wrapper';
+            wrapper.style.cssText = 'display:flex;align-items:start;gap:4px;';
+
+            const spokeStar = document.createElement('button');
+            spokeStar.className = `priority-star-btn ${this.isPrioritised({type:'spoke', categoryId, itemId, spokeIndex:idx}) ? 'active' : ''}`;
+            spokeStar.innerHTML = '&#9733;';
+            spokeStar.title = 'Add to priorities';
+            spokeStar.style.cssText = 'flex-shrink:0;margin-top:8px;';
+            spokeStar.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.addToPriorities({type:'spoke', categoryId, itemId, spokeIndex:idx});
+                spokeStar.classList.toggle('active', this.isPrioritised({type:'spoke', categoryId, itemId, spokeIndex:idx}));
+            });
+            wrapper.appendChild(spokeStar);
 
             const div = document.createElement('div');
             div.className = 'tab2-spoke-item';
+            div.style.flex = '1';
 
             // Build the spoke type button based on current type and schedule state
             let spokeTypeButton = '';
@@ -515,14 +544,20 @@ const UI = {
                         scheduleDisplay = `<span class="action-schedule">${dateStr} ${timeStr}</span>`;
                     }
                     const isCompleted = child.completed || false;
+                    const isActionPrioritised = UI.isPrioritised({type:'action', categoryId, itemId, spokeIndex:idx, childIndex:childIdx});
                     return `
-                        <div class="tab2-action-item">
-                            <input type="checkbox" class="action-checkbox"
-                                onchange="UI.toggleActionCompleted('${categoryId}', '${itemId}', ${idx}, ${childIdx})"
-                                ${isCompleted ? 'checked' : ''}>
-                            <span class="action-text ${isCompleted ? 'action-completed' : ''}">${childText}</span>
-                            ${scheduleDisplay}
-                            <button class="small warn" onclick="UI.removeActionFromTab2(${idx}, ${childIdx})" title="Remove action">×</button>
+                        <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+                            <button class="priority-star-btn ${isActionPrioritised ? 'active' : ''}"
+                                onclick="event.stopPropagation(); UI.addToPriorities({type:'action', categoryId:'${categoryId}', itemId:'${itemId}', spokeIndex:${idx}, childIndex:${childIdx}}); this.classList.toggle('active', UI.isPrioritised({type:'action', categoryId:'${categoryId}', itemId:'${itemId}', spokeIndex:${idx}, childIndex:${childIdx}}))"
+                                title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
+                            <div class="tab2-action-item" style="flex:1;margin-bottom:0;">
+                                <input type="checkbox" class="action-checkbox"
+                                    onchange="UI.toggleActionCompleted('${categoryId}', '${itemId}', ${idx}, ${childIdx})"
+                                    ${isCompleted ? 'checked' : ''}>
+                                <span class="action-text ${isCompleted ? 'action-completed' : ''}">${childText}</span>
+                                ${scheduleDisplay}
+                                <button class="small warn" onclick="UI.removeActionFromTab2(${idx}, ${childIdx})" title="Remove action">×</button>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -818,7 +853,7 @@ const UI = {
                                        title="Change color"
                                        style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;"
                                        onchange="App.updateItemColor('${category.id}', '${item.id}', this.value)">
-                                
+                                <button style="background: #4CAF50; margin-left: 5px;" onclick="UI.showAddSpokeInput('${category.id}', '${item.id}')" title="Add spoke">+ <span class="btn-label">New Spoke</span></button>
                                 <button class="warn" style="margin-left: 5px;" onclick="App.removeItem('${category.id}', '${item.id}')">
                                     <img width="15" height="15" src="./assets/trash.svg" />
                                 </button>
@@ -962,13 +997,17 @@ const UI = {
                                     </li>
                                 `}).join('')}</ul>`
                                 : '<p style="color: #999; font-size: 12px; margin: 8px 0;">No Spokes</p>'}
-                            <div class="add-spoke-input-container"
-                                style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+                            <div id="add-spoke-${category.id}-${item.id}" class="add-spoke-input-container"
+                                style="margin-top: 10px; display: none; gap: 8px; align-items: center;">
                                 <input type="text"
                                        id="new-subitem-${item.id}"
                                        placeholder="New Spoke"
-                                       style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                <button class="small" style="background: #4CAF50;" onclick="App.addSubItem('${category.id}', '${item.id}')">+</button>
+                                       style="flex: 1; padding: 8px; border: 1px solid #4CAF50; border-radius: 4px;"
+                                       onkeydown="if(event.key==='Enter') App.addSubItem('${category.id}', '${item.id}')">
+                                <button class="small" style="background: #4CAF50;" onclick="App.addSubItem('${category.id}', '${item.id}')">Add</button>
+                                <button class="small warn" onclick="UI.hideAddSpokeInput('${category.id}', '${item.id}')">
+                                    <img width="15" height="20" src="./assets/trash.svg" />
+                                </button>
                             </div>
                         </div>
                     `).join('')}
@@ -1006,7 +1045,7 @@ const UI = {
                                style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
                     </div>
-                    <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">New Slice</button>
+                    <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">+ <span class="btn-label">New Slice</span></button>
                     <button class="warn" style="margin-left: 5px;" onclick="App.removeCategory('${category.id}')">
                         <img width="15" height="15" src="./assets/trash.svg" />
                     </button>
@@ -1201,6 +1240,31 @@ const UI = {
         });
         document.querySelectorAll('li').forEach(li => {
             li.style.borderTop = '';
+        });
+    },
+
+    showAddSpokeInput(categoryId, itemId) {
+        this.hideAllAddSpokeInputs();
+        const inputDiv = document.getElementById(`add-spoke-${categoryId}-${itemId}`);
+        const input = document.getElementById(`new-subitem-${itemId}`);
+        if (inputDiv && input) {
+            inputDiv.style.display = 'flex';
+            input.focus();
+        }
+    },
+
+    hideAddSpokeInput(categoryId, itemId) {
+        const inputDiv = document.getElementById(`add-spoke-${categoryId}-${itemId}`);
+        const input = document.getElementById(`new-subitem-${itemId}`);
+        if (inputDiv) inputDiv.style.display = 'none';
+        if (input) input.value = '';
+    },
+
+    hideAllAddSpokeInputs() {
+        document.querySelectorAll('[id^="add-spoke-"]').forEach(div => {
+            div.style.display = 'none';
+            const input = div.querySelector('input[type="text"]');
+            if (input) input.value = '';
         });
     },
 
@@ -2309,35 +2373,48 @@ const UI = {
             const childText = typeof child === 'string' ? child : child.text;
             const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
 
-            let scheduleInfo = '<span style="color: #999;">Not scheduled</span>';
+            let scheduleBtn = `<button type="button" class="small" style="background:#4285F4;" onclick="UI.rescheduleAction(${idx})" title="Schedule">📅</button>`;
             if (hasSchedule) {
                 const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
                 const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                scheduleInfo = `<span style="color: #4CAF50; font-weight: 600;">${dateStr} ${timeStr}</span>`;
+                scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 8px;" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} ${timeStr}</button>`;
             }
 
             const isCompleted = child.completed || false;
+            const isActionPrioritised = this.isPrioritised({type:'action', categoryId, itemId, spokeIndex, childIndex:idx});
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:6px;';
+
+            const star = document.createElement('button');
+            star.className = `priority-star-btn ${isActionPrioritised ? 'active' : ''}`;
+            star.innerHTML = '&#9733;';
+            star.title = 'Add to priorities';
+            star.style.flexShrink = '0';
+            star.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.addToPriorities({type:'action', categoryId, itemId, spokeIndex, childIndex:idx});
+                star.classList.toggle('active', this.isPrioritised({type:'action', categoryId, itemId, spokeIndex, childIndex:idx}));
+            });
+
             const entry = document.createElement('div');
             entry.className = 'spoke-action-entry';
-            entry.style.background = '#f5f5f5';
-            entry.style.padding = '8px 12px';
-            entry.style.borderRadius = '6px';
+            entry.style.cssText = 'flex:1;background:#f5f5f5;padding:8px 12px;border-radius:6px;';
             entry.innerHTML = `
                 <input type="checkbox" class="action-checkbox"
                     onchange="UI.toggleActionCompleted('${categoryId}', '${itemId}', ${spokeIndex}, ${idx})"
                     ${isCompleted ? 'checked' : ''}>
                 <div style="flex: 1;">
                     <div style="font-weight: 500;" class="${isCompleted ? 'action-completed' : ''}">${childText}</div>
-                    <div style="font-size: 12px; margin-top: 2px;">${scheduleInfo}</div>
                 </div>
-                <button type="button" class="small" style="background: #4285F4;"
-                        onclick="UI.rescheduleAction(${idx})" title="Schedule">
-                    ${hasSchedule ? '✏️' : '📅'}
-                </button>
+                ${scheduleBtn}
                 <button type="button" class="small warn" onclick="UI.removeAction(${idx})" title="Remove">×</button>
             `;
-            container.appendChild(entry);
+
+            row.appendChild(star);
+            row.appendChild(entry);
+            container.appendChild(row);
         });
     },
 

@@ -1126,7 +1126,7 @@ const ChartRenderer = {
 
                 // --- Level 3: Spokes as wrapped text rows ---
                 const subItems = sliceNode.data.subItems || [];
-                const spokeStartY = 36;
+                const spokeStartY = 40;
                 const lineHeight = 15;
                 const spokePadding = 6;  // Extra gap between spokes
                 const charWidth = 5.8;   // Approx width per char at 10px font
@@ -1166,7 +1166,7 @@ const ChartRenderer = {
                     const isTreePriority = UI.isPrioritised(treeSpokeRef);
 
                     const starOffset = isTreePriority ? 12 : 0;
-                    const textStartX = (icon ? 20 : 5) + starOffset;
+                    const textStartX = 5 + starOffset;
                     const textAvailableW = sliceW - textStartX - 6;
                     const charsPerLine = Math.max(4, Math.floor(textAvailableW / charWidth));
 
@@ -1238,15 +1238,6 @@ const ChartRenderer = {
                             });
                     }
 
-                    // Icon on first line
-                    if (icon) {
-                        spokeGroup.append('text')
-                            .attr('x', 5 + starOffset)
-                            .attr('y', cursorY)
-                            .attr('font-size', '10px')
-                            .text(icon);
-                    }
-
                     // Wrapped text lines
                     const nameEl = spokeGroup.append('text')
                         .attr('x', textStartX)
@@ -1270,13 +1261,24 @@ const ChartRenderer = {
                     });
 
                     const lastLineY = cursorY + (lines.length - 1) * lineHeight;
+                    const lastLineWidth = lines[lines.length - 1].length * charWidth;
+                    let afterTextX = textStartX + lastLineWidth + 4;
+
+                    // Icon after text, before pill
+                    if (icon) {
+                        spokeGroup.append('text')
+                            .attr('x', afterTextX)
+                            .attr('y', lastLineY)
+                            .attr('font-size', '10px')
+                            .text(icon);
+                        afterTextX += 14;
+                    }
 
                     // Inline schedule pill on last line
                     if (pillText && pillColor) {
                         setTimeout(() => {
                             try {
-                                const lastLineWidth = lines[lines.length - 1].length * charWidth;
-                                const pillX = textStartX + lastLineWidth + 4;
+                                const pillX = afterTextX;
                                 const pillPadX = 5;
                                 const pillPadY = 2;
 
@@ -1575,7 +1577,7 @@ const ChartRenderer = {
                 .attr('x', 5).attr('y', 11)
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '12px')
-                .attr('fill', '#f44336')
+                .attr('fill', '#f05252')
                 .text('\uD83D\uDDD1');
             btnX -= 10;
 
