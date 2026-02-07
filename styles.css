@@ -623,6 +623,10 @@ textarea {
     @media (max-width: 1024px) {
         font-size: 10px;
     }
+        @media (min-width: 1440px) {
+        font-size: 18.5px;
+        letter-spacing: -0.1px;
+    }
 
     @media (max-width: 768px) {
         font-size: 14px;
@@ -637,13 +641,17 @@ textarea {
 }
 
 .item-label {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     /* fill: #333; */
     pointer-events: none;
 
     @media (max-width: 960px) {
         font-size: 10px;
+    }
+    @media (min-width: 1440px) {
+        font-size: 15.5px;
+        letter-spacing: -0.2px;
     }
 
     @media (min-width: 1920px) {
@@ -658,7 +666,10 @@ textarea {
     @media (max-width: 1024px) {
         font-size: 10px;
     }
-
+    @media (min-width: 1440px) {
+        font-size: 13.5px;
+        letter-spacing: -0.1px;
+    }
     @media (min-height: 1580px) {
         letter-spacing: 0.4px;
         font-size: 14px;

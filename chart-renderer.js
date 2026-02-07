@@ -663,6 +663,7 @@ const ChartRenderer = {
                 .append('textPath')
                 .attr('xlink:href', `#category-text-arc-${i}`)
                 .attr('startOffset', this.width > 1024 ? '20%' : '15%')
+                .attr('text-anchor', 'start')
                 .text(d.data.name);
 
             // Percentage path (offset)
