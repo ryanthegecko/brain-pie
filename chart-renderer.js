@@ -1426,7 +1426,10 @@ const ChartRenderer = {
             cardY = Math.max(minY, Math.min(maxY, reusePosition.y));
         } else {
             cardX = Math.max(minX, Math.min(maxX, clickSvgX - cardWidth / 2));
-            cardY = Math.max(minY, Math.min(maxY, clickSvgY + 15));
+            // Place below click, but flip above if it would clip the bottom
+            const belowY = clickSvgY + 15;
+            const aboveY = clickSvgY - cardHeight - 15;
+            cardY = belowY <= maxY ? Math.max(minY, belowY) : Math.max(minY, aboveY);
         }
 
         const branchGroup = this.highlightGroup.append('g')
@@ -1671,7 +1674,8 @@ const ChartRenderer = {
                 .attr('transform', 'translate(3, 4) scale(0.07)');
             btnX -= 16;
 
-            // 5) Calendar icon / schedule pill
+            // 5) Calendar icon / schedule pill (hidden when completed)
+            if (!isCompleted) {
             const calGroup = rowGroup.append('g')
                 .style('cursor', 'pointer')
                 .on('click', (event) => {
@@ -1718,6 +1722,7 @@ const ChartRenderer = {
                     .attr('font-size', '24px')
                     .text('\uD83D\uDCC5');
             }
+            } // end if (!isCompleted)
         });
 
         // New action input row at bottom
