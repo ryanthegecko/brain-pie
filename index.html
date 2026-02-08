@@ -414,8 +414,15 @@
                 <label for="event-date">Date</label>
                 <input type="date" id="event-date" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
             </div>
-            
+
             <div class="datetime-section">
+                <label class="allday-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="event-allday" onchange="UI.toggleAllDay()" style="width: 18px; height: 18px; cursor: pointer;">
+                    All day
+                </label>
+            </div>
+
+            <div class="datetime-section" id="time-section">
                 <label>Time</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <select id="event-hour" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
@@ -454,7 +461,7 @@
                 </div>
             </div>
             
-            <div class="datetime-section">
+            <div class="datetime-section" id="duration-section">
                 <label for="event-duration">Duration</label>
                 <select id="event-duration" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
                     <option value="15">15 minutes</option>
@@ -475,6 +482,11 @@
             <div class="datetime-section">
                 <label for="event-notes">Notes <span style="color: #999; font-weight: normal;">(optional)</span></label>
                 <textarea id="event-notes" placeholder="Phone numbers, URLs, or any details for the calendar event" rows="3" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
+            </div>
+
+            <div class="datetime-section">
+                <label for="event-invitees">Invitees <span style="color: #999; font-weight: normal;">(optional, comma-separated emails)</span></label>
+                <input type="text" id="event-invitees" placeholder="email@example.com, another@example.com" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
             </div>
 
             <div id="reschedule-reminder" style="display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px; font-size: 13px; color: #856404;">
@@ -972,6 +984,7 @@
             <p id="tutorial-content"></p>
             <div class="tutorial-buttons" id="tutorial-buttons"></div>
         </div>
+        <button class="tutorial-btn secondary tutorial-skip-fixed" onclick="TutorialManager.skip()">Skip Tutorial</button>
     </div>
 
     <!-- Tutorial Modal -->
@@ -981,6 +994,7 @@
             <p id="tutorial-modal-text"></p>
             <div class="tutorial-modal-buttons" id="tutorial-modal-buttons"></div>
         </div>
+        <button class="tutorial-btn secondary tutorial-skip-fixed" onclick="TutorialManager.skip()">Skip Tutorial</button>
     </div>
 
     <script src="storage.js"></script>

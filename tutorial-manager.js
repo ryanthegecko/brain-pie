@@ -25,7 +25,6 @@ const TutorialManager = {
             title: 'Welcome to Brain Pie! 🥧',
             content: "Brain Pie helps you visualize and organize everything on your mind. It's flexible—use it for life management, project tracking, team coordination, or anything else. Let me show you how.",
             buttons: [
-                { text: 'Skip Tutorial', action: 'skip', class: 'secondary' },
                 { text: "Let's Go!", action: 'next', class: 'primary' }
             ]
         },
@@ -36,7 +35,6 @@ const TutorialManager = {
             content: 'This is a "whole life" pie. Categories like Home, Health, Learning, and Social help organize everything on your mind. Slices represent individual items in each category, and each Slice can be given Spokes, often representing steps needed, or more granular tasks.',
             onEnter: 'loadLifePie',
             buttons: [
-                { text: 'Skip', action: 'skip', class: 'secondary' },
                 { text: 'Explore', action: 'explore', class: '' },
                 { text: 'Next', action: 'next', class: 'primary' }
             ]
@@ -48,7 +46,6 @@ const TutorialManager = {
             content: "This is a project pie for a team. Each category is a team member (PM, Designer, Developer). It's clear who's doing what, what's done, and what's in progress. Everyone can add and update.",
             onEnter: 'loadTeamPie',
             buttons: [
-                { text: 'Skip', action: 'skip', class: 'secondary' },
                 { text: 'Explore', action: 'explore', class: '' },
                 { text: 'Next', action: 'next', class: 'primary' }
             ]
@@ -59,7 +56,6 @@ const TutorialManager = {
             title: 'Calendar Sync',
             content: "Sign in with Google to enable 2-way sync. When you move an event in Google Calendar, Brain Pie updates automatically. Without sign-in, events still go to your calendar, just one-way. You'll need to accept calendar permissions when prompted.\n\nDon't worry — the example data won't be added to your calendar. Only events you schedule yourself will appear there.",
             buttons: [
-                { text: 'Skip', action: 'skip', class: 'secondary' },
                 { text: 'Maybe Later', action: 'next', class: '' },
                 { text: 'Sign In', action: 'signIn', class: 'primary' }
             ]
@@ -71,7 +67,6 @@ const TutorialManager = {
             content: "Here's a simple Health pie. We want to start taking sleep more seriously - let's add a Sleep Slice to keep it on our radar.",
             onEnter: 'loadHealthPie',
             buttons: [
-                { text: 'Skip', action: 'skip', class: 'secondary' },
                 { text: "Let's Add It!", action: 'next', class: 'primary' }
             ]
         },
@@ -105,10 +100,10 @@ const TutorialManager = {
             id: 'slice-added-pause',
             type: 'modal',
             delay: 2500,
+            autoProgress: 3000,
             title: 'Nice Work! 🌙',
             content: "You just added your first Slice! Ready to add a Spoke?",
             buttons: [
-                { text: 'Skip', action: 'skip', class: 'secondary' },
                 { text: 'Continue', action: 'next', class: 'primary' }
             ]
         },
@@ -161,6 +156,7 @@ const TutorialManager = {
             id: 'summary-cards',
             type: 'modal',
             delay: 2500,
+            autoProgress: 5000,
             noBackdrop: true,
             onEnter: 'scrollToSummaryCards',
             title: 'Edit From Here Too',
@@ -227,6 +223,10 @@ const TutorialManager = {
      * Move to next step
      */
     nextStep() {
+        if (this._autoProgressTimer) {
+            clearTimeout(this._autoProgressTimer);
+            this._autoProgressTimer = null;
+        }
         const prevStep = this.steps[this.currentStepIndex];
         console.log(`[Tutorial] nextStep() from: ${prevStep ? prevStep.id : 'none'} (index ${this.currentStepIndex})`);
         this.hideAll();
@@ -249,6 +249,10 @@ const TutorialManager = {
      * Skip the tutorial
      */
     skip() {
+        if (this._autoProgressTimer) {
+            clearTimeout(this._autoProgressTimer);
+            this._autoProgressTimer = null;
+        }
         this.hideAll();
         this.isActive = false;
         this.isExploring = false;
@@ -271,6 +275,10 @@ const TutorialManager = {
      * Complete the tutorial
      */
     complete() {
+        if (this._autoProgressTimer) {
+            clearTimeout(this._autoProgressTimer);
+            this._autoProgressTimer = null;
+        }
         this.hideAll();
         this.isActive = false;
         this.isExploring = false;
@@ -346,6 +354,12 @@ const TutorialManager = {
 
         console.log(`[Tutorial] renderCurrentStep: ${step.id} (type: ${step.type}, delay: ${step.delay || 0})`);
 
+        // Clear any pending auto-progress timer
+        if (this._autoProgressTimer) {
+            clearTimeout(this._autoProgressTimer);
+            this._autoProgressTimer = null;
+        }
+
         // Support optional delay before showing the step
         if (step.delay) {
             console.log(`[Tutorial]   delaying by ${step.delay}ms`);
@@ -355,6 +369,9 @@ const TutorialManager = {
                     this[step.onEnter]();
                 }
                 this.showStep(step);
+                if (step.autoProgress) {
+                    this._autoProgressTimer = setTimeout(() => this.nextStep(), step.autoProgress);
+                }
             }, step.delay);
         } else {
             if (step.onEnter) {
@@ -362,6 +379,9 @@ const TutorialManager = {
                 this[step.onEnter]();
             }
             this.showStep(step);
+            if (step.autoProgress) {
+                this._autoProgressTimer = setTimeout(() => this.nextStep(), step.autoProgress);
+            }
         }
     },
 
@@ -496,9 +516,7 @@ const TutorialManager = {
 
         title.textContent = step.title;
         content.textContent = step.content;
-        buttons.innerHTML = `
-            <button class="tutorial-btn secondary" onclick="TutorialManager.skip()">Skip</button>
-        `;
+        buttons.innerHTML = '';
 
         this.positionTooltip(tooltip, rect);
         overlay.classList.add('active');
@@ -539,9 +557,7 @@ const TutorialManager = {
 
         title.textContent = step.title;
         content.textContent = step.content;
-        buttons.innerHTML = `
-            <button class="tutorial-btn secondary" onclick="TutorialManager.skip()">Skip</button>
-        `;
+        buttons.innerHTML = '';
 
         tooltip.style.left = '50%';
         tooltip.style.top = '20px';
@@ -659,7 +675,7 @@ const TutorialManager = {
             const data = ExampleData.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            DataModel.saveToStorage();
+            Storage.save({ categories: DataModel.categories, categoryPercentageOverrides: DataModel.categoryPercentageOverrides, priorityList: DataModel.priorityList || [] }); // localStorage only — don't push tutorial data to Firebase
             App.render();
         }
     },
@@ -673,7 +689,7 @@ const TutorialManager = {
             const data = ExampleData2.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            DataModel.saveToStorage();
+            Storage.save({ categories: DataModel.categories, categoryPercentageOverrides: DataModel.categoryPercentageOverrides, priorityList: DataModel.priorityList || [] }); // localStorage only — don't push tutorial data to Firebase
             App.render();
         }
     },
@@ -725,7 +741,7 @@ const TutorialManager = {
             const data = ExampleData3.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            DataModel.saveToStorage();
+            Storage.save({ categories: DataModel.categories, categoryPercentageOverrides: DataModel.categoryPercentageOverrides, priorityList: DataModel.priorityList || [] }); // localStorage only — don't push tutorial data to Firebase
             App.render();
         }
     },

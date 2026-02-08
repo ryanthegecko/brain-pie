@@ -171,7 +171,7 @@ const CalendarAdapter = {
      * @returns {Object} Google Calendar API event object
      */
     buildEventPayload(eventData) {
-        const { title, date, time, duration, description, rrule, allDay, location } = eventData;
+        const { title, date, time, duration, description, rrule, allDay, location, attendees } = eventData;
 
         const payload = {
             summary: title,
@@ -206,6 +206,11 @@ const CalendarAdapter = {
         // Add recurrence if provided
         if (rrule) {
             payload.recurrence = [`RRULE:${rrule}`];
+        }
+
+        // Add attendees if provided
+        if (attendees && attendees.length > 0) {
+            payload.attendees = attendees.map(email => ({ email }));
         }
 
         return payload;
