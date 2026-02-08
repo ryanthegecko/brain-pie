@@ -773,6 +773,23 @@ group.on('mouseover', (event, d) => {
 
 **Also:** When using D3 opacity transitions on parent `<g>` elements (e.g. crossfade animations), always clean up the inline style after completion with `.on('end', () => { el.style('opacity', null); })` to avoid leaving a compositing layer active.
 
+### Firebase `undefined` Pitfall — NEVER use `undefined` in data objects
+Firebase Realtime Database's `ref.set()` **throws an error** if any property in the data tree is `undefined`. Unlike `JSON.stringify()` (which silently drops `undefined`), Firebase rejects the entire write. The error message is: `set failed: value argument contains undefined in property '...'`.
+
+**Never do:** Set properties to `undefined` in objects that will be saved to Firebase:
+```javascript
+// BAD — Firebase will reject this
+{ scheduled: someValue ? { ...someValue } : undefined }
+```
+
+**Instead:** Use `null` (which Firebase accepts and treats as "delete this key"):
+```javascript
+// GOOD — Firebase accepts null
+{ scheduled: someValue ? { ...someValue } : null }
+```
+
+**Also:** Avoid blind `{ ...obj }` spreads on objects that may contain `undefined` values (e.g. data loaded from localStorage or imported files). Explicitly construct objects with known fields instead.
+
 ### Code Style
 - ES6+ JavaScript
 - No build process (runs directly in browser)

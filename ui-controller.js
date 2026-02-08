@@ -4108,7 +4108,7 @@ const UI = {
         Storage.exportToFile(exportData);
     },
 
-    toggleActionCompleted(categoryId, itemId, spokeIndex, childIndex) {
+    toggleActionCompleted(categoryId, itemId, spokeIndex, childIndex, skipRender = false) {
         const category = DataModel.categories.find(c => c.id === categoryId);
         if (!category) return;
 
@@ -4134,9 +4134,11 @@ const UI = {
         }
 
         DataModel.saveToStorage();
-        this.renderTab2Spokes();
-        this.renderExistingActions();
-        App.render();
+        if (!skipRender) {
+            this.renderTab2Spokes();
+            this.renderExistingActions();
+            App.render();
+        }
     },
 
     // --- Prioritiser ---
