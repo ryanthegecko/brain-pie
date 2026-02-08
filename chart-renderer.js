@@ -387,10 +387,9 @@ const ChartRenderer = {
 
         // Get spoke type
         const spokeType = DataModel.getSpokeType(categoryId, itemId, spokeIndex);
-        const hasChildren = (typeof subItem === 'object' && subItem.children && subItem.children.length > 0);
 
-        // For list type with children, show branch expansion
-        if (spokeType === 'list' && hasChildren) {
+        // For list type, show action popup (with or without existing children)
+        if (spokeType === 'list') {
             // Check if this spoke is already expanded (toggle behavior)
             const loc = this.currentExpandedLocation;
             if (loc && loc.categoryId === categoryId && loc.itemId === itemId && loc.spokeIndex === spokeIndex) {
@@ -452,8 +451,8 @@ const ChartRenderer = {
                 .append('g')
                 .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
         } else if (actualWidth >= 960) {
-            // Pie: medium screens — render at 1920px virtual canvas, scale down via viewBox
-            const virtualWidth = 1920;
+            // Pie: medium screens — render at 1720px virtual canvas, scale down via viewBox
+            const virtualWidth = 1720;
             const virtualHeight = Math.round(actualHeight * (virtualWidth / actualWidth));
             this.width = virtualWidth;
             this.height = virtualHeight;
@@ -663,6 +662,7 @@ const ChartRenderer = {
                 .append('textPath')
                 .attr('xlink:href', `#category-text-arc-${i}`)
                 .attr('startOffset', this.width > 1024 ? '20%' : '15%')
+                .attr('text-anchor', 'start')
                 .text(d.data.name);
 
             // Percentage path (offset)
@@ -1363,7 +1363,7 @@ const ChartRenderer = {
         this.expandedView = null;
         App.render();
     },
-    showActionPopup(event, spokeData, categoryName, sliceName, categoryId, itemId, spokeIndex) {
+    showActionPopup(event, spokeData, categoryName, sliceName, categoryId, itemId, spokeIndex, reusePosition) {
         if (!Debug.isActive('allowMultipleBranches') && this.currentExpandedLocation) {
             this.collapseBranch();
         }
@@ -1372,7 +1372,6 @@ const ChartRenderer = {
         const that = this;
         const dataLocation = { categoryId, itemId, spokeIndex };
         const children = spokeData.children || [];
-        if (children.length === 0) return;
 
         const spokeName = spokeData.text || spokeData;
 
@@ -1393,12 +1392,19 @@ const ChartRenderer = {
             clickSvgY = this.viewMode === 'pie' ? 0 : this.height / 2;
         }
 
-        // Card dimensions
-        const rowHeight = 32;
-        const cardPadding = 12;
-        const headerHeight = 32;
-        const cardWidth = Math.min(320, this.width - 40);
-        const cardHeight = Math.min(headerHeight + children.length * rowHeight + cardPadding, this.height - 40);
+        // Card dimensions (2x original)
+        const rowHeight = 64;
+        const cardPadding = 24;
+        const headerHeight = 64;
+        const inputRowHeight = 64;
+        const cardWidth = Math.min(640, this.width - 40);
+        const listTopPaddingVal = 20;
+        const maxVisibleRows = 10;
+        const visibleRows = Math.min(children.length, maxVisibleRows);
+        const listAreaHeight = visibleRows * rowHeight;
+        const needsScroll = children.length > maxVisibleRows;
+        const fullListHeight = children.length * rowHeight;
+        const cardHeight = Math.min(headerHeight + listTopPaddingVal + listAreaHeight + inputRowHeight + 8, this.height - 40);
 
         // Position near click, clamped within SVG bounds
         let minX, maxX, minY, maxY;
@@ -1413,8 +1419,15 @@ const ChartRenderer = {
             minY = 10;
             maxY = this.height - cardHeight - 10;
         }
-        const cardX = Math.max(minX, Math.min(maxX, clickSvgX - cardWidth / 2));
-        const cardY = Math.max(minY, Math.min(maxY, clickSvgY + 15));
+        let cardX, cardY;
+        if (reusePosition) {
+            // Re-opening after add/remove: keep same X, re-clamp Y for new height
+            cardX = Math.max(minX, Math.min(maxX, reusePosition.x));
+            cardY = Math.max(minY, Math.min(maxY, reusePosition.y));
+        } else {
+            cardX = Math.max(minX, Math.min(maxX, clickSvgX - cardWidth / 2));
+            cardY = Math.max(minY, Math.min(maxY, clickSvgY + 15));
+        }
 
         const branchGroup = this.highlightGroup.append('g')
             .attr('class', 'branch-view action-popup');
@@ -1441,64 +1454,107 @@ const ChartRenderer = {
             .attr('y', cardY)
             .attr('width', cardWidth)
             .attr('height', cardHeight)
-            .attr('rx', 8)
+            .attr('rx', 16)
             .attr('fill', '#ffffff')
             .attr('stroke', '#ddd')
-            .attr('stroke-width', 1);
+            .attr('stroke-width', 2);
 
-        // Card header
+        // Card header — spoke star + name + close button
+        const isSpokePrioritised = UI.isPrioritised({ type: 'spoke', categoryId, itemId, spokeIndex });
+        const headerStarGroup = branchGroup.append('g')
+            .attr('transform', `translate(${cardX + cardPadding}, ${cardY + 18})`)
+            .style('cursor', 'pointer')
+            .on('click', (event) => {
+                event.stopPropagation();
+                const ref = { type: 'spoke', categoryId, itemId, spokeIndex };
+                UI.addToPriorities(ref);
+                headerStarGroup.select('text').attr('fill', UI.isPrioritised(ref) ? '#FFD700' : '#ccc');
+            });
+        headerStarGroup.append('text')
+            .attr('x', 10).attr('y', 24)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '28px')
+            .attr('fill', isSpokePrioritised ? '#FFD700' : '#ccc')
+            .text('\u2605');
+
         branchGroup.append('text')
-            .attr('x', cardX + cardPadding)
-            .attr('y', cardY + 22)
-            .attr('font-size', '13px')
+            .attr('x', cardX + cardPadding + 36)
+            .attr('y', cardY + 44)
+            .attr('font-size', '26px')
             .attr('font-weight', 'bold')
             .attr('fill', '#333')
             .text(spokeName);
 
         // Close button
         const closeBtn = branchGroup.append('g')
-            .attr('transform', `translate(${cardX + cardWidth - 18}, ${cardY + 18})`)
+            .attr('transform', `translate(${cardX + cardWidth - 36}, ${cardY + 34})`)
             .style('cursor', 'pointer')
             .on('click', (event) => {
                 event.stopPropagation();
                 this.collapseBranch();
             });
         closeBtn.append('circle')
-            .attr('r', 11)
-            .attr('fill', '#e0e0e0');
+            .attr('r', 22)
+            .attr('fill', '#f05252');
         closeBtn.append('text')
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
-            .attr('fill', '#666')
-            .attr('font-size', '12px')
+            .attr('fill', '#fff')
+            .attr('font-size', '24px')
             .attr('font-weight', 'bold')
             .text('\u2715');
 
-        // Action rows: checkbox | title | calendar/schedule | star | trash
+        // Action rows: star | checkbox | title | calendar/schedule | trash
+        const listTopPadding = 20;
+
+        // If >10 items, wrap rows in a scrollable foreignObject
+        let rowParent = branchGroup;
+        let rowYBase = cardY + headerHeight + listTopPadding;
+        let rowXBase = cardX;
+        if (needsScroll) {
+            const fo = branchGroup.append('foreignObject')
+                .attr('x', cardX)
+                .attr('y', cardY + headerHeight + listTopPadding)
+                .attr('width', cardWidth)
+                .attr('height', listAreaHeight);
+            const scrollDiv = fo.append('xhtml:div')
+                .style('width', '100%')
+                .style('height', '100%')
+                .style('overflow-y', 'auto')
+                .style('overflow-x', 'hidden');
+            const innerSvg = scrollDiv.append('svg')
+                .attr('xmlns', 'http://www.w3.org/2000/svg')
+                .attr('width', cardWidth)
+                .attr('height', fullListHeight);
+            rowParent = innerSvg;
+            rowYBase = 0;
+            rowXBase = 0;
+        }
+
         children.forEach((child, idx) => {
-            const rowY = cardY + headerHeight + idx * rowHeight;
+            const rowY = rowYBase + idx * rowHeight;
             const childText = child.text || child;
             const hasSchedule = child.scheduled && child.scheduled.date;
             const isCompleted = child.completed || false;
             const childDataLocation = { ...dataLocation, childIndex: idx };
-            const rightEdge = cardX + cardWidth - cardPadding;
-            let cursorX = cardX + cardPadding;
+            const rightEdge = rowXBase + cardWidth - cardPadding;
+            let cursorX = rowXBase + cardPadding;
 
-            const rowGroup = branchGroup.append('g');
+            const rowGroup = rowParent.append('g');
 
             // Row background for hover
             rowGroup.append('rect')
-                .attr('x', cardX + 2)
-                .attr('y', rowY - 2)
-                .attr('width', cardWidth - 4)
+                .attr('x', rowXBase + 4)
+                .attr('y', rowY - 4)
+                .attr('width', cardWidth - 8)
                 .attr('height', rowHeight)
                 .attr('fill', 'transparent')
-                .attr('rx', 4);
+                .attr('rx', 8);
 
             // 1) Star for prioritiser (far left)
             const isPrioritised = UI.isPrioritised({ type: 'action', categoryId, itemId, spokeIndex, childIndex: idx });
             const starGroup = rowGroup.append('g')
-                .attr('transform', `translate(${cursorX}, ${rowY + 6})`)
+                .attr('transform', `translate(${cursorX}, ${rowY + 8})`)
                 .style('cursor', 'pointer')
                 .on('click', (event) => {
                     event.stopPropagation();
@@ -1507,51 +1563,77 @@ const ChartRenderer = {
                     starGroup.select('text').attr('fill', UI.isPrioritised(ref) ? '#FFD700' : '#ccc');
                 });
             starGroup.append('text')
-                .attr('x', 5).attr('y', 12)
+                .attr('x', 12).attr('y', 28)
                 .attr('text-anchor', 'middle')
-                .attr('font-size', '14px')
+                .attr('font-size', '28px')
                 .attr('fill', isPrioritised ? '#FFD700' : '#ccc')
                 .text('\u2605');
-            cursorX += 18;
+            cursorX += 36;
 
-            // 2) Checkbox
-            const checkSize = 14;
+            // 2) Checkbox — toggles in place without closing popup
+            const checkSize = 28;
             const checkX = cursorX;
             const checkY = rowY + (rowHeight - checkSize) / 2 - 2;
             const checkGroup = rowGroup.append('g')
                 .style('cursor', 'pointer')
                 .on('click', (event) => {
                     event.stopPropagation();
-                    UI.toggleActionCompleted(categoryId, itemId, spokeIndex, idx);
-                    that.collapseBranch();
+                    UI.toggleActionCompleted(categoryId, itemId, spokeIndex, idx, true);
+                    // Update checkbox visuals in place
+                    const nowCompleted = DataModel.categories
+                        .find(c => c.id === categoryId)?.items
+                        .find(i => i.id === itemId)?.subItems[spokeIndex]?.children[idx]?.completed || false;
+                    checkGroup.select('rect')
+                        .attr('fill', nowCompleted ? '#4CAF50' : '#fff')
+                        .attr('stroke', nowCompleted ? '#4CAF50' : '#ccc');
+                    if (nowCompleted) {
+                        checkGroup.append('text')
+                            .attr('class', 'check-mark')
+                            .attr('x', checkX + checkSize / 2)
+                            .attr('y', checkY + checkSize / 2 + 1)
+                            .attr('text-anchor', 'middle')
+                            .attr('dominant-baseline', 'central')
+                            .attr('font-size', '20px')
+                            .attr('fill', '#fff')
+                            .attr('font-weight', 'bold')
+                            .text('\u2713');
+                    } else {
+                        checkGroup.selectAll('.check-mark').remove();
+                    }
+                    // Update title style
+                    rowGroup.select('.action-title')
+                        .attr('fill', nowCompleted ? '#999' : '#333')
+                        .style('text-decoration', nowCompleted ? 'line-through' : 'none');
                 });
             checkGroup.append('rect')
                 .attr('x', checkX)
                 .attr('y', checkY)
                 .attr('width', checkSize)
                 .attr('height', checkSize)
-                .attr('rx', 2)
+                .attr('rx', 4)
                 .attr('fill', isCompleted ? '#4CAF50' : '#fff')
                 .attr('stroke', isCompleted ? '#4CAF50' : '#ccc')
-                .attr('stroke-width', 1.5);
+                .attr('stroke-width', 2);
             if (isCompleted) {
                 checkGroup.append('text')
+                    .attr('class', 'check-mark')
                     .attr('x', checkX + checkSize / 2)
                     .attr('y', checkY + checkSize / 2 + 1)
                     .attr('text-anchor', 'middle')
                     .attr('dominant-baseline', 'central')
-                    .attr('font-size', '10px')
+                    .attr('font-size', '20px')
                     .attr('fill', '#fff')
                     .attr('font-weight', 'bold')
                     .text('\u2713');
             }
-            cursorX += checkSize + 8;
+            cursorX += checkSize + 14;
 
             // 3) Title
             rowGroup.append('text')
+                .attr('class', 'action-title')
                 .attr('x', cursorX)
-                .attr('y', rowY + 14)
-                .attr('font-size', '11px')
+                .attr('y', rowY + 30)
+                .attr('font-size', '22px')
                 .attr('fill', isCompleted ? '#999' : '#333')
                 .style('text-decoration', isCompleted ? 'line-through' : 'none')
                 .text(childText);
@@ -1559,28 +1641,35 @@ const ChartRenderer = {
             // Right-side buttons (laid out right-to-left)
             let btnX = rightEdge;
 
-            // 4) Trash icon (rightmost)
-            btnX -= 14;
+            // 4) Trash button (rightmost) — red pill with white trash SVG
+            btnX -= 28;
             const trashGroup = rowGroup.append('g')
-                .attr('transform', `translate(${btnX}, ${rowY + 6})`)
+                .attr('transform', `translate(${btnX}, ${rowY + 10})`)
                 .style('cursor', 'pointer')
                 .on('click', (event) => {
                     event.stopPropagation();
                     App.removeSpokeChild(categoryId, itemId, spokeIndex, idx);
-                    that.collapseBranch();
+                    // Re-open popup with updated data at same position
+                    const cat = DataModel.categories.find(c => c.id === categoryId);
+                    const itm = cat?.items.find(i => i.id === itemId);
+                    const updatedSpoke = itm?.subItems[spokeIndex];
+                    if (updatedSpoke) {
+                        const pos = { x: cardX, y: cardY };
+                        that.collapseBranch();
+                        that.showActionPopup(null, updatedSpoke, categoryName, sliceName, categoryId, itemId, spokeIndex, pos);
+                    } else {
+                        that.collapseBranch();
+                    }
                 });
             trashGroup.append('rect')
-                .attr('x', -4).attr('y', -2)
-                .attr('width', 18).attr('height', 18)
-                .attr('fill', '#ffeaea').attr('rx', 3);
-            trashGroup.append('text')
-                .attr('x', 5).attr('y', 11)
-                .attr('text-anchor', 'middle')
-                .attr('font-size', '12px')
-                .attr('fill', '#f05252')
-                .text('\uD83D\uDDD1');
-            btnX -= 10;
-
+                .attr('x', -6).attr('y', -4)
+                .attr('width', 40).attr('height', 40)
+                .attr('fill', '#f05252').attr('rx', 8);
+            trashGroup.append('path')
+                .attr('d', 'M184.581,230.833l9.521-100.238c0.575-6.048,5.931-10.48,11.991-9.911c6.048,0.575,10.485,5.943,9.911,11.991l-9.521,100.238c-0.541,5.694-5.332,9.961-10.938,9.961c-0.348,0-0.699-0.017-1.053-0.05C188.444,242.249,184.007,236.881,184.581,230.833z M45.306,37.023h216.644c6.075,0,11-4.925,11-11s-4.925-11-11-11h-61.998c0.49-1.246,0.759-2.604,0.759-4.023c0-6.075-4.925-11-11-11h-72.165c-6.075,0-11,4.925-11,11c0,1.42,0.269,2.777,0.759,4.023H45.306c-6.075,0-11,4.925-11,11S39.23,37.023,45.306,37.023z M153.624,260.644c6.075,0,11-4.925,11-11V113.864c0-6.075-4.925-11-11-11s-11,4.925-11,11v135.779C142.624,255.719,147.549,260.644,153.624,260.644z M273.279,68.477l-25.58,228.996c-0.622,5.568-5.329,9.779-10.932,9.779H70.484c-5.603,0-10.31-4.211-10.932-9.779L33.973,68.477c-0.348-3.11,0.646-6.222,2.733-8.555c2.086-2.333,5.068-3.666,8.198-3.666h217.443c3.13,0,6.112,1.333,8.198,3.666C272.633,62.255,273.627,65.366,273.279,68.477z M250.051,78.256H57.201l23.123,206.996h146.604L250.051,78.256z M100.772,232.913c0.54,5.694,5.33,9.961,10.938,9.961c0.348,0,0.699-0.017,1.053-0.05c6.048-0.575,10.485-5.943,9.911-11.991l-9.52-100.238c-0.575-6.048-5.938-10.484-11.991-9.911c-6.048,0.575-10.485,5.943-9.911,11.991L100.772,232.913z')
+                .attr('fill', '#fff')
+                .attr('transform', 'translate(3, 4) scale(0.07)');
+            btnX -= 16;
 
             // 5) Calendar icon / schedule pill
             const calGroup = rowGroup.append('g')
@@ -1595,34 +1684,110 @@ const ChartRenderer = {
                 const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 const timeStr = child.scheduled.time ? that.formatCompactTime(child.scheduled.time) : '';
                 const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
-                const pillW = pillLabel.length * 7 + 12;
+                const pillW = pillLabel.length * 13 + 24;
                 btnX -= pillW;
                 calGroup.append('rect')
                     .attr('x', btnX)
-                    .attr('y', rowY + 2)
+                    .attr('y', rowY + 6)
                     .attr('width', pillW)
-                    .attr('height', 20)
-                    .attr('rx', 10)
+                    .attr('height', 40)
+                    .attr('rx', 20)
                     .attr('fill', '#4CAF50');
                 calGroup.append('text')
                     .attr('x', btnX + pillW / 2)
-                    .attr('y', rowY + 15)
+                    .attr('y', rowY + 32)
                     .attr('text-anchor', 'middle')
-                    .attr('font-size', '9px')
+                    .attr('font-size', '18px')
                     .attr('fill', '#fff')
                     .attr('font-weight', 'bold')
                     .text(pillLabel);
             } else {
-                btnX -= 20;
+                const calPillW = 52;
+                btnX -= calPillW;
+                calGroup.append('rect')
+                    .attr('x', btnX)
+                    .attr('y', rowY + 6)
+                    .attr('width', calPillW)
+                    .attr('height', 40)
+                    .attr('rx', 8)
+                    .attr('fill', '#2196F3');
                 calGroup.append('text')
-                    .attr('x', btnX + 10)
-                    .attr('y', rowY + 15)
+                    .attr('x', btnX + calPillW / 2)
+                    .attr('y', rowY + 33)
                     .attr('text-anchor', 'middle')
-                    .attr('font-size', '16px')
-                    .attr('fill', '#4285F4')
+                    .attr('font-size', '24px')
                     .text('\uD83D\uDCC5');
             }
         });
+
+        // New action input row at bottom
+        const inputRowY = cardY + headerHeight + listTopPadding + listAreaHeight;
+        const inputGroup = branchGroup.append('g');
+
+        // "+" button
+        const addBtnX = cardX + cardPadding;
+        const addBtnGroup = inputGroup.append('g')
+            .attr('transform', `translate(${addBtnX}, ${inputRowY + 8})`)
+            .style('cursor', 'pointer');
+        addBtnGroup.append('rect')
+            .attr('width', 44).attr('height', 44)
+            .attr('rx', 8)
+            .attr('fill', '#4CAF50');
+        addBtnGroup.append('text')
+            .attr('x', 22).attr('y', 32)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '28px')
+            .attr('font-weight', 'bold')
+            .attr('fill', '#fff')
+            .text('+');
+
+        // Text input via foreignObject
+        const inputX = addBtnX + 54;
+        const inputW = cardWidth - cardPadding * 2 - 54;
+        const fo = inputGroup.append('foreignObject')
+            .attr('x', inputX)
+            .attr('y', inputRowY + 8)
+            .attr('width', inputW)
+            .attr('height', 44);
+        const input = fo.append('xhtml:input')
+            .attr('type', 'text')
+            .attr('placeholder', 'New action...')
+            .style('width', '100%')
+            .style('height', '42px')
+            .style('border', '2px solid #ccc')
+            .style('border-radius', '8px')
+            .style('padding', '0 12px')
+            .style('font-size', '20px')
+            .style('outline', 'none')
+            .style('box-sizing', 'border-box');
+
+        const addAction = () => {
+            const val = input.node().value.trim();
+            if (!val) return;
+            App.addSpokeChild(categoryId, itemId, spokeIndex, val);
+            // Re-read spoke data and reopen popup at same position
+            const cat = DataModel.categories.find(c => c.id === categoryId);
+            const item = cat?.items.find(i => i.id === itemId);
+            const updatedSpoke = item?.subItems[spokeIndex];
+            if (updatedSpoke) {
+                const pos = { x: cardX, y: cardY };
+                that.collapseBranch();
+                that.showActionPopup(null, updatedSpoke, categoryName, sliceName, categoryId, itemId, spokeIndex, pos);
+            }
+        };
+
+        addBtnGroup.on('click', (event) => {
+            event.stopPropagation();
+            addAction();
+        });
+        input.on('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.stopPropagation();
+                addAction();
+            }
+        });
+        // Prevent dimmer click when clicking input
+        input.on('click', (event) => event.stopPropagation());
 
         this.highlightGroup.raise();
 

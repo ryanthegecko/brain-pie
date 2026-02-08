@@ -90,6 +90,7 @@ const Controls = {
     if (checkboxMobile) checkboxMobile.checked = isTree;
     ChartRenderer.viewMode = isTree ? 'tree' : 'pie';
     container.classList.toggle('tree-view', isTree);
+    container.classList.toggle('pie-view', !isTree);
 
     const updateViewMode = (shouldBeTree) => {
       if (checkboxDesktop) checkboxDesktop.checked = shouldBeTree;
@@ -97,6 +98,7 @@ const Controls = {
       localStorage.setItem(this.VIEW_MODE_KEY, shouldBeTree ? 'tree' : 'pie');
       ChartRenderer.viewMode = shouldBeTree ? 'tree' : 'pie';
       container.classList.toggle('tree-view', shouldBeTree);
+      container.classList.toggle('pie-view', !shouldBeTree);
 
       ChartRenderer.expandedView = null;
       ChartRenderer.collapseIfBranchExpanded();
@@ -128,6 +130,7 @@ const App = {
                     DataModel.categories = cleanData.categories;
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
                     DataModel.priorityList = cleanData.priorityList || [];
+                    DataModel.normalizeAllSpokes(); // Restore fields Firebase drops
 
                     // Save to localStorage so it's up-to-date on next page load
                     Storage.save(cleanData);
