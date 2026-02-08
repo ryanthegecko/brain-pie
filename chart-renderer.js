@@ -1694,13 +1694,25 @@ const ChartRenderer = {
                 const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
                 const pillW = pillLabel.length * 13 + 24;
                 btnX -= isCompleted ? 0 : pillW;
-                calGroup.append('rect')
+                const isPastAction = that.isPast(schedDate);
+                const isTodayAction = that.isToday(schedDate);
+                const isTomorrowAction = that.isTomorrow(schedDate);
+                const pillRect = calGroup.append('rect')
                     .attr('x', btnX)
                     .attr('y', rowY + 6)
                     .attr('width', pillW)
                     .attr('height', 40)
                     .attr('rx', 20)
-                    .attr('fill', '#4CAF50');
+                    .attr('fill', isPastAction ? '#FF9800' : '#4CAF50');
+                if (isPastAction) {
+                    pillRect.attr('stroke', '#e65100').attr('stroke-width', 2);
+                } else if (isTodayAction) {
+                    pillRect.attr('stroke', '#FF9800').attr('stroke-width', 2);
+                } else if (isTomorrowAction) {
+                    pillRect.attr('stroke', '#000000').attr('stroke-width', 2);
+                } else {
+                    pillRect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
+                }
                 calGroup.append('text')
                     .attr('x', btnX + pillW / 2)
                     .attr('y', rowY + 32)

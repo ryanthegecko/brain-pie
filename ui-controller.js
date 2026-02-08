@@ -8,6 +8,30 @@ const UI = {
     newlyAddedSliceIds: [],
     preselectedSliceId: null,
 
+    // Returns inline CSS border + background string for schedule pills based on date proximity
+    getScheduleBorderStyle(dateStr, timeStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
+        if (ChartRenderer.isPast(date)) return 'background: #FF9800; border: 2px solid #e65100;';
+        if (ChartRenderer.isToday(date)) return 'border: 2px solid #FF9800;';
+        if (ChartRenderer.isTomorrow(date)) return 'border: 2px solid #000000;';
+        return 'border: 1.5px solid #fff;';
+    },
+
+    // Get the relevant date string for a spoke's schedule (single or repeating)
+    getSpokeDateInfo(spoke) {
+        if (typeof spoke !== 'object') return { dateStr: null, timeStr: null };
+        const type = (spoke.type === 'action' ? 'list' : spoke.type) || 'static';
+        if (type === 'single' && spoke.scheduled && spoke.scheduled.date) {
+            return { dateStr: spoke.scheduled.date, timeStr: spoke.scheduled.time };
+        }
+        if (type === 'repeating' && spoke.metadata && spoke.metadata.recurrence) {
+            const rec = spoke.metadata.recurrence;
+            if (rec.startDate) return { dateStr: rec.startDate, timeStr: rec.time };
+        }
+        return { dateStr: null, timeStr: null };
+    },
+
     showMenu() {
         // Reset state
         this.currentMenuTab = 1;
@@ -502,14 +526,16 @@ const UI = {
                     const schedDate = new Date(`${spokeSchedule.date}T${spokeSchedule.time || '00:00'}`);
                     const timeStr = spokeSchedule.time ? schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                     const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.openSpokeScheduler('${categoryId}', '${itemId}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
+                    const borderStyle = UI.getScheduleBorderStyle(spokeSchedule.date, spokeSchedule.time);
+                    spokeTypeButton = `<button style="background: #4CAF50; ${borderStyle}" onclick="UI.openSpokeScheduler('${categoryId}', '${itemId}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
                 } else {
                     spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.openSpokeScheduler('${categoryId}', '${itemId}', ${idx})" title="Schedule">📅 Schedule</button>`;
                 }
             } else if (spokeType === 'repeating') {
                 if (spokeRecurrence) {
                     const recurrenceText = this.formatRecurrenceDescriptionCompact(spokeRecurrence);
-                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.openSpokeRecurrenceScheduler('${categoryId}', '${itemId}', ${idx})" title="Edit recurrence">${recurrenceText}</button>`;
+                    const recBorder = UI.getScheduleBorderStyle(spokeRecurrence.startDate, spokeRecurrence.time);
+                    spokeTypeButton = `<button style="background: #4CAF50; ${recBorder}" onclick="UI.openSpokeRecurrenceScheduler('${categoryId}', '${itemId}', ${idx})" title="Edit recurrence">${recurrenceText}</button>`;
                 } else {
                     spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.openSpokeRecurrenceScheduler('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">🔁 Set recurrence</button>`;
                 }
@@ -538,14 +564,15 @@ const UI = {
                     const hasSchedule = child.scheduled && child.scheduled.date && (child.scheduled.time || child.scheduled.allDay);
                     let scheduleDisplay = '';
                     if (hasSchedule) {
+                        const actionBorder = UI.getScheduleBorderStyle(child.scheduled.date, child.scheduled.time);
                         if (child.scheduled.allDay) {
                             const dateStr = new Date(child.scheduled.date + 'T00:00').toLocaleDateString([], { month: 'short', day: 'numeric' });
-                            scheduleDisplay = `<span class="action-schedule">${dateStr} (all day)</span>`;
+                            scheduleDisplay = `<span class="action-schedule" style="${actionBorder}">${dateStr} (all day)</span>`;
                         } else {
                             const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
                             const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                             const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                            scheduleDisplay = `<span class="action-schedule">${dateStr} ${timeStr}</span>`;
+                            scheduleDisplay = `<span class="action-schedule" style="${actionBorder}">${dateStr} ${timeStr}</span>`;
                         }
                     }
                     const isCompleted = child.completed || false;
@@ -891,15 +918,17 @@ const UI = {
                                             const schedDate = new Date(spokeSchedule.date + 'T' + (spokeSchedule.time || '00:00'));
                                             const timeStr = spokeSchedule.time ? schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                                             const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 8px;" onclick="UI.openSpokeScheduler('${category.id}', '${item.id}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
+                                            const borderStyle = UI.getScheduleBorderStyle(spokeSchedule.date, spokeSchedule.time);
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${borderStyle}" onclick="UI.openSpokeScheduler('${category.id}', '${item.id}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 8px;" onclick="UI.openSpokeScheduler('${category.id}', '${item.id}', ${idx})" title="Schedule">📅</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.openSpokeScheduler('${category.id}', '${item.id}', ${idx})" title="Schedule">📅</button>`;
                                         }
                                     } else if (spokeType === 'repeating') {
                                         if (spokeRecurrence) {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 8px;" onclick="UI.openSpokeRecurrenceScheduler('${category.id}', '${item.id}', ${idx})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
+                                            const recBorder = UI.getScheduleBorderStyle(spokeRecurrence.startDate, spokeRecurrence.time);
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${recBorder}" onclick="UI.openSpokeRecurrenceScheduler('${category.id}', '${item.id}', ${idx})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 8px;" onclick="UI.openSpokeRecurrenceScheduler('${category.id}', '${item.id}', ${idx})" title="Set recurrence">🔁</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.openSpokeRecurrenceScheduler('${category.id}', '${item.id}', ${idx})" title="Set recurrence">🔁</button>`;
                                         }
                                     } else if (spokeType === 'list') {
                                         spokeTypeBtn = `<button class="" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>`;
@@ -950,7 +979,8 @@ const UI = {
                                                     if (hasRecurrence) {
                                                         // Repeating action - show recurrence on green button
                                                         scheduleDisplay = UI.formatRecurrenceDescriptionCompact(child.recurrence);
-                                                        buttonStyle = 'background: #4CAF50; padding: 3px 8px;';
+                                                        const recBorder = UI.getScheduleBorderStyle(child.recurrence.startDate, child.recurrence.time);
+                                                        buttonStyle = 'background: #4CAF50; padding: 3px 17px; ' + recBorder;
                                                         buttonTitle = 'Repeating event';
                                                     } else if (hasSchedule) {
                                                         if (child.scheduled.allDay) {
@@ -962,7 +992,8 @@ const UI = {
                                                             const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                                                             scheduleDisplay = dateStr + ' ' + timeStr;
                                                         }
-                                                        buttonStyle = 'background: #4CAF50; padding: 3px 8px;';
+                                                        const actionBorder = UI.getScheduleBorderStyle(child.scheduled.date, child.scheduled.time);
+                                                        buttonStyle = 'background: #4CAF50; padding: 3px 17px; ' + actionBorder;
                                                         buttonTitle = 'Reschedule';
                                                     }
 
@@ -2458,14 +2489,15 @@ const UI = {
 
             let scheduleBtn = `<button type="button" class="small" style="background:#4285F4;" onclick="UI.rescheduleAction(${idx})" title="Schedule">📅</button>`;
             if (hasSchedule) {
+                const actionBorder = UI.getScheduleBorderStyle(child.scheduled.date, child.scheduled.time);
                 if (child.scheduled.allDay) {
                     const dateStr = new Date(child.scheduled.date + 'T00:00').toLocaleDateString([], { month: 'short', day: 'numeric' });
-                    scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 8px;" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} (all day)</button>`;
+                    scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 17px;${actionBorder}" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} (all day)</button>`;
                 } else {
                     const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
                     const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                    scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 8px;" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} ${timeStr}</button>`;
+                    scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 17px;${actionBorder}" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} ${timeStr}</button>`;
                 }
             }
 
@@ -4412,7 +4444,8 @@ const UI = {
                             const d = new Date(sched.date + 'T' + (sched.time || '00:00'));
                             const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                             const timeStr = sched.time ? ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Reschedule">${dateStr}${timeStr}</button>`;
+                            const borderStyle = UI.getScheduleBorderStyle(sched.date, sched.time);
+                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${borderStyle}cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Reschedule">${dateStr}${timeStr}</button>`;
                         } else {
                             actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Schedule">📅</button>`;
                         }
@@ -4420,7 +4453,8 @@ const UI = {
                         const recurrence = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.recurrence : null;
                         if (recurrence) {
                             const recText = UI.formatRecurrenceDescriptionCompact(recurrence);
-                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeRecurrenceScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Edit recurrence">${recText}</button>`;
+                            const recBorder = UI.getScheduleBorderStyle(recurrence.startDate, recurrence.time);
+                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${recBorder}cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeRecurrenceScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Edit recurrence">${recText}</button>`;
                         } else {
                             actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeRecurrenceScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Set recurrence">🔁</button>`;
                         }
