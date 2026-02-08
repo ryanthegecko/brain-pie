@@ -40,14 +40,16 @@
                 <div>
                     <button style="width: 100%;margin-bottom: 10px" onclick="UI.showMenu()"><span style="font-size: 20px;vertical-align: middle;position: relative;top: -1px;left: -4px;">+</span> Add</button>    
                     <p><button class="tertiary" onclick="UI.togglePrioritiser()">&#9733; <span style="vertical-align: middle;">Priorities</span></button></p>
+                    <hr style="width: 100%;margin-top: 10px; margin-bottom: 1px">
                     <div style="display:flex;padding-top: 10px;">
                         <button class="secondary" onclick="UI.showSettings()"><span style="font-size: 22px;vertical-align: middle;position: relative;top: 0px;left: -4px;">⚙️</span>Settings</button>
                     </div>
                 </div>
-                <hr style="width: 100%;margin-bottom: 1px">
                 <div>
-                    <p style="margin-bottom: 8px;">Hide spokes <input style="float:right;position:relative;top:5px;" class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"></p>
-                    <p>Tree view <input style="float:right;position:relative;top:5px;" class="view-mode-toggle" id="view-mode-toggle" type="checkbox" name="view-mode-toggle"></p>
+                    <div style="display:flex; flex-direction: column; gap:8px;">
+                        <label class="toggle-btn" for="hide-labels"><input class="hide-labels" id="hide-labels" type="checkbox" name="hide-labels"><span>Hide spokes</span></label>
+                        <label class="toggle-btn" for="view-mode-toggle"><input class="view-mode-toggle" id="view-mode-toggle" type="checkbox" name="view-mode-toggle"><span>Treemap</span></label>
+                    </div>
                 </div>
             </div>
             <div class="top-bar-right-mobile">
@@ -251,9 +253,9 @@
             <button class="menu-close" onclick="UI.closeSettings()">✕</button>
             <h2>Settings</h2>
             <div class="settings-section settings-section-mobile">
-                                <div>
-                    <p style="margin-bottom: 8px;">Hide spokes <input style="float:right;position:relative;top:5px;" class="hide-labels" id="hide-labels-mobile" type="checkbox" name="hide-labels-mobile"></p>
-                    <p>Tree view <input style="float:right;position:relative;top:5px;" class="view-mode-toggle" id="view-mode-toggle-mobile" type="checkbox" name="view-mode-toggle-mobile"></p>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <label class="toggle-btn" for="hide-labels-mobile"><input class="hide-labels" id="hide-labels-mobile" type="checkbox" name="hide-labels-mobile"><span>Hide spokes</span></label>
+                    <label class="toggle-btn" for="view-mode-toggle-mobile"><input class="view-mode-toggle" id="view-mode-toggle-mobile" type="checkbox" name="view-mode-toggle-mobile"><span>Treemap</span></label>
                 </div>
             </div>
             <div class="settings-section">
@@ -915,7 +917,7 @@
             -->
 
             <button onclick="UI.saveSpokeConfig()" style="margin-top: 20px; width: 100%;">
-                Save Configuration
+                Save
             </button>
         </div>
     </div>

@@ -474,7 +474,7 @@ const ExampleData = {
                             "id": "4",
                             "name": "Exercise",
                             "percentage": 25,
-                            "color": "#F44336",
+                            "color": "#f05252",
                             "subItems": [
                                 { text: "Morning jog", type: "repeating", children: [], scheduled: null, metadata: { recurrence: { frequency: "WEEKLY", interval: 1, byDay: ["MO","WE","FR"], time: "07:00", duration: 45, allDay: false, endType: "never" } } },
                                 { text: "Stretching routine", type: "static", children: [], scheduled: null, metadata: {} },
@@ -953,7 +953,7 @@ const ExampleData3 = {
                             "id": "4",
                             "name": "Exercise",
                             "percentage": 33.33,
-                            "color": "#F44336",
+                            "color": "#f05252",
                             "subItems": ["Morning jog", "Stretching routine", "Gym session"]
                         },
                         {
