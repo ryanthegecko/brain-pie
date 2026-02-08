@@ -130,6 +130,7 @@ const App = {
                     DataModel.categories = cleanData.categories;
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
                     DataModel.priorityList = cleanData.priorityList || [];
+                    DataModel.normalizeAllSpokes(); // Restore fields Firebase drops
 
                     // Save to localStorage so it's up-to-date on next page load
                     Storage.save(cleanData);
