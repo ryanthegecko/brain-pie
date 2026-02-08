@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.11
+**Current Version:** v0.12
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -238,6 +238,8 @@ Spokes can have different types that affect their behavior:
 - **Google Calendar** - Opens web interface with pre-filled event
 - **Apple Calendar** - Downloads .ics file
 - **Custom scheduling** - Date/time picker for actions
+- **All-day events** - Checkbox to create all-day events (default for new events)
+- **Invitees** - Comma-separated email addresses added as attendees
 - **Configurable duration** - 15min to 4 hours
 - **Reschedule support** - Update existing scheduled actions
 
@@ -327,6 +329,49 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.12 (February 2026)
+Calendar enhancements, tutorial UX improvements, and action popup fixes:
+
+**All-Day Events:**
+- New "All day" checkbox in datetime picker between Date and Time fields
+- When checked, Time and Duration sections are hidden
+- New events default to all-day (unchecking reveals time picker defaulting to 9AM)
+- All-day state persists in `scheduled.allDay` and pre-fills on reschedule
+- Google Calendar API: uses `{ date }` format (already supported in `buildEventPayload`)
+- Google Calendar URL redirect: uses `YYYYMMDD/YYYYMMDD` date format
+- Apple .ics: uses `DTSTART;VALUE=DATE:YYYYMMDD` format (no time component)
+- Schedule display shows "Feb 15 (all day)" across all views (summary cards, action popup, spoke config)
+
+**Invitees / Attendees:**
+- New "Invitees" text input in datetime picker (comma-separated emails)
+- Invitees persist in `scheduled.invitees` array and pre-fill on reschedule
+- Google Calendar API: added as `payload.attendees = [{ email }]`
+- Apple .ics: added as `ATTENDEE;PARTSTAT=NEEDS-ACTION:mailto:email` lines
+
+**Skip Scheduling Cleanup:**
+- "Skip" button no longer saves partial date/time data to the model
+- Previously, skipping saved defaults as if scheduled, showing misleading green pills
+- Skip now simply closes the picker without side effects
+
+**Action Popup Bottom-Edge Fix:**
+- Popup now flips above the click point when it would clip the bottom edge of the SVG
+- Calculates both below (clickY + 15) and above (clickY - cardHeight - 15) positions
+- Chooses below if it fits, otherwise above
+
+**Hide Schedule on Completed Actions:**
+- Calendar icon / schedule pill hidden for completed (checked) actions in the action popup
+- Checked actions no longer show scheduling controls
+
+**Tutorial UX Improvements:**
+- "Skip Tutorial" button moved to fixed bottom-right position (all tutorial steps)
+- Removed inline Skip buttons from every modal/tooltip step
+- New `.tutorial-skip-fixed` CSS class (fixed position, z-index 10002)
+- Auto-progress on two tutorial steps: "Nice Work" (3s) and "Edit From Here Too" (5s)
+- Auto-progress timers cleared on skip, next, and complete
+- Tutorial example data now saves to localStorage only (not Firebase) to prevent pushing tutorial data to cloud sync
+
+---
 
 ### v0.11 (February 2026)
 Responsive layout overhaul, prioritiser enhancements, star consistency, and tutorial safety:
@@ -808,6 +853,8 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 - ~~Expansion Refactor~~ - Implemented as full-pie takeover in v0.8 (re-render approach with data override, not DOM transform)
 - ~~Prioritiser System~~ - Implemented in v0.9 (separate `priorityList` array, draggable window UI, star buttons)
 - ~~Spoke Label Clipping~~ - Implemented as ViewBox scaling in v0.10 (render at 1920px virtual canvas, scale down via SVG viewBox for viewports <1920px)
+- ~~All-Day Events~~ - Implemented in v0.12 (checkbox in datetime picker, defaults to all-day for new events)
+- ~~Invitees / Attendees~~ - Implemented in v0.12 (comma-separated emails, Google Calendar API + Apple .ics support)
 
 ## Development Notes
 
@@ -985,6 +1032,25 @@ Debug.log('message', data)
 - [ ] **Responsive**: Mobile toggles in Settings overlay, not top bar
 - [ ] **Responsive**: Container padding correct at 1024px, 960px, 768px breakpoints
 - [ ] **Treemap**: Larger slice titles (16px), more spoke spacing, readable at all sizes
+- [ ] **All-day**: Checkbox defaults to checked for new events
+- [ ] **All-day**: Time and Duration sections hide when checked
+- [ ] **All-day**: Unchecking shows time picker with 9AM default
+- [ ] **All-day**: All-day state persists on reschedule (pre-fills checkbox)
+- [ ] **All-day**: Google Calendar creates all-day event (date bar, not timed)
+- [ ] **All-day**: Apple .ics creates all-day event (VALUE=DATE format)
+- [ ] **All-day**: Schedule display shows "Feb 15 (all day)" in summary cards
+- [ ] **All-day**: Schedule display shows "Feb 15 (all day)" in action popup
+- [ ] **All-day**: Chart schedule pills show date only (no time)
+- [ ] **Invitees**: Input field in datetime picker accepts comma-separated emails
+- [ ] **Invitees**: Invitees pre-fill on reschedule
+- [ ] **Invitees**: Google Calendar event includes attendees
+- [ ] **Invitees**: Apple .ics includes ATTENDEE lines
+- [ ] **Skip scheduling**: Does not save any data (no misleading green pills)
+- [ ] **Action popup**: Flips above click point when near bottom edge
+- [ ] **Action popup**: Completed actions hide calendar/schedule controls
+- [ ] **Tutorial**: Skip button fixed to bottom-right on all steps
+- [ ] **Tutorial**: Auto-progress on "Nice Work" and "Edit From Here Too" steps
+- [ ] **Tutorial**: Example data saved to localStorage only (not Firebase)
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support

@@ -535,13 +535,18 @@ const UI = {
                 actionsList.className = 'tab2-actions-expanded';
                 actionsList.innerHTML = children.map((child, childIdx) => {
                     const childText = typeof child === 'string' ? child : child.text;
-                    const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+                    const hasSchedule = child.scheduled && child.scheduled.date && (child.scheduled.time || child.scheduled.allDay);
                     let scheduleDisplay = '';
                     if (hasSchedule) {
-                        const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
-                        const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                        scheduleDisplay = `<span class="action-schedule">${dateStr} ${timeStr}</span>`;
+                        if (child.scheduled.allDay) {
+                            const dateStr = new Date(child.scheduled.date + 'T00:00').toLocaleDateString([], { month: 'short', day: 'numeric' });
+                            scheduleDisplay = `<span class="action-schedule">${dateStr} (all day)</span>`;
+                        } else {
+                            const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
+                            const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                            scheduleDisplay = `<span class="action-schedule">${dateStr} ${timeStr}</span>`;
+                        }
                     }
                     const isCompleted = child.completed || false;
                     const isActionPrioritised = UI.isPrioritised({type:'action', categoryId, itemId, spokeIndex:idx, childIndex:childIdx});
@@ -936,7 +941,7 @@ const UI = {
                                             style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
                                                 ${children.map((child, childIdx) => {
                                                     const childText = typeof child === 'string' ? child : child.text;
-                                                    const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+                                                    const hasSchedule = child.scheduled && child.scheduled.date && (child.scheduled.time || child.scheduled.allDay);
                                                     const hasRecurrence = child.recurrence;
                                                     let scheduleDisplay = '📅';
                                                     let buttonStyle = 'background: #4285F4; padding: 3px 12px;';
@@ -948,10 +953,15 @@ const UI = {
                                                         buttonStyle = 'background: #4CAF50; padding: 3px 8px;';
                                                         buttonTitle = 'Repeating event';
                                                     } else if (hasSchedule) {
-                                                        const schedDate = new Date(child.scheduled.date + 'T' + child.scheduled.time);
-                                                        const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                                        const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                                                        scheduleDisplay = dateStr + ' ' + timeStr;
+                                                        if (child.scheduled.allDay) {
+                                                            const dateStr = new Date(child.scheduled.date + 'T00:00').toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                                            scheduleDisplay = dateStr + ' (all day)';
+                                                        } else {
+                                                            const schedDate = new Date(child.scheduled.date + 'T' + child.scheduled.time);
+                                                            const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                                            const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                                            scheduleDisplay = dateStr + ' ' + timeStr;
+                                                        }
                                                         buttonStyle = 'background: #4CAF50; padding: 3px 8px;';
                                                         buttonTitle = 'Reschedule';
                                                     }
@@ -1467,6 +1477,9 @@ const UI = {
             document.getElementById('event-duration').value = existingSchedule.duration || '60';
             document.getElementById('event-location').value = existingSchedule.location || '';
             document.getElementById('event-notes').value = existingSchedule.notes || '';
+            document.getElementById('event-invitees').value = (existingSchedule.invitees || []).join(', ');
+            document.getElementById('event-allday').checked = !!existingSchedule.allDay;
+            this.toggleAllDay();
         } else {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1476,6 +1489,9 @@ const UI = {
             document.getElementById('event-duration').value = '60';
             document.getElementById('event-location').value = '';
             document.getElementById('event-notes').value = '';
+            document.getElementById('event-invitees').value = '';
+            document.getElementById('event-allday').checked = true;
+            this.toggleAllDay();
         }
 
         // Update title, button text, and show reminder based on whether this is a reschedule
@@ -1517,6 +1533,12 @@ const UI = {
         document.getElementById('datetime-overlay').classList.add('active');
     },
 
+    toggleAllDay() {
+        const allDay = document.getElementById('event-allday').checked;
+        document.getElementById('time-section').style.display = allDay ? 'none' : '';
+        document.getElementById('duration-section').style.display = allDay ? 'none' : '';
+    },
+
     closeDateTimePicker() {
         document.getElementById('datetime-overlay').classList.remove('active');
         this.pendingCalendarEvent = null;
@@ -1539,7 +1561,6 @@ const UI = {
     },
 
     skipScheduling() {
-        // Skip this action and return to spoke config or close
         document.getElementById('datetime-overlay').classList.remove('active');
         this.pendingCalendarEvent = null;
         this.pendingSpokeSchedule = null;
@@ -1582,14 +1603,21 @@ const UI = {
 
         // Get user-selected date/time and optional fields
         const dateStr = document.getElementById('event-date').value;
+        const allDay = document.getElementById('event-allday').checked;
         const hourStr = document.getElementById('event-hour').value;
         const minuteStr = document.getElementById('event-minute').value;
-        const timeStr = `${hourStr}:${minuteStr}`;
-        const duration = parseInt(document.getElementById('event-duration').value);
+        const timeStr = allDay ? null : `${hourStr}:${minuteStr}`;
+        const duration = allDay ? null : parseInt(document.getElementById('event-duration').value);
         const location = document.getElementById('event-location').value.trim();
         const notes = document.getElementById('event-notes').value.trim();
+        const inviteesStr = document.getElementById('event-invitees').value.trim();
+        const invitees = inviteesStr ? inviteesStr.split(',').map(e => e.trim()).filter(e => e) : [];
 
-        if (!dateStr || !hourStr || !minuteStr) {
+        if (!dateStr) {
+            alert('Please select a date');
+            return;
+        }
+        if (!allDay && (!hourStr || !minuteStr)) {
             alert('Please select date and time');
             return;
         }
@@ -1623,8 +1651,10 @@ const UI = {
             date: dateStr,
             time: timeStr,
             duration: duration,
+            allDay: allDay || null,
             location: location || null,
-            notes: notes || null
+            notes: notes || null,
+            invitees: invitees.length > 0 ? invitees : null
         };
 
         const provider = this.getCalendarProvider();
@@ -1653,8 +1683,10 @@ const UI = {
                 date: dateStr,
                 time: timeStr,
                 duration: duration,
+                allDay: allDay || null,
                 location: location || null,
-                description: description
+                description: description,
+                attendees: invitees.length > 0 ? invitees : null
             };
 
             let event;
@@ -1685,19 +1717,31 @@ const UI = {
             if (!event || !event.id) {
                 // API failed, fall back to URL redirect
                 Debug.log('Calendar API failed, falling back to URL redirect');
+                if (allDay) {
+                    this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, null, null, location, notes, true, dateStr);
+                } else {
+                    const startDate = new Date(`${dateStr}T${timeStr}`);
+                    const endDate = new Date(startDate.getTime() + duration * 60000);
+                    this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location, notes);
+                }
+            }
+        } else if (provider === 'apple') {
+            if (allDay) {
+                this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, null, null, null, location, notes, invitees, true, dateStr);
+            } else {
+                const startDate = new Date(`${dateStr}T${timeStr}`);
+                const endDate = new Date(startDate.getTime() + duration * 60000);
+                this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, null, location, notes, invitees);
+            }
+        } else {
+            // Google without API access - use URL redirect
+            if (allDay) {
+                this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, null, null, location, notes, true, dateStr);
+            } else {
                 const startDate = new Date(`${dateStr}T${timeStr}`);
                 const endDate = new Date(startDate.getTime() + duration * 60000);
                 this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location, notes);
             }
-        } else if (provider === 'apple') {
-            const startDate = new Date(`${dateStr}T${timeStr}`);
-            const endDate = new Date(startDate.getTime() + duration * 60000);
-            this.downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, null, location, notes);
-        } else {
-            // Google without API access - use URL redirect
-            const startDate = new Date(`${dateStr}T${timeStr}`);
-            const endDate = new Date(startDate.getTime() + duration * 60000);
-            this.openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location, notes);
         }
 
         // Save scheduled time to the data
@@ -1752,12 +1796,21 @@ const UI = {
         }
     },
 
-    openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location = null, notes = null) {
-        const formatDate = (date) => {
-            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-        };
-
-        const dates = `${formatDate(startDate)}/${formatDate(endDate)}`;
+    openGoogleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, location = null, notes = null, allDay = false, dateStr = null) {
+        let dates;
+        if (allDay && dateStr) {
+            // All-day: use YYYYMMDD format, end date is next day
+            const startFormatted = dateStr.replace(/-/g, '');
+            const nextDay = new Date(dateStr);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const endFormatted = nextDay.toISOString().split('T')[0].replace(/-/g, '');
+            dates = `${startFormatted}/${endFormatted}`;
+        } else {
+            const formatDate = (date) => {
+                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+            dates = `${formatDate(startDate)}/${formatDate(endDate)}`;
+        }
 
         // Build description with notes first, then context
         let details = '';
@@ -1792,7 +1845,7 @@ const UI = {
         window.open(calendarUrl, '_blank');
     },
     
-    downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, rrule = null, location = null, notes = null) {
+    downloadAppleCalendarEvent(actionText, spokeText, sliceName, categoryName, startDate, endDate, rrule = null, location = null, notes = null, attendees = [], allDay = false, dateStr = null) {
         // Format dates for iCalendar format (local time, not UTC)
         const formatICSDate = (date) => {
             const year = date.getFullYear();
@@ -1819,16 +1872,36 @@ const UI = {
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//Brain Pie//Calendar//EN',
-            'BEGIN:VEVENT',
-            `DTSTART:${formatICSDate(startDate)}`,
-            `DTEND:${formatICSDate(endDate)}`,
+            'BEGIN:VEVENT'
+        ];
+
+        if (allDay && dateStr) {
+            const startFormatted = dateStr.replace(/-/g, '');
+            const nextDay = new Date(dateStr);
+            nextDay.setDate(nextDay.getDate() + 1);
+            const endFormatted = nextDay.toISOString().split('T')[0].replace(/-/g, '');
+            eventLines.push(`DTSTART;VALUE=DATE:${startFormatted}`);
+            eventLines.push(`DTEND;VALUE=DATE:${endFormatted}`);
+        } else {
+            eventLines.push(`DTSTART:${formatICSDate(startDate)}`);
+            eventLines.push(`DTEND:${formatICSDate(endDate)}`);
+        }
+
+        eventLines.push(
             `SUMMARY:${escapeICS(actionText)} (${escapeICS(categoryName)} - ${escapeICS(sliceName)})`,
             `DESCRIPTION:${description}`
-        ];
+        );
 
         // Add location if provided
         if (location) {
             eventLines.push(`LOCATION:${escapeICS(location)}`);
+        }
+
+        // Add attendees if provided
+        if (attendees && attendees.length > 0) {
+            attendees.forEach(email => {
+                eventLines.push(`ATTENDEE;PARTSTAT=NEEDS-ACTION:mailto:${email}`);
+            });
         }
 
         // Add RRULE for recurring events
@@ -2381,14 +2454,19 @@ const UI = {
 
         spoke.children.forEach((child, idx) => {
             const childText = typeof child === 'string' ? child : child.text;
-            const hasSchedule = child.scheduled && child.scheduled.date && child.scheduled.time;
+            const hasSchedule = child.scheduled && child.scheduled.date && (child.scheduled.time || child.scheduled.allDay);
 
             let scheduleBtn = `<button type="button" class="small" style="background:#4285F4;" onclick="UI.rescheduleAction(${idx})" title="Schedule">📅</button>`;
             if (hasSchedule) {
-                const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
-                const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 8px;" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} ${timeStr}</button>`;
+                if (child.scheduled.allDay) {
+                    const dateStr = new Date(child.scheduled.date + 'T00:00').toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 8px;" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} (all day)</button>`;
+                } else {
+                    const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time}`);
+                    const timeStr = schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    scheduleBtn = `<button type="button" class="small" style="background:#4CAF50;padding:3px 8px;" onclick="UI.rescheduleAction(${idx})" title="Reschedule">${dateStr} ${timeStr}</button>`;
+                }
             }
 
             const isCompleted = child.completed || false;
@@ -2745,6 +2823,9 @@ const UI = {
             document.getElementById('event-duration').value = existingSchedule.duration || '60';
             document.getElementById('event-location').value = existingSchedule.location || '';
             document.getElementById('event-notes').value = existingSchedule.notes || '';
+            document.getElementById('event-invitees').value = (existingSchedule.invitees || []).join(', ');
+            document.getElementById('event-allday').checked = !!existingSchedule.allDay;
+            this.toggleAllDay();
         } else {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -2754,6 +2835,9 @@ const UI = {
             document.getElementById('event-duration').value = '60';
             document.getElementById('event-location').value = '';
             document.getElementById('event-notes').value = '';
+            document.getElementById('event-invitees').value = '';
+            document.getElementById('event-allday').checked = true;
+            this.toggleAllDay();
         }
 
         // Update title, button text, and reminder
@@ -3685,10 +3769,10 @@ const UI = {
                         const action = spoke.children[actionIdx];
                         if (action.scheduled &&
                             action.scheduled.date &&
-                            action.scheduled.time &&
+                            (action.scheduled.time || action.scheduled.allDay) &&
                             !action.scheduled.calendarEventId) {
                             // Create unique key based on action text and schedule
-                            const key = `${action.text}|${action.scheduled.date}|${action.scheduled.time}`;
+                            const key = `${action.text}|${action.scheduled.date}|${action.scheduled.time || 'allday'}`;
                             keys.add(key);
                         }
                     }
