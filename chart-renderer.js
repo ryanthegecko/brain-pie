@@ -1426,7 +1426,10 @@ const ChartRenderer = {
             cardY = Math.max(minY, Math.min(maxY, reusePosition.y));
         } else {
             cardX = Math.max(minX, Math.min(maxX, clickSvgX - cardWidth / 2));
-            cardY = Math.max(minY, Math.min(maxY, clickSvgY + 15));
+            // Place below click, but flip above if it would clip the bottom
+            const belowY = clickSvgY + 15;
+            const aboveY = clickSvgY - cardHeight - 15;
+            cardY = belowY <= maxY ? Math.max(minY, belowY) : Math.max(minY, aboveY);
         }
 
         const branchGroup = this.highlightGroup.append('g')
@@ -1604,6 +1607,9 @@ const ChartRenderer = {
                     rowGroup.select('.action-title')
                         .attr('fill', nowCompleted ? '#999' : '#333')
                         .style('text-decoration', nowCompleted ? 'line-through' : 'none');
+                    // Toggle calendar pill visibility
+                    rowGroup.select('.cal-group')
+                        .style('display', nowCompleted ? 'none' : null);
                 });
             checkGroup.append('rect')
                 .attr('x', checkX)
@@ -1671,9 +1677,11 @@ const ChartRenderer = {
                 .attr('transform', 'translate(3, 4) scale(0.07)');
             btnX -= 16;
 
-            // 5) Calendar icon / schedule pill
+            // 5) Calendar icon / schedule pill (hidden when completed)
             const calGroup = rowGroup.append('g')
+                .attr('class', 'cal-group')
                 .style('cursor', 'pointer')
+                .style('display', isCompleted ? 'none' : null)
                 .on('click', (event) => {
                     event.stopPropagation();
                     that.openCalendarForAction(child, spokeData, sliceName, categoryName, childDataLocation);
@@ -1685,7 +1693,7 @@ const ChartRenderer = {
                 const timeStr = child.scheduled.time ? that.formatCompactTime(child.scheduled.time) : '';
                 const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
                 const pillW = pillLabel.length * 13 + 24;
-                btnX -= pillW;
+                btnX -= isCompleted ? 0 : pillW;
                 calGroup.append('rect')
                     .attr('x', btnX)
                     .attr('y', rowY + 6)
@@ -1703,7 +1711,7 @@ const ChartRenderer = {
                     .text(pillLabel);
             } else {
                 const calPillW = 52;
-                btnX -= calPillW;
+                btnX -= isCompleted ? 0 : calPillW;
                 calGroup.append('rect')
                     .attr('x', btnX)
                     .attr('y', rowY + 6)

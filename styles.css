@@ -2539,6 +2539,14 @@ select:focus {
     background: #e0e0e0;
 }
 
+.tutorial-skip-fixed {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10002;
+    pointer-events: all;
+}
+
 /* Tutorial Animations */
 @keyframes tutorial-pulse {
 
