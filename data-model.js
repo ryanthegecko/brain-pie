@@ -22,6 +22,7 @@ const DataModel = {
             this.categories = data.categories;
             this.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
             this.priorityList = data.priorityList || [];
+            this.normalizeAllSpokes(); // Restore fields Firebase may have dropped
             this.validatePriorityList();
             return;
         }
@@ -41,6 +42,33 @@ const DataModel = {
         this.saveToStorage();
     },
 
+    /**
+     * Normalize all spokes in all categories.
+     * Firebase drops null values and empty arrays, so spokes loaded from
+     * Firebase may be missing children, scheduled, metadata fields.
+     * This restores them to the expected format.
+     */
+    normalizeAllSpokes() {
+        if (!Array.isArray(this.categories)) {
+            this.categories = Object.values(this.categories || {});
+        }
+        for (const category of this.categories) {
+            if (!category.items) { category.items = []; continue; }
+            if (!Array.isArray(category.items)) {
+                category.items = Object.values(category.items);
+            }
+            for (const item of category.items) {
+                if (!item.subItems) { item.subItems = []; continue; }
+                if (!Array.isArray(item.subItems)) {
+                    item.subItems = Object.values(item.subItems);
+                }
+                for (let i = 0; i < item.subItems.length; i++) {
+                    item.subItems[i] = this.normalizeSpoke(item.subItems[i]);
+                }
+            }
+        }
+    },
+
     saveToStorage() {
         const calendarProvider = localStorage.getItem('calendarProvider') || 'google';
 
@@ -56,7 +84,9 @@ const DataModel = {
 
         // Use StorageAdapter if available (supports Firebase)
         if (typeof StorageAdapter !== 'undefined') {
-            StorageAdapter.save(data);
+            StorageAdapter.save(data).catch(e => {
+                console.error('StorageAdapter.save failed:', e);
+            });
         } else {
             Storage.save(data);
         }
@@ -606,9 +636,14 @@ const DataModel = {
         return {
             text: spoke.text || '',
             type: type,
-            children: (spoke.children || []).map(child => {
+            children: (Array.isArray(spoke.children) ? spoke.children : Object.values(spoke.children || {})).map(child => {
                 if (typeof child === 'string') return { text: child, children: [], completed: false };
-                return { ...child, completed: child.completed || false };
+                return {
+                    text: child.text || '',
+                    children: child.children || [],
+                    completed: child.completed || false,
+                    scheduled: child.scheduled || null
+                };
             }),
             scheduled: spoke.scheduled || null, // For single/repeating: spoke-level scheduling
             metadata: {
@@ -760,12 +795,8 @@ const DataModel = {
 
         if (existing) {
             // Merge: add new actions to existing spoke (avoid duplicates)
-            const existingSpoke = this.normalizeSpoke(existing.spoke);
-
-            // Update to object format if it was a string
-            if (typeof item.subItems[existing.index] === 'string') {
-                item.subItems[existing.index] = existingSpoke;
-            }
+            // Always normalize existing spoke (Firebase drops empty arrays/null values)
+            item.subItems[existing.index] = this.normalizeSpoke(existing.spoke);
 
             // Merge children (actions)
             if (normalizedImported.children && normalizedImported.children.length > 0) {
@@ -808,7 +839,7 @@ const DataModel = {
                                 children: importedAction.children || [],
                                 scheduled: importedAction.scheduled
                                     ? { ...importedAction.scheduled, calendarEventId: null }
-                                    : undefined
+                                    : null
                             };
                         item.subItems[existing.index].children.push(newAction);
                     }
@@ -832,7 +863,7 @@ const DataModel = {
                     ...child,
                     scheduled: child.scheduled
                         ? { ...child.scheduled, calendarEventId: null }
-                        : undefined
+                        : null
                 };
             })
         };
