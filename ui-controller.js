@@ -8,6 +8,12 @@ const UI = {
     newlyAddedSliceIds: [],
     preselectedSliceId: null,
 
+    // Convert URLs in text to clickable links (for HTML contexts)
+    linkifyUrls(text) {
+        if (!text) return text;
+        return text.replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#1a73e8;text-decoration:underline;">$1</a>');
+    },
+
     // Returns inline CSS border + background string for schedule pills based on date proximity
     getScheduleBorderStyle(dateStr, timeStr) {
         if (!dateStr) return '';
@@ -600,7 +606,7 @@ const UI = {
                                 <input type="checkbox" class="action-checkbox"
                                     onchange="UI.toggleActionCompleted('${categoryId}', '${itemId}', ${idx}, ${childIdx})"
                                     ${isCompleted ? 'checked' : ''}>
-                                <span class="action-text ${isCompleted ? 'action-completed' : ''}">${childText}</span>
+                                <span class="action-text ${isCompleted ? 'action-completed' : ''}">${UI.linkifyUrls(childText)}</span>
                                 ${scheduleDisplay}
                                 <button class="small warn" onclick="UI.removeActionFromTab2(${idx}, ${childIdx})" title="Remove action">×</button>
                             </div>
@@ -1028,7 +1034,7 @@ const UI = {
                                                             <input type="checkbox" class="action-checkbox"
                                                                 onchange="UI.toggleActionCompleted('${category.id}', '${item.id}', ${idx}, ${childIdx})"
                                                                 ${isActionCompleted ? 'checked' : ''}>
-                                                            <span style="flex: 1;margin-right: 1em;" class="${isActionCompleted ? 'action-completed' : ''}">${childText}</span>
+                                                            <span style="flex: 1;margin-right: 1em;" class="${isActionCompleted ? 'action-completed' : ''}">${UI.linkifyUrls(childText)}</span>
                                                             <div style="display: flex; gap: 4px;">
                                                                 ${!isActionCompleted ? `<button class="small"
                                                                         style="${buttonStyle}"
@@ -2547,7 +2553,7 @@ const UI = {
                     onchange="UI.toggleActionCompleted('${categoryId}', '${itemId}', ${spokeIndex}, ${idx})"
                     ${isCompleted ? 'checked' : ''}>
                 <div style="flex: 1;">
-                    <div style="font-weight: 500;" class="${isCompleted ? 'action-completed' : ''}">${childText}</div>
+                    <div style="font-weight: 500;" class="${isCompleted ? 'action-completed' : ''}">${UI.linkifyUrls(childText)}</div>
                 </div>
                 ${scheduleBtn}
                 <button type="button" class="small warn" onclick="UI.removeAction(${idx})" title="Remove">×</button>
@@ -4558,7 +4564,7 @@ const UI = {
                     <span class="priority-rank">${idx + 1}</span>
                     <span class="priority-color" style="background: ${resolved.color}"></span>
                     <div class="priority-info" style="cursor: pointer">
-                        <div class="priority-name">${resolved.displayName}</div>
+                        <div class="priority-name">${UI.linkifyUrls(resolved.displayName)}</div>
                         <div class="priority-context">${resolved.context}</div>
                     </div>
                     ${actionBtn}
