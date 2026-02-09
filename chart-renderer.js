@@ -603,7 +603,7 @@ const ChartRenderer = {
             .attr('d', outerArc)
             .attr('fill', d => d.data.color)
             .attr('stroke', 'white')
-            .attr('stroke-width', 2)
+            .attr('stroke-width', 3)
             .attr('opacity', 0.7);
 
         categorySlices
@@ -740,7 +740,7 @@ const ChartRenderer = {
                         g.append('path')
                             .attr('d', borderArc({ startAngle: d.startAngle, endAngle: d.startAngle }))
                             .attr('stroke', 'white')
-                            .attr('stroke-width', 2)
+                            .attr('stroke-width', 3)
                             .attr('fill', 'none');
                     }
                     // Last item in category — thick border on end edge
@@ -748,7 +748,7 @@ const ChartRenderer = {
                         g.append('path')
                             .attr('d', borderArc({ startAngle: d.endAngle, endAngle: d.endAngle }))
                             .attr('stroke', 'white')
-                            .attr('stroke-width', 2)
+                            .attr('stroke-width', 3)
                             .attr('fill', 'none');
                     }
                 });
@@ -1071,7 +1071,7 @@ const ChartRenderer = {
                 .attr('opacity', 0.2)
                 .attr('rx', 6)
                 .attr('stroke', catNode.data.color)
-                .attr('stroke-width', 2)
+                .attr('stroke-width', 3)
                 .style('cursor', 'pointer')
                 .on('click', (event) => {
                     event.stopPropagation();
