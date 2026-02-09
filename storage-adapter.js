@@ -121,6 +121,9 @@ const StorageAdapter = {
             // Initialize Firebase if not already
             if (!FirebaseAdapter.app) {
                 await FirebaseAdapter.init(config);
+            } else {
+                // App already initialized — ensure config is up to date
+                FirebaseAdapter.config = config;
             }
 
             // Save config for future sessions
