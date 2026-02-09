@@ -162,7 +162,7 @@ const App = {
         // Show sign-in banner if loaded with a Firebase config URL but not yet signed in
         if (typeof FirebaseAdapter !== 'undefined') {
             const urlConfig = FirebaseAdapter.parseConfigFromURL();
-            if (urlConfig && !FirebaseAdapter.user) {
+            if (urlConfig) {
                 // Initialize Firebase with the URL config
                 try {
                     if (!FirebaseAdapter.app) {
@@ -172,8 +172,12 @@ const App = {
                 } catch (e) {
                     Debug.log('Firebase init from URL config failed:', e.message);
                 }
-                // Show sign-in banner (popup must be user-initiated to avoid browser blocking)
-                UI.showConfigSignInBanner();
+                // Wait for auth state to settle, then show banner if still not signed in
+                setTimeout(() => {
+                    if (!FirebaseAdapter.user) {
+                        UI.showConfigSignInBanner();
+                    }
+                }, 1500);
             }
         }
 
