@@ -816,9 +816,15 @@ const UI = {
             card.style.borderLeftColor = category.color;
             card.dataset.categoryId = category.id;
             card.dataset.categoryIndex = categoryIndex;
-            card.draggable = true;
-            card.style.cursor = 'move';
-            
+            // Only allow drag from the grip handle, not inputs/editable areas
+            card.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.category-drag-handle')) {
+                    card.draggable = true;
+                } else {
+                    card.draggable = false;
+                }
+            });
+
             // Category drag events
             card.addEventListener('dragstart', this.handleCategoryDragStart.bind(this));
             card.addEventListener('dragend', this.handleDragEnd.bind(this));
@@ -860,20 +866,21 @@ const UI = {
             const itemsHTML = category.items.length > 0
                 ? `<div class="items-in-category">
                     ${category.items.map(item => `
-                        <div class="item-card" 
-                             style="border-left-color: ${item.color}" 
-                             draggable="true"
+                        <div class="item-card"
+                             style="border-left-color: ${item.color}"
                              data-category-id="${category.id}"
                              data-item-id="${item.id}"
+                             onmousedown="var h=event.target.closest('.item-drag-handle'); this.draggable=!!h;"
                              ondragstart="UI.handleItemDragStart(event)"
                              ondragend="UI.handleDragEnd(event)"
                              ondragover="UI.handleItemDragOver(event)"
                             ondrop="UI.handleItemDrop(event)"
                              >
                             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; gap: 10px;">
+                                <span class="item-drag-handle" style="font-size: 16px; color: #999; cursor: move; padding: 2px 4px; margin-top: 2px;">⋮⋮</span>
                                 <button class="priority-star-btn ${UI.isPrioritised({type:'slice', categoryId:category.id, itemId:item.id}) ? 'active' : ''}"
                                     onclick="event.stopPropagation(); UI.addToPriorities({type:'slice', categoryId:'${category.id}', itemId:'${item.id}'})"
-                                    title="Add to priorities" style="flex-shrink:0;margin-top:2px;">&#9733;</button>
+                                    title="Add to priorities" style="flex-shrink:0;margin-top:-4px;">&#9733;</button>
                                 <h3 contenteditable="true"
                                     onblur="App.updateItemName('${category.id}', '${item.id}', this.textContent)"
                                     style="flex: 1; outline: none; padding: 2px; border-radius: 3px;"
@@ -1009,10 +1016,10 @@ const UI = {
                                                                 ${isActionCompleted ? 'checked' : ''}>
                                                             <span style="flex: 1;margin-right: 1em;" class="${isActionCompleted ? 'action-completed' : ''}">${childText}</span>
                                                             <div style="display: flex; gap: 4px;">
-                                                                <button class="small"
+                                                                ${!isActionCompleted ? `<button class="small"
                                                                         style="${buttonStyle}"
                                                                         onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${idx}, ${childIdx})"
-                                                                        title="${buttonTitle}">${scheduleDisplay}</button>
+                                                                        title="${buttonTitle}">${scheduleDisplay}</button>` : ''}
                                                                 <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
                                                                     <img width="15" height="20" src="./assets/trash.svg" />
                                                                 </button>
@@ -1056,9 +1063,9 @@ const UI = {
                 : '<div class="empty-category">No items yet</div>';
             
             card.innerHTML = `
-                <div class="category-header" style="cursor: move;">
+                <div class="category-header">
                     <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 20px; color: #999;">⋮⋮</span>
+                        <span class="category-drag-handle" style="font-size: 20px; color: #999; cursor: move; padding: 4px;">⋮⋮</span>
                         <div style="flex: 1;">
                             <h2 contenteditable="true"
                                 onblur="App.updateCategoryName('${category.id}', this.textContent)"
@@ -1069,19 +1076,19 @@ const UI = {
                             <div 
                                 class="category-percentage-input-container"
                                 style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
-                                <input type="number" 
+                                <input type="number"
                                         name="categoryPercentage"
-                                       value="${displayPercentage}" 
-                                       min="0" 
-                                       max="100" 
+                                       value="${displayPercentage}"
+                                       min="0"
+                                       max="100"
                                        step="0.1"
                                        style="width: 70px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"
                                        onchange="App.updateCategoryPercentage('${category.id}', parseFloat(this.value))">
                                 <span class="auto-percentage">% (${category.items.length} items)</span>
                             </div>
                         </div>
-                        <input type="color" 
-                               value="${category.color}" 
+                        <input type="color"
+                               value="${category.color}"
                                title="Change category color"
                                style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
