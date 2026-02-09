@@ -32,6 +32,20 @@ const UI = {
         return { dateStr: null, timeStr: null };
     },
 
+    showConfigSignInBanner() {
+        const banner = document.createElement('div');
+        banner.id = 'config-signin-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 20px;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,0.2);';
+        banner.innerHTML = `
+            <span>Sign in with Google to sync data from the cloud</span>
+            <button onclick="UI.signInWithGoogle().then(()=>{document.getElementById('config-signin-banner')?.remove()}).catch(()=>{})"
+                style="background:#fff;color:#1a73e8;border:none;padding:8px 20px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:14px;">Sign in with Google</button>
+            <button onclick="this.parentElement.remove()"
+                style="background:none;border:none;color:#fff;cursor:pointer;font-size:20px;padding:0 4px;opacity:0.7;">\u2715</button>
+        `;
+        document.body.prepend(banner);
+    },
+
     showMenu() {
         // Reset state
         this.currentMenuTab = 1;

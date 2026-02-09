@@ -159,23 +159,21 @@ const App = {
             setTimeout(() => TutorialManager.start(), 500);
         }
 
-        // Auto-prompt sign-in if loaded with a Firebase config URL but not yet signed in
+        // Show sign-in banner if loaded with a Firebase config URL but not yet signed in
         if (typeof FirebaseAdapter !== 'undefined') {
             const urlConfig = FirebaseAdapter.parseConfigFromURL();
             if (urlConfig && !FirebaseAdapter.user) {
-                setTimeout(async () => {
-                    try {
-                        // Initialize Firebase with the URL config
-                        if (!FirebaseAdapter.app) {
-                            await FirebaseAdapter.init(urlConfig);
-                        }
-                        await StorageAdapter.enableCloudSync(urlConfig);
-                        // Prompt Google sign-in
-                        await UI.signInWithGoogle();
-                    } catch (e) {
-                        Debug.log('Auto sign-in from URL config failed:', e.message);
+                // Initialize Firebase with the URL config
+                try {
+                    if (!FirebaseAdapter.app) {
+                        await FirebaseAdapter.init(urlConfig);
                     }
-                }, 500);
+                    await StorageAdapter.enableCloudSync(urlConfig);
+                } catch (e) {
+                    Debug.log('Firebase init from URL config failed:', e.message);
+                }
+                // Show sign-in banner (popup must be user-initiated to avoid browser blocking)
+                UI.showConfigSignInBanner();
             }
         }
 
