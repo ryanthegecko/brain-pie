@@ -227,6 +227,19 @@ const FirebaseAdapter = {
         this.auth = firebase.auth();
         this.db = firebase.database();
 
+        // Check for redirect result (returning from Google sign-in redirect)
+        try {
+            const result = await this.auth.getRedirectResult();
+            if (result && result.credential) {
+                this.accessToken = result.credential.accessToken;
+                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000);
+                this.saveTokenToLocal();
+                Debug.log('Google sign-in successful (redirect), calendar access granted:', result.user.displayName);
+            }
+        } catch (e) {
+            Debug.log('Redirect result error:', e.message);
+        }
+
         // Listen for auth state changes
         this.auth.onAuthStateChanged((user) => {
             this.user = user;
@@ -253,8 +266,8 @@ const FirebaseAdapter = {
 
     /**
      * Sign in with Google
-     * Requests Calendar API scope for 2-way calendar sync
-     * @returns {Promise<Object>} User object
+     * Uses redirect flow to avoid Cross-Origin-Opener-Policy issues on GitHub Pages.
+     * After redirect, getRedirectResult() in init() captures the OAuth token.
      */
     async signInWithGoogle() {
         if (!this.auth) {
@@ -273,26 +286,10 @@ const FirebaseAdapter = {
         // Request Calendar API scope for 2-way calendar sync
         provider.addScope('https://www.googleapis.com/auth/calendar.events');
 
-        try {
-            const result = await this.auth.signInWithPopup(provider);
-
-            // Capture OAuth access token for Calendar API
-            if (result.credential) {
-                this.accessToken = result.credential.accessToken;
-                // Token expires in ~1 hour, store expiry time
-                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000); // 55 minutes
-                // Persist token to localStorage for page refreshes
-                this.saveTokenToLocal();
-                Debug.log('Google sign-in successful, calendar access granted:', result.user.displayName);
-            } else {
-                Debug.log('Google sign-in successful (no credential):', result.user.displayName);
-            }
-
-            return result.user;
-        } catch (e) {
-            Debug.log('Google sign-in failed:', e.message);
-            throw e;
-        }
+        // Use redirect instead of popup — COOP headers on GitHub Pages block popup communication
+        Debug.log('Redirecting to Google sign-in...');
+        await this.auth.signInWithRedirect(provider);
+        // Page will redirect — execution stops here
     },
 
     /**
@@ -317,24 +314,16 @@ const FirebaseAdapter = {
             return null;
         }
 
-        // Note: This will show a popup - not truly silent
-        // But it's the only way to get a fresh token for Calendar API
+        // Re-authenticate via redirect to get fresh Calendar API token
         try {
-            Debug.log('Token expired, re-authenticating...');
+            Debug.log('Token expired, redirecting to re-authenticate...');
 
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.addScope('https://www.googleapis.com/auth/calendar.events');
 
-            // Re-authenticate to get fresh token
-            const result = await this.user.reauthenticateWithPopup(provider);
-
-            if (result.credential) {
-                this.accessToken = result.credential.accessToken;
-                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000);
-                this.saveTokenToLocal();
-                Debug.log('Access token refreshed');
-                return this.accessToken;
-            }
+            // Redirect flow — page will reload, getRedirectResult in init() captures the token
+            await this.auth.signInWithRedirect(provider);
+            // Page will redirect — execution stops here
         } catch (e) {
             Debug.log('Failed to refresh access token:', e.message);
         }
