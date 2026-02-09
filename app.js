@@ -155,6 +155,9 @@ const App = {
         UI.clearCategoryInputs();
         this.render();
 
+        // Restore prioritiser window state (open/closed + position)
+        UI.restorePrioritiserState();
+
         if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
             setTimeout(() => TutorialManager.start(), 500);
         }

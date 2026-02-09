@@ -3088,6 +3088,42 @@ const UI = {
     },
 
     // ==========================================
+    // Documentation Popup
+    // ==========================================
+
+    docsCurrentPage: 1,
+    docsTotalPages: 7,
+
+    openDocs() {
+        document.getElementById('docs-overlay').classList.add('active');
+        this.switchDocsPage(1);
+    },
+
+    closeDocs() {
+        document.getElementById('docs-overlay').classList.remove('active');
+    },
+
+    switchDocsPage(pageNum) {
+        this.docsCurrentPage = pageNum;
+        document.querySelectorAll('.docs-page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.docs-nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('docs-page-' + pageNum).classList.add('active');
+        document.querySelector('.docs-nav-btn[data-page="' + pageNum + '"]').classList.add('active');
+        document.querySelector('.docs-prev').style.visibility = pageNum === 1 ? 'hidden' : 'visible';
+        document.querySelector('.docs-next').style.visibility = pageNum === this.docsTotalPages ? 'hidden' : 'visible';
+        // Scroll page content to top
+        document.getElementById('docs-page-' + pageNum).scrollTop = 0;
+    },
+
+    docsPagePrev() {
+        if (this.docsCurrentPage > 1) this.switchDocsPage(this.docsCurrentPage - 1);
+    },
+
+    docsPageNext() {
+        if (this.docsCurrentPage < this.docsTotalPages) this.switchDocsPage(this.docsCurrentPage + 1);
+    },
+
+    // ==========================================
     // Cloud Sync / Firebase Methods
     // ==========================================
 
@@ -4374,10 +4410,36 @@ const UI = {
         win.classList.add('active');
         this.renderPriorityList();
         this.initPrioritiserDrag();
+        localStorage.setItem('brainPiePrioritiserOpen', 'true');
     },
 
     closePrioritiser() {
         document.getElementById('prioritiser-window').classList.remove('active');
+        localStorage.setItem('brainPiePrioritiserOpen', 'false');
+    },
+
+    restorePrioritiserState() {
+        const win = document.getElementById('prioritiser-window');
+        // Restore position
+        const pos = localStorage.getItem('brainPiePrioritiserPos');
+        if (pos) {
+            try {
+                const { left, top } = JSON.parse(pos);
+                win.style.left = left + 'px';
+                win.style.top = top + 'px';
+                win.style.right = 'auto';
+            } catch (e) {}
+        }
+        // Restore open state
+        if (localStorage.getItem('brainPiePrioritiserOpen') === 'true') {
+            this.openPrioritiser();
+        }
+    },
+
+    savePrioritiserPosition() {
+        const win = document.getElementById('prioritiser-window');
+        const rect = win.getBoundingClientRect();
+        localStorage.setItem('brainPiePrioritiserPos', JSON.stringify({ left: rect.left, top: rect.top }));
     },
 
     isPrioritised(ref) {
@@ -4617,6 +4679,9 @@ const UI = {
         };
 
         const onEnd = () => {
+            if (isDragging) {
+                UI.savePrioritiserPosition();
+            }
             isDragging = false;
             win.style.transition = '';
         };
