@@ -227,6 +227,268 @@
         </div>
     </div>
 
+    <!-- Documentation Overlay -->
+    <div class="docs-overlay" id="docs-overlay" onclick="UI.closeDocs()">
+        <div class="docs-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeDocs()">✕</button>
+            <h2>Documentation</h2>
+
+            <div class="docs-nav">
+                <button class="docs-nav-btn active" data-page="1" onclick="UI.switchDocsPage(1)">Overview</button>
+                <button class="docs-nav-btn" data-page="2" onclick="UI.switchDocsPage(2)">Getting Started</button>
+                <button class="docs-nav-btn" data-page="3" onclick="UI.switchDocsPage(3)">Spokes & Actions</button>
+                <button class="docs-nav-btn" data-page="4" onclick="UI.switchDocsPage(4)">Calendar</button>
+                <button class="docs-nav-btn" data-page="5" onclick="UI.switchDocsPage(5)">Priorities</button>
+                <button class="docs-nav-btn" data-page="6" onclick="UI.switchDocsPage(6)">Cloud Sync</button>
+                <button class="docs-nav-btn" data-page="7" onclick="UI.switchDocsPage(7)">Import / Export</button>
+            </div>
+
+            <!-- Page 1: Overview -->
+            <div class="docs-page active" id="docs-page-1">
+                <h3>What is Brain Pie?</h3>
+                <p>Brain Pie is a visual mind organization tool that uses a 4-layer pie chart to help you organize thoughts, tasks, and actions. Everything stays in your browser by default — no accounts, no servers, no tracking.</p>
+
+                <h3>The 4-Layer Hierarchy</h3>
+                <ul>
+                    <li><strong>Categories</strong> — Top-level areas of life (the outer ring). Examples: Work, Health, Personal.</li>
+                    <li><strong>Slices</strong> — Specific domains within a category (the inner pie wedges). Examples: under Health → Exercise, Diet, Sleep.</li>
+                    <li><strong>Spokes</strong> — Individual items radiating outward from slices. These can be reminders, tasks, recurring events, or containers for actions.</li>
+                    <li><strong>Actions</strong> — Sub-items under "List" type spokes. Each action can be scheduled on your calendar independently.</li>
+                </ul>
+
+                <h3>Interacting with the Pie</h3>
+                <ul>
+                    <li><strong>Click a slice</strong> to expand it to a full 360° view with all its spokes.</li>
+                    <li><strong>Click a category</strong> (outer ring) to see only that category's slices across the full pie.</li>
+                    <li><strong>Click a spoke</strong> to configure it, change its type, or view its actions.</li>
+                    <li><strong>Click the back button (✕)</strong> or anywhere on an expanded chart to return to the full pie.</li>
+                </ul>
+
+                <h3>Privacy First</h3>
+                <p>All data is stored in your browser's localStorage. Nothing is sent to any server unless you explicitly enable Cloud Sync with your own Firebase project. There are no accounts, no cookies, and no analytics.</p>
+            </div>
+
+            <!-- Page 2: Getting Started -->
+            <div class="docs-page" id="docs-page-2">
+                <h3>Adding Categories & Slices</h3>
+                <p>Click the <strong>+ Add</strong> button in the top-right corner to open the Add menu.</p>
+                <ul>
+                    <li><strong>Tab 1</strong> lets you create or select a category, then add slices to it.</li>
+                    <li>Each slice has a name, weight (percentage), and color.</li>
+                    <li>Click <strong>Done</strong> when you've added your slices, or continue to Tab 2 to add spokes.</li>
+                </ul>
+
+                <h3>Adding Spokes</h3>
+                <ul>
+                    <li>In Tab 2 of the Add menu, select a slice and type a spoke name into the input field.</li>
+                    <li>You can also add spokes from the summary cards at the bottom of the page using the green <strong>+</strong> button.</li>
+                    <li>New spokes are created as <strong>Static</strong> type by default. Use the blue "Spoke type" button to change the type.</li>
+                </ul>
+
+                <h3>Editing & Reordering</h3>
+                <ul>
+                    <li><strong>Inline editing</strong> — Click any spoke name in the summary cards to edit it directly.</li>
+                    <li><strong>Drag and drop</strong> — Drag categories, slices, or spokes to reorder them or move them between groups.</li>
+                    <li><strong>Percentages</strong> — Adjust slice weight percentages to change their visual size in the pie. Other slices automatically redistribute.</li>
+                    <li><strong>Colors</strong> — Use the color picker next to each category or slice to customize colors.</li>
+                </ul>
+
+                <h3>Views</h3>
+                <ul>
+                    <li><strong>Pie view</strong> — The default circular visualization.</li>
+                    <li><strong>Treemap view</strong> — Toggle the "Treemap" checkbox to see a rectangular grid layout instead.</li>
+                    <li><strong>Hide spokes</strong> — Toggle to show only slices and categories (the pie scales larger).</li>
+                </ul>
+            </div>
+
+            <!-- Page 3: Spokes & Actions -->
+            <div class="docs-page" id="docs-page-3">
+                <h3>Spoke Types</h3>
+                <p>Every spoke has a type that determines its behavior:</p>
+
+                <table>
+                    <thead>
+                        <tr><th>Type</th><th>Purpose</th><th>Calendar?</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Static</td><td>A persistent reminder — always visible, no scheduling</td><td>No</td></tr>
+                        <tr><td>Single</td><td>A one-time schedulable task — the spoke itself is the event</td><td>Yes</td></tr>
+                        <tr><td>Repeating</td><td>A recurring schedulable task — the spoke itself recurs</td><td>Yes</td></tr>
+                        <tr><td>List</td><td>A container for multiple actions, each independently schedulable</td><td>Per action</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Changing Spoke Type</h3>
+                <ul>
+                    <li>Click the blue <strong>Spoke type</strong> button next to a spoke in the summary cards.</li>
+                    <li>Or click a spoke on the pie chart to open the type picker.</li>
+                    <li>Selecting <strong>Single</strong> opens the date/time picker to schedule the spoke.</li>
+                    <li>Selecting <strong>Repeating</strong> opens the recurrence picker.</li>
+                    <li>Selecting <strong>List</strong> opens the spoke config where you can add actions.</li>
+                </ul>
+
+                <h3>Actions (List Spokes)</h3>
+                <ul>
+                    <li>List spokes can have multiple child actions. Click the spoke on the chart to see the action popup.</li>
+                    <li>Each action has a <strong>checkbox</strong> to mark it complete (line-through when checked).</li>
+                    <li>Each action can be independently scheduled on your calendar.</li>
+                    <li>Use <strong>Add & Schedule</strong> in the spoke config to create and schedule an action in one step.</li>
+                </ul>
+
+                <h3>Schedule Indicators</h3>
+                <ul>
+                    <li>Scheduled spokes show a green pill with the date/time on the chart.</li>
+                    <li>Unscheduled schedulable spokes show a blue button in the summary cards.</li>
+                    <li>Repeating spokes show a compact summary like "Mon, Wed, 5PM".</li>
+                </ul>
+            </div>
+
+            <!-- Page 4: Calendar -->
+            <div class="docs-page" id="docs-page-4">
+                <h3>Calendar Providers</h3>
+                <p>Brain Pie supports two calendar providers, selectable in Settings:</p>
+                <ul>
+                    <li><strong>Google Calendar</strong> — Creates events via the Google Calendar API (with sign-in) or opens Google Calendar with pre-filled details.</li>
+                    <li><strong>Apple Calendar</strong> — Downloads an .ics file that opens in Apple Calendar (or any app that supports .ics).</li>
+                </ul>
+
+                <h3>Scheduling Events</h3>
+                <ul>
+                    <li>Choose a date, time, and duration in the date/time picker.</li>
+                    <li><strong>All-day events</strong> — Check "All day" to create an event without a specific time. New events default to all-day.</li>
+                    <li><strong>Duration</strong> — Options from 15 minutes to 4 hours.</li>
+                    <li><strong>Location & Notes</strong> — Optional fields included in the calendar event.</li>
+                    <li><strong>Invitees</strong> — Add comma-separated email addresses to invite attendees.</li>
+                    <li>Click <strong>Skip</strong> to close without scheduling.</li>
+                </ul>
+
+                <h3>Repeating Events</h3>
+                <ul>
+                    <li>Set frequency (daily, weekly, monthly, yearly) and interval.</li>
+                    <li>For weekly: select specific days of the week.</li>
+                    <li>For monthly: select the day of the month.</li>
+                    <li>Choose when to end: never, on a specific date, or after N occurrences.</li>
+                    <li>Recurring events create proper RRULE entries in Google Calendar and .ics files.</li>
+                </ul>
+
+                <h3>Rescheduling</h3>
+                <ul>
+                    <li>Click the green schedule pill on a spoke or action to reschedule.</li>
+                    <li>The picker pre-fills with the existing schedule.</li>
+                    <li>Note: You may need to manually delete the old calendar entry if not using Google Calendar API sync.</li>
+                </ul>
+
+                <h3>Calendar Sync (Google)</h3>
+                <p>Sign in with Google in Settings to enable 2-way sync. This allows Brain Pie to create, update, and delete events automatically. If you delete or move an event in Google Calendar, the change syncs back to Brain Pie on page load.</p>
+
+                <h3>Event Naming</h3>
+                <ul>
+                    <li><strong>Single/Repeating spokes:</strong> "Spoke Name (Category/Slice)"</li>
+                    <li><strong>List actions:</strong> "Action Name (Spoke/Slice/Category)"</li>
+                </ul>
+            </div>
+
+            <!-- Page 5: Priorities -->
+            <div class="docs-page" id="docs-page-5">
+                <h3>The Priority List</h3>
+                <p>Brain Pie has a built-in priority system to highlight your most important items. The priority list is a ranked order — item #1 is your top priority.</p>
+
+                <h3>Adding Priorities</h3>
+                <ul>
+                    <li>Click the <strong>star (&#9733;)</strong> button next to any spoke or action in the summary cards, action popup, or scheduler overlays.</li>
+                    <li>Stars turn gold when an item is already prioritised.</li>
+                    <li>The prioritiser window opens automatically when you add a priority.</li>
+                </ul>
+
+                <h3>The Prioritiser Window</h3>
+                <ul>
+                    <li>Toggle with the <strong>&#9733; Priorities</strong> button in the top bar.</li>
+                    <li>Drag the title bar to move the window anywhere on screen.</li>
+                    <li>Shows the top 5 items by default — click "Show all" to see the full list.</li>
+                    <li><strong>Drag to reorder</strong> items within the list to change their rank.</li>
+                    <li><strong>Click the star</strong> on an item to bump it to position #1 (clicking #1's star removes it).</li>
+                    <li><strong>Click an item's name</strong> to navigate to it on the chart (expands the parent slice and opens the action popup if applicable).</li>
+                    <li><strong>Click ✕</strong> next to an item to remove it from the list.</li>
+                </ul>
+
+                <h3>Priority Stars on the Chart</h3>
+                <ul>
+                    <li>Prioritised spokes show a gold star on the chart (both pie and treemap views).</li>
+                    <li>Top-5 items get a larger star for extra visibility.</li>
+                    <li>Click the star on the chart to bump that item's priority.</li>
+                </ul>
+
+                <h3>Automatic Removal</h3>
+                <p>Checking off a completed action (List type) automatically removes it from the priority list.</p>
+            </div>
+
+            <!-- Page 6: Cloud Sync -->
+            <div class="docs-page" id="docs-page-6">
+                <h3>How Cloud Sync Works</h3>
+                <p>Brain Pie can optionally sync your data across devices using Firebase Realtime Database. You provide your own Firebase project — Brain Pie never stores your data on its servers.</p>
+
+                <h3>Setting Up</h3>
+                <ul>
+                    <li>Go to <strong>Settings → Cloud Sync → Enable Cloud Sync</strong>.</li>
+                    <li>Paste your Firebase project config JSON and click "Connect to Firebase".</li>
+                    <li>Sign in with Google to authenticate.</li>
+                    <li>On first sync, you'll be asked whether to push your local data to the cloud or start fresh.</li>
+                </ul>
+
+                <h3>Sharing with Other Devices</h3>
+                <ul>
+                    <li>After connecting, a shareable URL is generated with your Firebase config encoded in it.</li>
+                    <li>Open this URL on another device to automatically connect to the same Firebase project.</li>
+                    <li>You can also export the Firebase config as a JSON file.</li>
+                </ul>
+
+                <h3>Real-Time Sync</h3>
+                <p>Changes sync instantly across all connected devices. The sync indicator in the UI shows connection status.</p>
+
+                <h3>Offline Fallback</h3>
+                <p>If the Firebase connection is lost, Brain Pie automatically falls back to localStorage. Your data is preserved locally and will sync when the connection is restored.</p>
+            </div>
+
+            <!-- Page 7: Import / Export -->
+            <div class="docs-page" id="docs-page-7">
+                <h3>Exporting Data</h3>
+                <ul>
+                    <li>Go to <strong>Settings → Export Data & Settings to JSON</strong>.</li>
+                    <li>A selection tree lets you choose which categories, slices, and spokes to include.</li>
+                    <li>Toggle "Include actions" to export with or without action details.</li>
+                    <li>Use Select All / Deselect All for quick selection.</li>
+                    <li>The exported JSON file can be saved as a backup or shared with others.</li>
+                </ul>
+
+                <h3>Importing Data</h3>
+                <ul>
+                    <li>Go to <strong>Settings → Import</strong> and select a JSON file.</li>
+                    <li><strong>Step 1 — Select:</strong> Choose which items to import. Items marked with a link icon (🔗) will merge with existing data of the same name.</li>
+                    <li><strong>Step 2 — Confirm:</strong> Review what will be added or merged before importing.</li>
+                </ul>
+
+                <h3>Smart Merge</h3>
+                <p>Importing uses name-based matching (case-insensitive) to detect existing items:</p>
+                <ul>
+                    <li><strong>Categories</strong> with the same name → imported slices are added to the existing category.</li>
+                    <li><strong>Slices</strong> with the same name → imported spokes are added to the existing slice.</li>
+                    <li><strong>Spokes</strong> with the same name → imported actions are added to the existing spoke.</li>
+                </ul>
+
+                <h3>Quick Replace</h3>
+                <p>Use the <strong>Replace All</strong> button to completely replace your current data with the imported file. This is useful for restoring a full backup.</p>
+
+                <h3>Scheduled Actions on Import</h3>
+                <p>If imported data contains scheduled actions, calendar events are automatically created during the import process.</p>
+            </div>
+
+            <div class="docs-footer">
+                <button class="secondary docs-prev" onclick="UI.docsPagePrev()">&#8592; Previous</button>
+                <button class="secondary docs-next" onclick="UI.docsPageNext()">Next &#8594;</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Disclaimer Overlay -->
     <div class="disclaimer-overlay" id="disclaimer-overlay" onclick="UI.closeDisclaimer()">
         <div class="disclaimer-content" onclick="event.stopPropagation()">
@@ -386,6 +648,9 @@
                 <h3>Help</h3>
                 <button class="tertiary" onclick="TutorialManager.restart(); UI.closeSettings();">
                     📖 Restart Tutorial
+                </button>
+                <button class="tertiary" onclick="UI.closeSettings(); UI.openDocs();" style="margin-top: 8px;">
+                    📄 Full Documentation
                 </button>
             </div>
 
