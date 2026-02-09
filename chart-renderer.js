@@ -603,7 +603,7 @@ const ChartRenderer = {
             .attr('d', outerArc)
             .attr('fill', d => d.data.color)
             .attr('stroke', 'white')
-            .attr('stroke-width', 3)
+            .attr('stroke-width', 2)
             .attr('opacity', 0.7);
 
         categorySlices
@@ -725,7 +725,34 @@ const ChartRenderer = {
                 .attr('d', innerArc)
                 .attr('fill', d => d.data.color)
                 .attr('stroke', 'white')
-                .attr('stroke-width', 2);
+                .attr('stroke-width', 1);
+
+            // Draw thicker borders on category boundaries (full pie view only)
+            if (!this.expandedView) {
+                const borderArc = d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(this.innerRadius);
+
+                itemSlices.each(function(d, i) {
+                    const g = d3.select(this);
+                    // First item in category — thick border on start edge
+                    if (i === 0) {
+                        g.append('path')
+                            .attr('d', borderArc({ startAngle: d.startAngle, endAngle: d.startAngle }))
+                            .attr('stroke', 'white')
+                            .attr('stroke-width', 2)
+                            .attr('fill', 'none');
+                    }
+                    // Last item in category — thick border on end edge
+                    if (i === items.length - 1) {
+                        g.append('path')
+                            .attr('d', borderArc({ startAngle: d.endAngle, endAngle: d.endAngle }))
+                            .attr('stroke', 'white')
+                            .attr('stroke-width', 2)
+                            .attr('fill', 'none');
+                    }
+                });
+            }
 
             itemSlices
                 .on('mouseover', (event, d) => {
