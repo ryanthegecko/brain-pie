@@ -197,6 +197,10 @@ const TutorialManager = {
         if (localStorage.getItem(this.COMPLETED_KEY)) {
             return false;
         }
+        // Skip tutorial if loading with Firebase config URL — data will come from cloud
+        if (new URLSearchParams(window.location.search).has('config')) {
+            return false;
+        }
         return true;
     },
 
