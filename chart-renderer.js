@@ -363,8 +363,12 @@ const ChartRenderer = {
                         .attr('ry', 10)
                         .attr('fill', pillColor);
 
-                    // Borders: orange today, black tomorrow, white otherwise
-                    if (isTodayEvent) {
+                    // Borders: past=dark orange, today=orange, tomorrow=black, else white
+                    const isPastEvent = scheduledDate && this.isPast(scheduledDate);
+                    if (isPastEvent) {
+                        rect.attr('stroke', '#e65100')
+                            .attr('stroke-width', 2);
+                    } else if (isTodayEvent) {
                         rect.attr('stroke', '#FF9800')
                             .attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
@@ -575,9 +579,14 @@ const ChartRenderer = {
             }
         }
 
-        // Restore base radius (in case expanded view changed it)
-        this.outerRadius = this.baseOuterRadius;
-        this.innerRadius = this.outerRadius - this.baseCategoryRingWidth;
+        // Restore base radius, shrink 30% when in expanded view
+        if (this.expandedView) {
+            this.outerRadius = this.baseOuterRadius * 0.7;
+            this.innerRadius = this.outerRadius - this.baseCategoryRingWidth;
+        } else {
+            this.outerRadius = this.baseOuterRadius;
+            this.innerRadius = this.outerRadius - this.baseCategoryRingWidth;
+        }
 
         // Outer ring (categories)
         const outerPie = d3.pie()
@@ -841,8 +850,9 @@ const ChartRenderer = {
                     
                     // Exponential scaling: more vertical = longer extension
                     const scaleFactor = Math.pow(1 - horizontalness, 2);
-                    const baseExtension = 15;
-                    const maxExtension = 46;
+                    const isExpanded = !!this.expandedView;
+                    const baseExtension = isExpanded ? 40 : 15;
+                    const maxExtension = isExpanded ? 90 : 46;
                     const additionalExtension = scaleFactor * (maxExtension - baseExtension);
                     const totalExtension = baseExtension + additionalExtension;
                     
@@ -910,6 +920,10 @@ const ChartRenderer = {
                         .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .text(labelText);
 
+                    if (isExpanded) {
+                        spokeLabel.style('font-size', '18px');
+                    }
+
                     // Apply text styling based on spoke type
                     Object.keys(textStyle).forEach(key => {
                         spokeLabel.style(key, textStyle[key]);
@@ -921,7 +935,7 @@ const ChartRenderer = {
                     }
 
                     // Add green pill for scheduled spokes (just the date/time portion)
-                    ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide);
+                    ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, isExpanded ? 16 : 12);
 
                 });
             });
@@ -1326,7 +1340,10 @@ const ChartRenderer = {
                                     .attr('rx', 6)
                                     .attr('fill', pillColor);
 
-                                if (isTodayEvent) {
+                                const isPastEvent = scheduledDate && that.isPast(scheduledDate);
+                                if (isPastEvent) {
+                                    rect.attr('stroke', '#e65100').attr('stroke-width', 1.5);
+                                } else if (isTodayEvent) {
                                     rect.attr('stroke', '#FF9800').attr('stroke-width', 1.5);
                                 } else if (isTomorrowEvent) {
                                     rect.attr('stroke', '#000000').attr('stroke-width', 1.5);
