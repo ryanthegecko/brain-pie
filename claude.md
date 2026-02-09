@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.12
+**Current Version:** v0.13
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -154,7 +154,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - ViewBox scaling for smaller viewports (see Responsive Design section)
 
 #### 3. **UI Controller** (`ui-controller.js`)
-- Manages all overlay states (menu, settings, datetime picker, spoke config, disclaimer)
+- Manages all overlay states (menu, settings, datetime picker, spoke config, disclaimer, documentation)
 - Handles drag-and-drop reordering
 - Builds the category/item list in the bottom section
 - Manages the spoke builder for adding new items
@@ -169,6 +169,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Spoke Configuration (set spoke type, add/schedule actions)
 - Prioritiser Window (fixed, draggable, with action buttons per spoke type)
 - Disclaimer/About
+- Documentation (7-page in-app reference with nav and prev/next)
 
 #### 4. **Storage** (`storage.js`)
 - localStorage persistence with auto-save
@@ -329,6 +330,24 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.13 (February 2026)
+In-app documentation and prioritiser persistence:
+
+**Full Documentation Popup:**
+- New 7-page in-app documentation accessible from Settings → Help → "Full Documentation"
+- Pill-style page navigation buttons (green active state) with prev/next footer
+- Pages cover: Overview, Getting Started, Spokes & Actions, Calendar, Priorities, Cloud Sync, Import/Export
+- Scrollable page content within fixed-height overlay
+- Click outside or ✕ to close
+- Mobile responsive: nav pills wrap, content fits 90vh
+- Follows existing overlay pattern (disclaimer-style fixed overlay with `.active` toggle)
+
+**Prioritiser State Persistence:**
+- Prioritiser window open/closed state and position now restore on page load
+- `restorePrioritiserState()` called during app initialization
+
+---
 
 ### v0.12 (February 2026)
 Calendar enhancements, tutorial UX improvements, and action popup fixes:
@@ -1051,6 +1070,14 @@ Debug.log('message', data)
 - [ ] **Tutorial**: Skip button fixed to bottom-right on all steps
 - [ ] **Tutorial**: Auto-progress on "Nice Work" and "Edit From Here Too" steps
 - [ ] **Tutorial**: Example data saved to localStorage only (not Firebase)
+- [ ] **Docs popup**: Opens from Settings → Help → "Full Documentation"
+- [ ] **Docs popup**: 7 pages with pill-style nav buttons
+- [ ] **Docs popup**: Previous hidden on page 1, Next hidden on page 7
+- [ ] **Docs popup**: Click outside or ✕ to close
+- [ ] **Docs popup**: Content scrolls when exceeding viewport height
+- [ ] **Docs popup**: Mobile responsive (nav wraps, fits 90vh)
+- [ ] **Docs popup**: All page content accurate and covers app features
+- [ ] **Prioritiser state**: Window open/closed and position restored on page load
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
