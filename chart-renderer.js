@@ -1705,66 +1705,68 @@ const ChartRenderer = {
             btnX -= 16;
 
             // 5) Calendar icon / schedule pill (hidden when completed)
-            const calGroup = rowGroup.append('g')
-                .attr('class', 'cal-group')
-                .style('cursor', 'pointer')
-                .style('display', isCompleted ? 'none' : null)
-                .on('click', (event) => {
-                    event.stopPropagation();
-                    that.openCalendarForAction(child, spokeData, sliceName, categoryName, childDataLocation);
-                });
+            if (!isCompleted) {
+                const calGroup = rowGroup.append('g')
+                    .attr('class', 'cal-group')
+                    .style('cursor', 'pointer')
+                    .style('display', isCompleted ? 'none' : null)
+                    .on('click', (event) => {
+                        event.stopPropagation();
+                        that.openCalendarForAction(child, spokeData, sliceName, categoryName, childDataLocation);
+                    });
 
-            if (hasSchedule) {
-                const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time || '00:00'}`);
-                const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                const timeStr = child.scheduled.time ? that.formatCompactTime(child.scheduled.time) : '';
-                const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
-                const pillW = pillLabel.length * 13 + 24;
-                btnX -= isCompleted ? 0 : pillW;
-                const isPastAction = that.isPast(schedDate);
-                const isTodayAction = that.isToday(schedDate);
-                const isTomorrowAction = that.isTomorrow(schedDate);
-                const pillRect = calGroup.append('rect')
-                    .attr('x', btnX)
-                    .attr('y', rowY + 6)
-                    .attr('width', pillW)
-                    .attr('height', 40)
-                    .attr('rx', 20)
-                    .attr('fill', isPastAction ? '#FF9800' : '#4CAF50');
-                if (isPastAction) {
-                    pillRect.attr('stroke', '#e65100').attr('stroke-width', 2);
-                } else if (isTodayAction) {
-                    pillRect.attr('stroke', '#FF9800').attr('stroke-width', 2);
-                } else if (isTomorrowAction) {
-                    pillRect.attr('stroke', '#000000').attr('stroke-width', 2);
+                if (hasSchedule) {
+                    const schedDate = new Date(`${child.scheduled.date}T${child.scheduled.time || '00:00'}`);
+                    const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    const timeStr = child.scheduled.time ? that.formatCompactTime(child.scheduled.time) : '';
+                    const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
+                    const pillW = pillLabel.length * 13 + 24;
+                    btnX -= isCompleted ? 0 : pillW;
+                    const isPastAction = that.isPast(schedDate);
+                    const isTodayAction = that.isToday(schedDate);
+                    const isTomorrowAction = that.isTomorrow(schedDate);
+                    const pillRect = calGroup.append('rect')
+                        .attr('x', btnX)
+                        .attr('y', rowY + 6)
+                        .attr('width', pillW)
+                        .attr('height', 40)
+                        .attr('rx', 20)
+                        .attr('fill', isPastAction ? '#FF9800' : '#4CAF50');
+                    if (isPastAction) {
+                        pillRect.attr('stroke', '#e65100').attr('stroke-width', 2);
+                    } else if (isTodayAction) {
+                        pillRect.attr('stroke', '#FF9800').attr('stroke-width', 2);
+                    } else if (isTomorrowAction) {
+                        pillRect.attr('stroke', '#000000').attr('stroke-width', 2);
+                    } else {
+                        pillRect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
+                    }
+                    calGroup.append('text')
+                        .attr('x', btnX + pillW / 2)
+                        .attr('y', rowY + 32)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', '18px')
+                        .attr('fill', '#fff')
+                        .attr('font-weight', 'bold')
+                        .text(pillLabel);
                 } else {
-                    pillRect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
+                    const calPillW = 52;
+                    btnX -= isCompleted ? 0 : calPillW;
+                    calGroup.append('rect')
+                        .attr('x', btnX)
+                        .attr('y', rowY + 6)
+                        .attr('width', calPillW)
+                        .attr('height', 40)
+                        .attr('rx', 8)
+                        .attr('fill', '#2196F3');
+                    calGroup.append('text')
+                        .attr('x', btnX + calPillW / 2)
+                        .attr('y', rowY + 33)
+                        .attr('text-anchor', 'middle')
+                        .attr('font-size', '24px')
+                        .text('\uD83D\uDCC5');
                 }
-                calGroup.append('text')
-                    .attr('x', btnX + pillW / 2)
-                    .attr('y', rowY + 32)
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', '18px')
-                    .attr('fill', '#fff')
-                    .attr('font-weight', 'bold')
-                    .text(pillLabel);
-            } else {
-                const calPillW = 52;
-                btnX -= isCompleted ? 0 : calPillW;
-                calGroup.append('rect')
-                    .attr('x', btnX)
-                    .attr('y', rowY + 6)
-                    .attr('width', calPillW)
-                    .attr('height', 40)
-                    .attr('rx', 8)
-                    .attr('fill', '#2196F3');
-                calGroup.append('text')
-                    .attr('x', btnX + calPillW / 2)
-                    .attr('y', rowY + 33)
-                    .attr('text-anchor', 'middle')
-                    .attr('font-size', '24px')
-                    .text('\uD83D\uDCC5');
-            }
+            } // end if (!isCompleted)
         });
 
         // New action input row at bottom
