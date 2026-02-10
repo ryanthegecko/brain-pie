@@ -124,7 +124,7 @@ const TutorialManager = {
             content: 'Click the "Spoke type" button next to your new Spoke to make it a schedulable task.',
             highlightDynamic: true,
             noSpotlight: true,
-            nextEvent: 'spoke-type-picker-opened'
+            nextEvent: 'spoke-editor-opened'
         },
         {
             id: 'select-single-type',
@@ -533,13 +533,13 @@ const TutorialManager = {
         if (stepId === 'change-spoke-type') {
             // Find the spoke type button for the newly added spoke
             // Check Tab 2 first (menu flow), then bottom list
-            const tab2Btns = document.querySelectorAll('.tab2-spoke-item .secondary[onclick*="showSpokeTypePicker"]');
+            const tab2Btns = document.querySelectorAll('.tab2-spoke-item .secondary[onclick*="showSpokeEditor"]');
             if (tab2Btns.length > 0) {
-                return '.tab2-spoke-wrapper:last-child .tab2-spoke-item .secondary[onclick*="showSpokeTypePicker"]';
+                return '.tab2-spoke-wrapper:last-child .tab2-spoke-item .secondary[onclick*="showSpokeEditor"]';
             }
-            const btns = document.querySelectorAll('.spoke-item .secondary[onclick*="showSpokeTypePicker"]');
+            const btns = document.querySelectorAll('.spoke-item .secondary[onclick*="showSpokeEditor"]');
             if (btns.length > 0) {
-                return '.spoke-item:last-child .secondary[onclick*="showSpokeTypePicker"]';
+                return '.spoke-item:last-child .secondary[onclick*="showSpokeEditor"]';
             }
         }
         return null;
