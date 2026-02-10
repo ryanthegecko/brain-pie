@@ -3104,13 +3104,20 @@ const UI = {
 
         if (meta && meta.pieIds) {
             // Firebase has multi-pie data — load it
-            const pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+            let pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+            let pieNames = meta.pieNames || {};
+
+            // Push any local-only pies to Firebase silently
+            const merged = await StorageAdapter.pushLocalOnlyPies(pieIds, pieNames);
+            pieIds = merged.pieIds;
+            pieNames = merged.pieNames;
+
             const activePieId = pieIds[0]; // Default to first pie
 
             // Update local meta to match Firebase
             DataModel.pieMeta = {
                 pieIds: pieIds,
-                pieNames: meta.pieNames || {},
+                pieNames: pieNames,
                 activePieId: activePieId
             };
             DataModel.setActivePieId(activePieId);
@@ -3121,7 +3128,7 @@ const UI = {
             if (pieData && pieData.categories) {
                 DataModel.categories = pieData.categories;
                 DataModel.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
-                DataModel.currentPieName = meta.pieNames?.[activePieId] || pieData.name || 'My Pie';
+                DataModel.currentPieName = pieNames[activePieId] || pieData.name || 'My Pie';
                 DataModel.normalizeAllSpokes();
 
                 // Save to localStorage backup
