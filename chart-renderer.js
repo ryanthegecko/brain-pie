@@ -120,6 +120,97 @@ const ChartRenderer = {
         return null;
     },
 
+    // Compute the next occurrence date (YYYY-MM-DD) on or after today for a recurrence object
+    getNextOccurrence(rec) {
+        if (!rec || !rec.startDate) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(rec.startDate + 'T00:00:00');
+        start.setHours(0, 0, 0, 0);
+        const freq = (rec.frequency || 'WEEKLY').toUpperCase();
+        const interval = rec.interval || 1;
+        const dayNames = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
+        // Check end conditions
+        const checkEnd = (candidate) => {
+            if (rec.until) {
+                const until = new Date(rec.until + 'T23:59:59');
+                if (candidate > until) return null;
+            }
+            return candidate;
+        };
+
+        const fmt = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+        if (freq === 'DAILY') {
+            if (start >= today) return rec.startDate;
+            // Find next occurrence respecting interval
+            const diffDays = Math.ceil((today - start) / 86400000);
+            const periods = Math.ceil(diffDays / interval);
+            const next = new Date(start);
+            next.setDate(next.getDate() + periods * interval);
+            return checkEnd(next) ? fmt(next) : rec.startDate;
+        }
+
+        if (freq === 'WEEKLY') {
+            // If byDay not set, derive from startDate's day of week
+            const targetDays = (rec.byDay && rec.byDay.length > 0)
+                ? rec.byDay.map(d => dayNames.indexOf(d.toUpperCase())).filter(d => d >= 0).sort((a, b) => a - b)
+                : [start.getDay()];
+            if (targetDays.length === 0) return rec.startDate;
+            const todayDay = today.getDay();
+            // Check today and upcoming days this week first
+            for (const d of targetDays) {
+                if (d >= todayDay) {
+                    const candidate = new Date(today);
+                    candidate.setDate(candidate.getDate() + (d - todayDay));
+                    if (candidate >= start) {
+                        if (checkEnd(candidate)) return fmt(candidate);
+                    }
+                }
+            }
+            // Next week
+            for (const d of targetDays) {
+                const daysAhead = (7 - todayDay + d);
+                const candidate = new Date(today);
+                candidate.setDate(candidate.getDate() + daysAhead);
+                if (candidate >= start) {
+                    if (checkEnd(candidate)) return fmt(candidate);
+                }
+            }
+            return rec.startDate;
+        }
+
+        if (freq === 'MONTHLY') {
+            const dayOfMonth = rec.byMonthDay || start.getDate();
+            // Try this month
+            const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
+            if (thisMonth >= today && thisMonth >= start) {
+                if (checkEnd(thisMonth)) return fmt(thisMonth);
+            }
+            // Next month
+            const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth);
+            if (nextMonth >= start) {
+                if (checkEnd(nextMonth)) return fmt(nextMonth);
+            }
+            return rec.startDate;
+        }
+
+        if (freq === 'YEARLY') {
+            const anniv = new Date(today.getFullYear(), start.getMonth(), start.getDate());
+            if (anniv >= today && anniv >= start) {
+                if (checkEnd(anniv)) return fmt(anniv);
+            }
+            const nextAnniv = new Date(today.getFullYear() + 1, start.getMonth(), start.getDate());
+            if (nextAnniv >= start) {
+                if (checkEnd(nextAnniv)) return fmt(nextAnniv);
+            }
+            return rec.startDate;
+        }
+
+        return rec.startDate;
+    },
+
     // Get the scheduled date for a spoke (returns Date or null)
     getScheduledDate(spoke) {
         if (typeof spoke === 'string') return null;
@@ -131,7 +222,8 @@ const ChartRenderer = {
         }
         if (type === 'repeating' && spoke.metadata && spoke.metadata.recurrence) {
             const rec = spoke.metadata.recurrence;
-            if (rec.startDate) return new Date(`${rec.startDate}T${rec.time || '00:00'}`);
+            const nextDate = this.getNextOccurrence(rec);
+            if (nextDate) return new Date(`${nextDate}T${rec.time || '00:00'}`);
         }
         return null;
     },
@@ -209,37 +301,37 @@ const ChartRenderer = {
         return `${hour12}:${String(m).padStart(2, '0')}${period}`;
     },
 
-    // Format recurrence data into short pill text like "Mon, Wed, 17:45"
+    // Format recurrence data into short pill text.
+    // Weekly with specific days: keep day names (e.g. "Mon, Wed, Fri 9AM")
+    // Monthly/Yearly/Daily: show next occurrence date (e.g. "Feb 15", "1st Mar")
     formatRecurrencePillText(recurrence) {
         if (!recurrence) return '🔁';
 
-        const dayNames = { MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun' };
-        let parts = [];
-
         const freq = recurrence.frequency;
-        const interval = recurrence.interval || 1;
+        const timeStr = recurrence.time ? ' ' + this.formatCompactTime(recurrence.time) : '';
 
+        // Weekly with specific days — keep day names
         if (freq === 'WEEKLY' && recurrence.byDay && recurrence.byDay.length > 0) {
-            parts.push(recurrence.byDay.map(d => dayNames[d] || d).join(', '));
-        } else if (freq === 'DAILY') {
-            parts.push(interval === 1 ? 'Daily' : `Every ${interval}d`);
-        } else if (freq === 'WEEKLY') {
-            parts.push(interval === 1 ? 'Weekly' : `Every ${interval}w`);
-        } else if (freq === 'MONTHLY') {
-            if (recurrence.byMonthDay) {
-                parts.push(`${recurrence.byMonthDay}${UI.getOrdinalSuffix(recurrence.byMonthDay)}`);
-            } else {
-                parts.push(interval === 1 ? 'Monthly' : `Every ${interval}mo`);
-            }
-        } else if (freq === 'YEARLY') {
-            parts.push(interval === 1 ? 'Yearly' : `Every ${interval}y`);
+            const dayNames = { MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun' };
+            return recurrence.byDay.map(d => dayNames[d] || d).join(', ') + timeStr;
         }
 
-        if (recurrence.time) {
-            parts.push(this.formatCompactTime(recurrence.time));
+        // For other frequencies, show the next occurrence date
+        const nextDate = this.getNextOccurrence(recurrence);
+        if (!nextDate) {
+            return recurrence.time ? this.formatCompactTime(recurrence.time) : '🔁';
         }
 
-        return parts.join(', ');
+        const d = new Date(nextDate + 'T00:00:00');
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        if (freq === 'MONTHLY') {
+            const day = d.getDate();
+            return `${day}${UI.getOrdinalSuffix(day)} ${months[d.getMonth()]}${timeStr}`;
+        }
+
+        // Yearly, Daily, or weekly without specific days
+        return `${months[d.getMonth()]} ${d.getDate()}${timeStr}`;
     },
 
     // Get indicator for static spokes only (other types use pills)
@@ -652,8 +744,14 @@ const ChartRenderer = {
             // Collapse branch if one is expanded
             if (this.collapseIfBranchExpanded()) return;
             if (this.expandedView) {
-                // In expanded view, clicking outer ring collapses back to full pie
-                this.collapseToFullPie();
+                if (this.expandedView.type === 'slice') {
+                    // In slice view, clicking outer ring switches to category view
+                    this.expandedView = { type: 'category', categoryId: d.data.id };
+                    App.render();
+                } else {
+                    // In category view, clicking outer ring collapses back to full pie
+                    this.collapseToFullPie();
+                }
             } else {
                 this.expandedView = { type: 'category', categoryId: d.data.id };
                 App.render();
@@ -1670,7 +1768,7 @@ const ChartRenderer = {
                     }
                     // Update title style
                     rowGroup.select('.action-title')
-                        .attr('fill', nowCompleted ? '#999' : '#333')
+                        .style('color', nowCompleted ? '#999' : '#333')
                         .style('text-decoration', nowCompleted ? 'line-through' : 'none');
                     // Toggle calendar pill visibility
                     rowGroup.select('.cal-group')
@@ -1699,15 +1797,24 @@ const ChartRenderer = {
             }
             cursorX += checkSize + 14;
 
-            // 3) Title
-            rowGroup.append('text')
-                .attr('class', 'action-title')
+            // 3) Title — use foreignObject so URLs in action text are clickable
+            const titleMaxWidth = rightEdge - cursorX - 100;
+            const titleFo = rowGroup.append('foreignObject')
+                .attr('class', 'action-title-fo')
                 .attr('x', cursorX)
-                .attr('y', rowY + 30)
-                .attr('font-size', '22px')
-                .attr('fill', isCompleted ? '#999' : '#333')
+                .attr('y', rowY + 6)
+                .attr('width', Math.max(titleMaxWidth, 100))
+                .attr('height', rowHeight - 12);
+            const titleDiv = titleFo.append('xhtml:div')
+                .attr('class', 'action-title')
+                .style('font-size', '22px')
+                .style('color', isCompleted ? '#999' : '#333')
                 .style('text-decoration', isCompleted ? 'line-through' : 'none')
-                .text(childText);
+                .style('line-height', (rowHeight - 12) + 'px')
+                .style('white-space', 'nowrap')
+                .style('overflow', 'hidden')
+                .style('text-overflow', 'ellipsis')
+                .html(UI.linkifyUrls(childText));
 
             // Right-side buttons (laid out right-to-left)
             let btnX = rightEdge;

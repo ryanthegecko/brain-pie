@@ -966,6 +966,19 @@ textarea {
     content: none;
 }
 
+.item-card .spoke-list li .action-container {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px;
+    background: #f5f5f5;
+    border-radius: 3px;
+    max-width: calc(100% - 20px);
+    padding-right: 4px;
+    margin-right: 20px;
+}
+
 .empty-category {
     color: #999;
     font-style: italic;
@@ -2060,6 +2073,210 @@ select:focus {
     padding: 15px;
     background: #e8f5e9;
     border-radius: 8px;
+}
+
+/* Calendar Import Overlay */
+.cal-import-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2006;
+}
+
+.cal-import-overlay.active {
+    display: flex;
+}
+
+.cal-import-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 700px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+@media (max-width: 1024px) {
+    .cal-import-content {
+        width: 98vw;
+        padding: 20px;
+        max-height: 95vh;
+    }
+}
+
+.cal-import-content h2 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 22px;
+}
+
+.cal-import-step-content {
+    display: none;
+}
+
+.cal-import-step-content.active {
+    display: block;
+}
+
+.cal-import-range {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.cal-import-target {
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+.cal-import-target h3 {
+    font-size: 14px;
+    color: #333;
+    margin: 0;
+}
+
+.cal-import-target-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.cal-import-target-row label {
+    font-size: 13px;
+    color: #666;
+    min-width: 65px;
+}
+
+.cal-import-target-row select {
+    flex: 1;
+    padding: 4px 8px;
+    font-size: 13px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.cal-import-event-list {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.cal-import-event {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+}
+
+.cal-import-event:last-child {
+    border-bottom: none;
+}
+
+.cal-import-event:hover {
+    background: #f8f8f8;
+}
+
+.cal-import-event.selected {
+    background: #e8f5e9;
+}
+
+.cal-import-event input[type="checkbox"] {
+    flex-shrink: 0;
+}
+
+.cal-import-event-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cal-import-event-title {
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cal-import-event-detail {
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.cal-import-event-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: #e3f2fd;
+    color: #1565c0;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.cal-import-event-badge.recurring {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.cal-import-review {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.cal-import-review-item {
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.cal-import-review-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.cal-import-review-type {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 6px;
+}
+
+.cal-import-review-target {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #666;
+}
+
+.cal-import-review-target select {
+    padding: 3px 6px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.cal-import-review-target button {
+    font-size: 11px;
+    padding: 2px 6px;
 }
 
 /* Import Preview Overlay */
