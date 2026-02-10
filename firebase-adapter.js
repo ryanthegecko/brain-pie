@@ -22,6 +22,9 @@ const FirebaseAdapter = {
     // Real-time listener unsubscribe function
     unsubscribeListener: null,
 
+    // Per-user priority listener unsubscribe function
+    unsubscribePriorityListener: null,
+
     // Connection state
     connected: false,
 
@@ -363,6 +366,7 @@ const FirebaseAdapter = {
         if (!this.auth) return;
 
         this.unsubscribeFromChanges();
+        this.unsubscribeFromPriorityChanges();
         await this.auth.signOut();
         this.user = null;
         this.connected = false;
@@ -398,7 +402,19 @@ const FirebaseAdapter = {
     },
 
     /**
+     * Get the database path for the current user's priorities
+     * @returns {string} Database path
+     */
+    getUserPriorityPath() {
+        if (!this.user) {
+            throw new Error('Not authenticated');
+        }
+        return `brainpie/${this.config.projectId}/userPriorities/${this.user.uid}`;
+    },
+
+    /**
      * Save data to Firebase Realtime Database
+     * Strips priorityList from shared data (priorities are per-user)
      * @param {Object} data - Data to save
      * @returns {Promise}
      */
@@ -416,8 +432,10 @@ const FirebaseAdapter = {
 
         try {
             const path = this.getDataPath();
+            // Strip priorityList from shared data — priorities are per-user
+            const { priorityList, ...sharedData } = data;
             const dataWithMeta = {
-                ...data,
+                ...sharedData,
                 lastModified: firebase.database.ServerValue.TIMESTAMP,
                 lastModifiedBy: this.user.uid,
                 lastModifiedByName: this.user.displayName || this.user.email
@@ -434,6 +452,137 @@ const FirebaseAdapter = {
             Debug.log('Firebase save failed:', e.message);
             return false;
         }
+    },
+
+    /**
+     * Save priorities to per-user Firebase path
+     * @param {Array} priorityList - Priority list array
+     * @returns {Promise<boolean>}
+     */
+    async savePriorities(priorityList) {
+        if (!this.db || !this.user) {
+            Debug.log('Cannot save priorities to Firebase: not connected');
+            return false;
+        }
+
+        if (typeof Debug !== 'undefined' && Debug.isActive('forceOfflineMode')) {
+            Debug.log('Firebase priority save skipped (offline debug mode)');
+            return false;
+        }
+
+        try {
+            const path = this.getUserPriorityPath();
+            // Use null instead of undefined for empty list (Firebase rejects undefined)
+            await this.db.ref(path).set(priorityList.length > 0 ? priorityList : null);
+
+            if (typeof Debug !== 'undefined' && Debug.isActive('firebaseVerbose')) {
+                Debug.log('Firebase priority save successful:', path);
+            }
+
+            return true;
+        } catch (e) {
+            Debug.log('Firebase priority save failed:', e.message);
+            return false;
+        }
+    },
+
+    /**
+     * Load priorities from per-user Firebase path
+     * @returns {Promise<Array|null>}
+     */
+    async loadPriorities() {
+        if (!this.db || !this.user) {
+            Debug.log('Cannot load priorities from Firebase: not connected');
+            return null;
+        }
+
+        if (typeof Debug !== 'undefined' && Debug.isActive('forceOfflineMode')) {
+            Debug.log('Firebase priority load skipped (offline debug mode)');
+            return null;
+        }
+
+        try {
+            const path = this.getUserPriorityPath();
+            const snapshot = await this.db.ref(path).get();
+
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                // Firebase may convert arrays to objects — normalize
+                const list = Array.isArray(data) ? data : Object.values(data || {});
+
+                if (typeof Debug !== 'undefined' && Debug.isActive('firebaseVerbose')) {
+                    Debug.log('Firebase priority load successful:', path, list);
+                }
+
+                return list;
+            }
+
+            Debug.log('Firebase: no priorities at path', path);
+            return [];
+        } catch (e) {
+            Debug.log('Firebase priority load failed:', e.message);
+            return null;
+        }
+    },
+
+    /**
+     * Subscribe to real-time priority changes (same user, other devices)
+     * @param {Function} callback - Called with priority array when changes occur
+     */
+    subscribeToPriorityChanges(callback) {
+        if (!this.db || !this.user) {
+            Debug.log('Cannot subscribe to priorities: not connected');
+            return;
+        }
+
+        this.unsubscribeFromPriorityChanges();
+
+        try {
+            const path = this.getUserPriorityPath();
+            const ref = this.db.ref(path);
+
+            this.unsubscribePriorityListener = ref.on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const list = Array.isArray(data) ? data : Object.values(data || {});
+
+                    if (typeof Debug !== 'undefined' && Debug.isActive('firebaseVerbose')) {
+                        Debug.log('Firebase priority real-time update:', list);
+                    }
+
+                    if (callback) {
+                        callback(list);
+                    }
+                } else {
+                    // No priorities yet — send empty array
+                    if (callback) {
+                        callback([]);
+                    }
+                }
+            }, (error) => {
+                Debug.log('Firebase priority listener error:', error.message);
+            });
+
+            Debug.log('Subscribed to Firebase priority changes at:', path);
+        } catch (e) {
+            Debug.log('Failed to subscribe to Firebase priorities:', e.message);
+        }
+    },
+
+    /**
+     * Unsubscribe from real-time priority changes
+     */
+    unsubscribeFromPriorityChanges() {
+        if (this.unsubscribePriorityListener && this.db && this.user) {
+            try {
+                const path = this.getUserPriorityPath();
+                this.db.ref(path).off('value', this.unsubscribePriorityListener);
+                Debug.log('Unsubscribed from Firebase priority changes');
+            } catch (e) {
+                Debug.log('Error unsubscribing from priorities:', e.message);
+            }
+        }
+        this.unsubscribePriorityListener = null;
     },
 
     /**

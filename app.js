@@ -121,19 +121,21 @@ const App = {
         if (typeof StorageAdapter !== 'undefined') {
             await StorageAdapter.init();
 
-            // Subscribe to real-time updates from Firebase
+            // Subscribe to real-time updates from Firebase (shared data — no priorities)
             StorageAdapter.subscribeToUpdates((data) => {
                 if (data && data.categories) {
                     Debug.log('Received remote data update');
                     // Clean internal metadata
-                    const { _saveId, _savedBy, ...cleanData } = data;
+                    const { _saveId, _savedBy, priorityList: _ignoredPriorities, ...cleanData } = data;
                     DataModel.categories = cleanData.categories;
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
-                    DataModel.priorityList = cleanData.priorityList || [];
+                    // Do NOT overwrite priorityList from shared data — priorities are per-user
                     DataModel.normalizeAllSpokes(); // Restore fields Firebase drops
+                    DataModel.validatePriorityList(); // Clean up orphans after shared data changes
 
                     // Save to localStorage so it's up-to-date on next page load
-                    Storage.save(cleanData);
+                    // Include current user's priorities in the local backup
+                    Storage.save({ ...cleanData, priorityList: DataModel.priorityList });
 
                     this.render();
                     Storage.showStatus('Synced from cloud', 'success');
@@ -144,10 +146,33 @@ const App = {
                     }
                 }
             });
+
+            // Subscribe to per-user priority changes (same user, other devices)
+            StorageAdapter.subscribeToPriorityChanges((priorityList) => {
+                Debug.log('Received remote priority update');
+                DataModel.priorityList = priorityList || [];
+                DataModel.validatePriorityList();
+                this.render();
+            });
         }
 
         // Load data (now async to support Firebase)
         await DataModel.loadFromStorageOrExample();
+
+        // Per-user priorities: load from Firebase user path if available
+        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            const userPriorities = await StorageAdapter.loadPriorities();
+            if (userPriorities !== null && userPriorities.length > 0) {
+                // User has priorities in their per-user path — use those
+                DataModel.priorityList = userPriorities;
+                DataModel.validatePriorityList();
+            } else if (DataModel.priorityList.length > 0) {
+                // Migration: user has priorities from the shared blob but none in per-user path
+                // Copy them to the per-user path as a one-time migration
+                Debug.log('Migrating shared priorities to per-user path');
+                await StorageAdapter.savePriorities(DataModel.priorityList);
+            }
+        }
 
         Controls.init();
         ChartRenderer.init('chart-container');
