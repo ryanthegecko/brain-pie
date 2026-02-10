@@ -1291,5 +1291,34 @@ const DataModel = {
 
     validatePriorityList() {
         this.priorityList = this.priorityList.filter(ref => this.resolvePriority(ref) !== null);
+    },
+
+    /**
+     * Scan all spokes and actions for existing calendarEventIds.
+     * Returns a Set of known IDs (for filtering already-imported events).
+     */
+    getExistingCalendarEventIds() {
+        const ids = new Set();
+        for (const category of this.categories) {
+            for (const item of (category.items || [])) {
+                for (const spoke of (item.subItems || [])) {
+                    if (typeof spoke !== 'object') continue;
+                    // Spoke-level calendarEventId (single/repeating)
+                    if (spoke.scheduled?.calendarEventId) {
+                        ids.add(spoke.scheduled.calendarEventId);
+                    }
+                    if (spoke.metadata?.calendarEventId) {
+                        ids.add(spoke.metadata.calendarEventId);
+                    }
+                    // Action-level calendarEventIds (list type)
+                    for (const child of (spoke.children || [])) {
+                        if (typeof child === 'object' && child.scheduled?.calendarEventId) {
+                            ids.add(child.scheduled.calendarEventId);
+                        }
+                    }
+                }
+            }
+        }
+        return ids;
     }
 };
