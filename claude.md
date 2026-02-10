@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.17
+**Current Version:** v0.18
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -246,6 +246,7 @@ Spokes can have different types that affect their behavior:
 ### 5. Calendar Integration
 - **Google Calendar** - Opens web interface with pre-filled event
 - **Apple Calendar** - Downloads .ics file
+- **Import from Google Calendar** - 2-step wizard to browse and import existing calendar events as spokes
 - **Custom scheduling** - Date/time picker for actions
 - **All-day events** - Checkbox to create all-day events (default for new events)
 - **Invitees** - Comma-separated email addresses added as attendees
@@ -350,6 +351,56 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.18 (February 2026)
+Import from Google Calendar, smarter recurrence pills, clickable URLs in action popups, and bug fixes:
+
+**Import from Google Calendar:**
+- New "Import from Google Calendar" button in Settings → Data section (visible when signed into Google)
+- 2-step wizard overlay: Step 1 (fetch & select events), Step 2 (review & assign targets)
+- Time range picker: Last 30 days, Last 90 days, or Custom date range
+- Default category/slice target with dropdown pickers and "+ New" inline creation
+- Per-event target override in Step 2 with category/slice dropdowns and "+ New" buttons
+- Events already tracked in Brain Pie are automatically excluded (no duplicate imports)
+- Select All / Deselect All controls with event count
+- One-time timed events → Single spokes with date, time, duration, and `calendarEventId`
+- All-day events → Single spokes with `allDay: true` and `calendarEventId`
+- Recurring events → Repeating spokes with parsed RRULE recurrence data and `calendarEventId`
+- Existing calendar sync works on imported events (detect moves/deletes on next page load)
+
+**New API Methods:**
+- `CalendarAdapter.listEvents(timeMin, timeMax)` — fetches events with pagination, `singleEvents=false` for master recurring events
+- `CalendarAdapter.parseRecurrence(rruleString, event)` — converts RRULE to Brain Pie's recurrence format (uppercase frequency, `byDay` codes, `byMonthDay`, `until`/`count`)
+- `DataModel.getExistingCalendarEventIds()` — scans all spokes/actions for known calendar event IDs
+
+**Smarter Recurrence Pills:**
+- Weekly events with specific days: keep day names in pill (e.g. "Mon, Wed, Fri 9AM")
+- Yearly events: show next occurrence date (e.g. "Feb 15")
+- Monthly events: show next occurrence with ordinal (e.g. "1st Mar")
+- Daily events: show next occurrence date (e.g. "Feb 12")
+- Repeating icon already signals recurrence, so pill text focuses on *when* not *what*
+
+**Yearly Date in Recurrence Descriptions:**
+- Compact format: "Feb 15, yearly" (for pills in summary cards)
+- Full format: "Every year on Feb 15" (for recurrence editor)
+- Both formats include time if the event is timed
+
+**Clickable URLs in Action Popup:**
+- Action names containing URLs are now clickable links in the chart action popup
+- Uses `foreignObject` with HTML rendering instead of SVG `<text>` (which can't contain links)
+- Links open in new tab with `target="_blank"` and `rel="noopener noreferrer"`
+- Checkbox completion toggle updates `color` style instead of SVG `fill` attribute
+
+**Firebase Auth Fix:**
+- Config URL sign-in banner no longer flashes for already-signed-in users
+- Replaced 1500ms `setTimeout` with Firebase SDK's native `auth.onAuthStateChanged` callback
+- Auth state resolves immediately from cache when user is already signed in
+
+**Schedule Pill Null-Time Fix:**
+- Clicking schedule pills on all-day events in summary cards no longer throws `Cannot read properties of undefined (reading 'split')`
+- Date/time picker now handles `null` time gracefully, defaulting to 09:00
+
+---
 
 ### v0.17 (February 2026)
 Focus Prioritised toggle to filter pie/treemap to only show prioritised items:
@@ -1340,6 +1391,33 @@ Debug.log('message', data)
 - [ ] **Focus Prioritised**: Spoke clicks open correct spoke editor (original index preserved)
 - [ ] **Focus Prioritised**: Priority stars match correctly in filtered view
 - [ ] **Focus Prioritised**: Works alongside hide-spokes and treemap toggles
+- [ ] **Calendar Import**: Button visible in Settings when signed into Google
+- [ ] **Calendar Import**: Button hidden when no Google auth
+- [ ] **Calendar Import**: Fetching shows loading state, handles API errors
+- [ ] **Calendar Import**: Events already tracked in Brain Pie excluded from list
+- [ ] **Calendar Import**: Select All / Deselect All work
+- [ ] **Calendar Import**: Time range radio buttons refetch events
+- [ ] **Calendar Import**: Default target dropdowns populate correctly
+- [ ] **Calendar Import**: "+ New" category/slice inline creation works (Step 1 and Step 2)
+- [ ] **Calendar Import**: Step 2 shows correct event count and assignments
+- [ ] **Calendar Import**: Per-event target override with dropdowns works
+- [ ] **Calendar Import**: One-off timed events → Single spokes with correct schedule
+- [ ] **Calendar Import**: All-day events → Single spokes with allDay flag
+- [ ] **Calendar Import**: Recurring events → Repeating spokes with parsed recurrence
+- [ ] **Calendar Import**: Imported spokes appear in correct category/slice
+- [ ] **Calendar Import**: Schedule pills show on chart after import
+- [ ] **Calendar Import**: Re-importing excludes previously imported events
+- [ ] **Calendar Import**: Works with both Firebase auth and standalone Google auth
+- [ ] **Recurrence pills**: Weekly shows day names (Mon, Wed, Fri 9AM)
+- [ ] **Recurrence pills**: Yearly shows next occurrence date (Feb 15)
+- [ ] **Recurrence pills**: Monthly shows ordinal + month (1st Mar)
+- [ ] **Recurrence pills**: Daily shows next occurrence date
+- [ ] **Yearly recurrence**: Compact description shows "Feb 15, yearly"
+- [ ] **Yearly recurrence**: Full description shows "Every year on Feb 15"
+- [ ] **Action popup**: URLs in action names are clickable links
+- [ ] **Action popup**: Completion checkbox toggles link style correctly
+- [ ] **Firebase auth**: Config URL doesn't flash sign-in banner when already logged in
+- [ ] **Schedule pills**: Clicking all-day event pill opens picker without error
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support

@@ -241,12 +241,15 @@ const App = {
                 } catch (e) {
                     Debug.log('Firebase init from URL config failed:', e.message);
                 }
-                // Wait for auth state to settle, then show banner if still not signed in
-                setTimeout(() => {
-                    if (!FirebaseAdapter.user) {
+                // Wait for Firebase SDK auth state to resolve, then show banner if not signed in.
+                // firebase.auth().onAuthStateChanged fires once auth state is determined
+                // (immediately if cached, or after network check).
+                const unsubAuth = FirebaseAdapter.auth.onAuthStateChanged((user) => {
+                    if (!user) {
                         UI.showConfigSignInBanner();
                     }
-                }, 1500);
+                    unsubAuth(); // Only need the first callback
+                });
             }
         }
 
