@@ -74,6 +74,7 @@ const Controls = {
     }
 
     this.initViewMode();
+    this.initFocusPrioritised();
   },
 
   VIEW_MODE_KEY: 'viewMode',
@@ -111,6 +112,33 @@ const Controls = {
     }
     if (checkboxMobile) {
       checkboxMobile.addEventListener('change', (e) => updateViewMode(e.target.checked));
+    }
+  },
+
+  FOCUS_PRIORITISED_KEY: 'focusPrioritised',
+
+  initFocusPrioritised() {
+    const checkboxDesktop = document.getElementById('focus-prioritised');
+    const checkboxMobile = document.getElementById('focus-prioritised-mobile');
+
+    const stored = localStorage.getItem(this.FOCUS_PRIORITISED_KEY);
+    const focus = stored === 'true';
+
+    if (checkboxDesktop) checkboxDesktop.checked = focus;
+    if (checkboxMobile) checkboxMobile.checked = focus;
+
+    const updateState = (shouldFocus) => {
+      if (checkboxDesktop) checkboxDesktop.checked = shouldFocus;
+      if (checkboxMobile) checkboxMobile.checked = shouldFocus;
+      localStorage.setItem(this.FOCUS_PRIORITISED_KEY, String(shouldFocus));
+      App.render();
+    };
+
+    if (checkboxDesktop) {
+      checkboxDesktop.addEventListener('change', (e) => updateState(e.target.checked));
+    }
+    if (checkboxMobile) {
+      checkboxMobile.addEventListener('change', (e) => updateState(e.target.checked));
     }
   }
 };
@@ -470,7 +498,8 @@ const App = {
     },
 
     render() {
-        const categories = DataModel.getCategories();
+        const focusMode = localStorage.getItem(Controls.FOCUS_PRIORITISED_KEY) === 'true';
+        const categories = focusMode ? DataModel.getFilteredCategories() : DataModel.getCategories();
         ChartRenderer.render(categories);
         UI.renderCategoriesList(categories);
         UI.renderPieTabs();

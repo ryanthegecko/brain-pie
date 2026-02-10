@@ -513,6 +513,33 @@ const ChartRenderer = {
     render(categories) {
         if (!this.svg) this.init('chart-container');
 
+        const focusMode = localStorage.getItem(Controls.FOCUS_PRIORITISED_KEY) === 'true';
+
+        if (focusMode && categories.length === 0) {
+            this.svg.selectAll('*').remove();
+            this.svg.append('text')
+                .attr('text-anchor', 'middle')
+                .attr('fill', '#999')
+                .attr('font-size', '16px')
+                .text('No priorities set \u2014 use \u2605 to add items');
+            return;
+        }
+
+        // Reset expanded view if target not in filtered categories
+        if (focusMode && this.expandedView) {
+            const ev = this.expandedView;
+            if (ev.type === 'slice') {
+                const cat = categories.find(c => c.id === ev.categoryId);
+                if (!cat || !cat.items.find(i => i.id === ev.itemId)) {
+                    this.expandedView = null;
+                }
+            } else if (ev.type === 'category') {
+                if (!categories.find(c => c.id === ev.categoryId)) {
+                    this.expandedView = null;
+                }
+            }
+        }
+
         if (this.viewMode === 'tree') {
             this.renderTreemap(categories);
         } else {
@@ -828,6 +855,7 @@ const ChartRenderer = {
                 const angleStep = (endAngle - startAngle) / subItems.length;
                 
                 subItems.forEach((subItem, idx) => {
+                    const spokeIndex = (typeof subItem === 'object' && subItem._originalIndex != null) ? subItem._originalIndex : idx;
                     const angle = startAngle + (angleStep * (idx + 0.5));
 
                     // Calculate the actual rendering angle
@@ -884,7 +912,7 @@ const ChartRenderer = {
                     const indicator = ChartRenderer.getSpokeIndicatorWithoutSchedule(subItem);
                     const textStyle = ChartRenderer.getSpokeTextStyle(subItem);
                     const isRightSide = extendX > 0;
-                    const spokeRef = { type: 'spoke', categoryId: catData.data.id, itemId: d.data.id, spokeIndex: idx };
+                    const spokeRef = { type: 'spoke', categoryId: catData.data.id, itemId: d.data.id, spokeIndex };
                     const isPriority = UI.isPrioritised(spokeRef);
 
                     // Put indicator on outside edge: right side = text+indicator, left side = indicator+text
@@ -901,7 +929,7 @@ const ChartRenderer = {
                                 subItem,
                                 catData,
                                 d,
-                                idx,
+                                spokeIndex,
                                 catData.data.id,
                                 d.data.id
                             );
@@ -1187,6 +1215,7 @@ const ChartRenderer = {
                     }
 
                     const subItem = subItems[idx];
+                    const spokeIndex = (typeof subItem === 'object' && subItem._originalIndex != null) ? subItem._originalIndex : idx;
                     const spokeName = typeof subItem === 'string' ? subItem : subItem.text;
                     const icon = this.getScheduleIcon(subItem);
                     const textStyle = this.getSpokeTextStyle(subItem);
@@ -1195,7 +1224,7 @@ const ChartRenderer = {
                     const scheduledDate = this.getScheduledDate(subItem);
                     const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
                     const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
-                    const treeSpokeRef = { type: 'spoke', categoryId, itemId, spokeIndex: idx };
+                    const treeSpokeRef = { type: 'spoke', categoryId, itemId, spokeIndex };
                     const isTreePriority = UI.isPrioritised(treeSpokeRef);
 
                     const starOffset = isTreePriority ? 12 : 0;
@@ -1248,7 +1277,7 @@ const ChartRenderer = {
                                 event, subItem,
                                 { data: catNode.data.categoryRef },
                                 { data: sliceNode.data.itemRef, startAngle: 0, endAngle: 0 },
-                                idx, categoryId, itemId
+                                spokeIndex, categoryId, itemId
                             );
                         });
 

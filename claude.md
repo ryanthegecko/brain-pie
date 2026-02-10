@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.16
+**Current Version:** v0.17
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -59,6 +59,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Manages percentage calculations and normalization
 - Handles category percentage overrides (manual adjustments)
 - Manages priority list (add, remove, reorder, resolve, validate references, per-user Firebase save)
+- Focus Prioritised filtering (`getFilteredCategories()` — deep-copy with `_originalIndex` annotations)
 - Manages multi-pie meta state (pie list, active pie, pie names)
 - Pie CRUD: create, delete, rename, switch, reorder
 
@@ -155,6 +156,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Priority stars on chart spokes (gold ★, larger for top-5 items, clickable to bump)
 - Hover fill lightening on slices (D3 mouseover, no CSS opacity — see SVG Opacity Pitfall)
 - Spoke lines start at outer ring edge (only external portion visible)
+- Focus Prioritised empty state message when no priorities set
 - ViewBox scaling for smaller viewports (see Responsive Design section)
 
 #### 3. **UI Controller** (`ui-controller.js`)
@@ -348,6 +350,40 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.17 (February 2026)
+Focus Prioritised toggle to filter pie/treemap to only show prioritised items:
+
+**Focus Prioritised Toggle:**
+- New "Focus ★" checkbox on desktop (top-right, after Treemap toggle) and mobile (Settings overlay)
+- Desktop and mobile checkboxes stay in sync (same pattern as Hide Spokes and Treemap toggles)
+- State persists to localStorage across page reloads
+- When ON: pie/treemap/summary cards show only items referenced in the priority list
+- When OFF: full unfiltered view restores immediately
+
+**Visibility Rules:**
+- Prioritised **spoke** → that spoke visible, parent slice + category visible
+- Prioritised **action** → parent spoke visible (as container), parent slice + category visible
+- Prioritised **slice** → slice visible with **all its spokes** (user prioritised the whole slice)
+- Category visible only if it contains at least one visible slice
+- Empty priority list with focus ON → empty state message: "No priorities set — use ★ to add items"
+
+**Data Model — `getFilteredCategories()`:**
+- New method builds a filtered deep copy of `categories` using `priorityList`
+- Scans priority refs to build visibility sets (slice keys, spoke indices per slice)
+- Filtered spokes annotated with `_originalIndex` property so chart/UI can reference the correct position in the original `subItems` array
+- String spokes normalized to objects when annotated (preserves backward compatibility)
+
+**Index Correctness:**
+- Chart renderer (pie + treemap) and summary cards derive `spokeIndex` from `_originalIndex` when present, falling back to loop index
+- All inline handlers (spoke editor, priority stars, rename, remove, calendar, drag data attributes) use the correct original index
+- Prevents wrong-spoke-clicked and wrong-priority-star bugs when subItems are filtered
+
+**Expanded View Safety:**
+- If the user is in an expanded slice/category view and toggles focus ON, the expanded target is checked against filtered categories
+- If the target is no longer visible, `expandedView` resets to `null` before rendering (prevents blank chart)
+
+---
 
 ### v0.16 (February 2026)
 Multi-pie support with tab-based switching, Firebase shared pies, and drag-to-reorder tabs:
@@ -1041,6 +1077,7 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 - ~~Unified Spoke Editor~~ - Implemented in v0.14 (Phase 0 of Transforms: merged spoke-type-picker + spoke-config into tabbed editor)
 - ~~Per-User Priorities~~ - Implemented in v0.15 (Firebase priorities stored at `userPriorities/{uid}`, team isolation, migration from shared blob)
 - ~~Multi-Pie Support~~ - Implemented in v0.16 (tab-based switching, per-pie storage, Firebase shared pies with per-user per-pie priorities)
+- ~~Focus Prioritised~~ - Implemented in v0.17 (toggle to filter pie/treemap to only prioritised items, `_originalIndex` annotations for correct spoke references)
 
 ## Development Notes
 
@@ -1287,6 +1324,22 @@ Debug.log('message', data)
 - [ ] **Multi-pie (tutorial)**: Example pies named Life Pie, Team Pie, Health Pie
 - [ ] **Multi-pie (tutorial)**: Pie names appear in tab bar
 - [ ] **Multi-pie (tutorial)**: Tutorial console messages only in debug mode
+- [ ] **Focus Prioritised**: Toggle visible on desktop (top-right, after Treemap)
+- [ ] **Focus Prioritised**: Toggle visible on mobile (Settings overlay)
+- [ ] **Focus Prioritised**: Desktop/mobile checkboxes stay in sync
+- [ ] **Focus Prioritised**: State persists across page reload (localStorage)
+- [ ] **Focus Prioritised (ON)**: Only prioritised spokes/actions/slices visible in pie view
+- [ ] **Focus Prioritised (ON)**: Only prioritised items visible in treemap view
+- [ ] **Focus Prioritised (OFF)**: Full unfiltered view restores
+- [ ] **Focus Prioritised**: Prioritised spoke → parent slice + category shown
+- [ ] **Focus Prioritised**: Prioritised action → parent spoke + slice + category shown
+- [ ] **Focus Prioritised**: Prioritised slice → all its spokes shown
+- [ ] **Focus Prioritised**: No priorities → empty state message in chart
+- [ ] **Focus Prioritised**: Expanded view collapses if target not in filtered set
+- [ ] **Focus Prioritised**: Summary cards only show filtered items
+- [ ] **Focus Prioritised**: Spoke clicks open correct spoke editor (original index preserved)
+- [ ] **Focus Prioritised**: Priority stars match correctly in filtered view
+- [ ] **Focus Prioritised**: Works alongside hide-spokes and treemap toggles
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
