@@ -318,13 +318,14 @@
                     </tbody>
                 </table>
 
-                <h3>Changing Spoke Type</h3>
+                <h3>Spoke Editor</h3>
                 <ul>
-                    <li>Click the blue <strong>Spoke type</strong> button next to a spoke in the summary cards.</li>
-                    <li>Or click a spoke on the pie chart to open the type picker.</li>
-                    <li>Selecting <strong>Single</strong> opens the date/time picker to schedule the spoke.</li>
-                    <li>Selecting <strong>Repeating</strong> opens the recurrence picker.</li>
-                    <li>Selecting <strong>List</strong> opens the spoke config where you can add actions.</li>
+                    <li>Click any spoke on the chart, or its button in the summary cards, to open the <strong>Spoke Editor</strong>.</li>
+                    <li>The editor has two tabs: <strong>Type</strong> and <strong>Schedule</strong>.</li>
+                    <li>Use the Type tab to change between Static, Single, Repeating, and List.</li>
+                    <li>The Schedule tab appears for Single and Repeating types, with fields for date/time or recurrence.</li>
+                    <li>If a spoke already has a schedule, the editor opens directly on the Schedule tab.</li>
+                    <li>You can switch types freely — schedule data is preserved if you switch back.</li>
                 </ul>
 
                 <h3>Actions (List Spokes)</h3>
@@ -332,12 +333,15 @@
                     <li>List spokes can have multiple child actions. Click the spoke on the chart to see the action popup.</li>
                     <li>Each action has a <strong>checkbox</strong> to mark it complete (line-through when checked).</li>
                     <li>Each action can be independently scheduled on your calendar.</li>
-                    <li>Use <strong>Add & Schedule</strong> in the spoke config to create and schedule an action in one step.</li>
+                    <li>Use <strong>Add & Schedule</strong> in the spoke editor to create and schedule an action in one step.</li>
                 </ul>
 
                 <h3>Schedule Indicators</h3>
                 <ul>
-                    <li>Scheduled spokes show a green pill with the date/time on the chart.</li>
+                    <li>Scheduled spokes show a <strong>green pill</strong> with the date/time on the chart.</li>
+                    <li>When the event is <strong>tomorrow</strong>, the pill gets a black border.</li>
+                    <li>When the event is <strong>today</strong>, the pill gets an orange border.</li>
+                    <li>When the event has <strong>passed</strong>, the pill turns orange with a red border.</li>
                     <li>Unscheduled schedulable spokes show a blue button in the summary cards.</li>
                     <li>Repeating spokes show a compact summary like "Mon, Wed, 5PM".</li>
                 </ul>
@@ -1089,155 +1093,229 @@
         </div>
     </div>
 
-    <!-- Spoke Configuration Overlay -->
-    <div class="spoke-config-overlay" id="spoke-config-overlay" onclick="UI.closeSpokeConfig()">
-        <div class="spoke-config-content" onclick="event.stopPropagation()">
-            <button class="menu-close" onclick="UI.closeSpokeConfig()">✕</button>
-
-            <div id="spoke-config-details" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Spoke:</div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div id="spoke-config-name" style="font-size: 18px; font-weight: bold; color: #333; flex: 1;"></div>
-                    <button class="scheduler-star-btn" id="spoke-config-star-btn" onclick="UI.toggleSchedulerStar('spoke-config')" title="Add to priorities" style="position: static; width: 26px; height: 26px; font-size: 14px; flex-shrink: 0; margin-left: auto;">&#9733;</button>
+    <!-- Unified Spoke Editor Overlay -->
+    <div class="spoke-editor-overlay" id="spoke-editor-overlay" onclick="UI.closeSpokeEditor()">
+        <div class="spoke-editor-content" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="spoke-editor-header">
+                <div class="spoke-editor-breadcrumb" id="spoke-editor-breadcrumb"></div>
+                <div class="spoke-editor-title-row">
+                    <div id="spoke-editor-name" class="spoke-editor-name"></div>
+                    <button class="scheduler-star-btn" id="spoke-editor-star-btn" onclick="UI.toggleSchedulerStar('spoke-editor')" title="Add to priorities" style="position:static;width:26px;height:26px;font-size:14px;flex-shrink:0;">&#9733;</button>
+                    <button class="menu-close" onclick="UI.closeSpokeEditor()">&#10005;</button>
                 </div>
-                <div id="spoke-config-context" style="font-size: 12px; color: #999; margin-top: 5px;"></div>
             </div>
 
-            <h2>Configure Spoke Type</h2>
-
-            <div class="spoke-type-options">
-                <button class="spoke-type-picker-btn" data-spoke-type="static" onclick="UI.selectSpokeConfigType('static')">
-                    <span class="spoke-type-picker-icon">📌</span>
-                    <span class="spoke-type-picker-label">Static</span>
-                    <span class="spoke-type-picker-desc">Persistent reminder (no calendar)</span>
-                </button>
-
-                <button class="spoke-type-picker-btn" data-spoke-type="single" onclick="UI.selectSpokeConfigType('single')">
-                    <span class="spoke-type-picker-icon">📅</span>
-                    <span class="spoke-type-picker-label">Single</span>
-                    <span class="spoke-type-picker-desc">One-time schedulable task</span>
-                </button>
-
-                <button class="spoke-type-picker-btn" data-spoke-type="repeating" onclick="UI.selectSpokeConfigType('repeating')">
-                    <span class="spoke-type-picker-icon">🔁</span>
-                    <span class="spoke-type-picker-label">Repeating</span>
-                    <span class="spoke-type-picker-desc">Recurring schedulable task</span>
-                </button>
-
-                <button class="spoke-type-picker-btn" data-spoke-type="list" onclick="UI.selectSpokeConfigType('list')">
-                    <span class="spoke-type-picker-icon">☑️</span>
-                    <span class="spoke-type-picker-label">List</span>
-                    <span class="spoke-type-picker-desc">Container for multiple actions</span>
-                </button>
+            <!-- Tab bar -->
+            <div class="spoke-editor-tabs">
+                <button class="spoke-editor-tab active" data-editor-tab="1" onclick="UI.switchSpokeEditorTab(1)">Type</button>
+                <button class="spoke-editor-tab" data-editor-tab="2" onclick="UI.switchSpokeEditorTab(2)">Schedule</button>
             </div>
 
-            <!-- Action(s) section -->
-            <div id="spoke-actions-fields" style="display: none; margin-top: 20px;">
-                <div class="input-group">
+            <!-- TAB 1: Type -->
+            <div class="spoke-editor-tab-content active" id="spoke-editor-tab-1">
+                <div class="spoke-type-picker-options" id="spoke-editor-type-btns">
+                    <button class="spoke-type-picker-btn" data-spoke-type="static" onclick="UI.selectSpokeEditorType('static')">
+                        <span class="spoke-type-picker-icon">📌</span>
+                        <span class="spoke-type-picker-label">Static</span>
+                        <span class="spoke-type-picker-desc">Persistent reminder</span>
+                    </button>
+                    <button class="spoke-type-picker-btn" data-spoke-type="single" onclick="UI.selectSpokeEditorType('single')">
+                        <span class="spoke-type-picker-icon">📅</span>
+                        <span class="spoke-type-picker-label">Single</span>
+                        <span class="spoke-type-picker-desc">One-time schedulable task</span>
+                    </button>
+                    <button class="spoke-type-picker-btn" data-spoke-type="repeating" onclick="UI.selectSpokeEditorType('repeating')">
+                        <span class="spoke-type-picker-icon">🔁</span>
+                        <span class="spoke-type-picker-label">Repeating</span>
+                        <span class="spoke-type-picker-desc">Recurring schedulable task</span>
+                    </button>
+                    <button class="spoke-type-picker-btn" data-spoke-type="list" onclick="UI.selectSpokeEditorType('list')">
+                        <span class="spoke-type-picker-icon">☑️</span>
+                        <span class="spoke-type-picker-label">List</span>
+                        <span class="spoke-type-picker-desc">Container for multiple actions</span>
+                    </button>
+                </div>
+
+                <!-- List-type action list -->
+                <div id="spoke-editor-actions-section" style="display:none;margin-top:20px;">
                     <label>Action(s) for this spoke:</label>
-
-                    <!-- Existing actions (read-only) -->
-                    <div id="spoke-existing-actions" class="spoke-actions-list" style="margin-bottom: 10px;">
-                        <!-- Existing actions will be shown here -->
-                    </div>
-
-                    <!-- Add new action -->
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <input type="text"
-                               id="new-spoke-action-input"
-                               placeholder="Enter action name..."
-                               style="flex: 1;"
-                               onkeydown="if(event.key==='Enter'){event.preventDefault(); UI.addAction();}">
-                        <button type="button" onclick="UI.addAction()">
-                            Add
-                        </button>
-                        <button type="button" class="secondary" onclick="UI.addAndScheduleAction()">
-                            Add & Schedule
-                        </button>
+                    <div id="spoke-editor-existing-actions" class="spoke-actions-list" style="margin-bottom:10px;"></div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="text" id="spoke-editor-new-action" placeholder="Enter action name..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();UI.addSpokeEditorAction();}">
+                        <button type="button" onclick="UI.addSpokeEditorAction()">Add</button>
+                        <button type="button" class="secondary" onclick="UI.addAndScheduleSpokeEditorAction()">Add & Schedule</button>
                     </div>
                     <span class="helper-text">Add actions, then optionally schedule them.</span>
                 </div>
             </div>
 
-            <!-- Repeating spoke fields -->
-            <div id="spoke-repeating-fields" style="display: none; margin-top: 20px;">
-                <div class="input-group">
-                    <label>Recurrence Pattern:</label>
-                    <div id="recurrence-display" style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
-                        <span id="recurrence-description" style="color: #666; font-style: italic;">Not set</span>
-                        <button type="button" class="secondary small" onclick="UI.openRecurrencePickerForSpoke()">
-                            🔁 Set Recurrence
-                        </button>
+            <!-- TAB 2: Schedule -->
+            <div class="spoke-editor-tab-content" id="spoke-editor-tab-2">
+                <!-- Single schedule fields -->
+                <div id="spoke-editor-single-fields" style="display:none;">
+                    <div class="datetime-section">
+                        <label for="se-event-date">Date</label>
+                        <input type="date" id="se-event-date" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
                     </div>
+                    <div class="datetime-section">
+                        <label class="allday-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="se-event-allday" onchange="UI.toggleSpokeEditorAllDay()" style="width:18px;height:18px;cursor:pointer;">
+                            All day
+                        </label>
+                    </div>
+                    <div class="datetime-section" id="se-time-section">
+                        <label>Time</label>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <select id="se-event-hour" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                <option value="00">00</option><option value="01">01</option><option value="02">02</option>
+                                <option value="03">03</option><option value="04">04</option><option value="05">05</option>
+                                <option value="06">06</option><option value="07">07</option><option value="08">08</option>
+                                <option value="09" selected>09</option><option value="10">10</option><option value="11">11</option>
+                                <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+                                <option value="15">15</option><option value="16">16</option><option value="17">17</option>
+                                <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                                <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                            </select>
+                            <span style="font-size:18px;font-weight:bold;">:</span>
+                            <select id="se-event-minute" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                <option value="00" selected>00</option><option value="15">15</option>
+                                <option value="30">30</option><option value="45">45</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="datetime-section" id="se-duration-section">
+                        <label for="se-event-duration">Duration</label>
+                        <select id="se-event-duration" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                            <option value="15">15 minutes</option><option value="30">30 minutes</option>
+                            <option value="60" selected>1 hour</option><option value="90">1.5 hours</option>
+                            <option value="120">2 hours</option><option value="180">3 hours</option>
+                            <option value="240">4 hours</option>
+                        </select>
+                    </div>
+                    <div class="datetime-section">
+                        <label for="se-event-location">Location <span style="color:#999;font-weight:normal;">(optional)</span></label>
+                        <input type="text" id="se-event-location" placeholder="Address or meeting room" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                    </div>
+                    <div class="datetime-section">
+                        <label for="se-event-notes">Notes <span style="color:#999;font-weight:normal;">(optional)</span></label>
+                        <textarea id="se-event-notes" rows="3" placeholder="Details for the calendar event" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
+                    </div>
+                    <div class="datetime-section">
+                        <label for="se-event-invitees">Invitees <span style="color:#999;font-weight:normal;">(optional, comma-separated)</span></label>
+                        <input type="text" id="se-event-invitees" placeholder="email@example.com" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                    </div>
+                    <button onclick="UI.saveSpokeEditorSchedule()" style="margin-top:15px;width:100%;background:#4285F4;">
+                        📅 Add to Calendar
+                    </button>
                 </div>
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                    Note: Repeating events will create recurring calendar entries with Google Calendar.
-                </p>
+
+                <!-- Repeating recurrence fields -->
+                <div id="spoke-editor-repeating-fields" style="display:none;">
+                    <div class="recurrence-section">
+                        <label for="se-recurrence-start-date">Starting from</label>
+                        <input type="date" id="se-recurrence-start-date" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                    </div>
+                    <div class="recurrence-section">
+                        <label>Repeat every</label>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <input type="number" id="se-recurrence-interval" value="1" min="1" max="99" style="width:60px;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;text-align:center;">
+                            <select id="se-recurrence-frequency" onchange="UI.updateSpokeEditorRecurrenceOptions()" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                                <option value="DAILY">Day(s)</option>
+                                <option value="WEEKLY" selected>Week(s)</option>
+                                <option value="MONTHLY">Month(s)</option>
+                                <option value="YEARLY">Year(s)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="recurrence-section">
+                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                            <input type="checkbox" id="se-recurrence-all-day" checked onchange="UI.toggleSpokeEditorRecurrenceTime()">
+                            <span>All day (no specific time)</span>
+                        </label>
+                        <div id="se-recurrence-time-picker" style="display:none;margin-top:10px;flex-wrap:wrap;">
+                            <div style="display:flex;gap:10px;align-items:center;">
+                                <select id="se-recurrence-hour" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                    <option value="00">00</option><option value="01">01</option><option value="02">02</option>
+                                    <option value="03">03</option><option value="04">04</option><option value="05">05</option>
+                                    <option value="06">06</option><option value="07">07</option><option value="08">08</option>
+                                    <option value="09" selected>09</option><option value="10">10</option><option value="11">11</option>
+                                    <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+                                    <option value="15">15</option><option value="16">16</option><option value="17">17</option>
+                                    <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                                    <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                                </select>
+                                <span style="font-size:18px;font-weight:bold;">:</span>
+                                <select id="se-recurrence-minute" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                    <option value="00" selected>00</option><option value="15">15</option>
+                                    <option value="30">30</option><option value="45">45</option>
+                                </select>
+                            </div>
+                            <div style="margin-top:10px;">
+                                <label style="font-size:13px;color:#666;">Duration</label>
+                                <select id="se-recurrence-duration" style="width:100%;margin-top:5px;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                    <option value="15">15 minutes</option><option value="30">30 minutes</option>
+                                    <option value="60" selected>1 hour</option><option value="90">1.5 hours</option>
+                                    <option value="120">2 hours</option><option value="180">3 hours</option>
+                                    <option value="240">4 hours</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="recurrence-section" id="se-recurrence-weekly-options">
+                        <label>On days</label>
+                        <div class="weekday-picker">
+                            <label class="weekday-option"><input type="checkbox" name="se-recurrence-day" value="MO"><span>M</span></label>
+                            <label class="weekday-option"><input type="checkbox" name="se-recurrence-day" value="TU"><span>T</span></label>
+                            <label class="weekday-option"><input type="checkbox" name="se-recurrence-day" value="WE"><span>W</span></label>
+                            <label class="weekday-option"><input type="checkbox" name="se-recurrence-day" value="TH"><span>T</span></label>
+                            <label class="weekday-option"><input type="checkbox" name="se-recurrence-day" value="FR"><span>F</span></label>
+                            <label class="weekday-option"><input type="checkbox" name="se-recurrence-day" value="SA"><span>S</span></label>
+                            <label class="weekday-option"><input type="checkbox" name="se-recurrence-day" value="SU"><span>S</span></label>
+                        </div>
+                    </div>
+                    <div class="recurrence-section" id="se-recurrence-monthly-options" style="display:none;">
+                        <label>On day</label>
+                        <select id="se-recurrence-monthday" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                            <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
+                            <option value="4">4th</option><option value="5">5th</option><option value="6">6th</option>
+                            <option value="7">7th</option><option value="8">8th</option><option value="9">9th</option>
+                            <option value="10">10th</option><option value="11">11th</option><option value="12">12th</option>
+                            <option value="13">13th</option><option value="14">14th</option><option value="15">15th</option>
+                            <option value="16">16th</option><option value="17">17th</option><option value="18">18th</option>
+                            <option value="19">19th</option><option value="20">20th</option><option value="21">21st</option>
+                            <option value="22">22nd</option><option value="23">23rd</option><option value="24">24th</option>
+                            <option value="25">25th</option><option value="26">26th</option><option value="27">27th</option>
+                            <option value="28">28th</option><option value="29">29th</option><option value="30">30th</option>
+                            <option value="31">31st</option>
+                        </select>
+                    </div>
+                    <div class="recurrence-section">
+                        <label>Ends</label>
+                        <div class="recurrence-end-options">
+                            <label class="radio-option"><input type="radio" name="se-recurrence-end" value="never" checked onchange="UI.updateSpokeEditorRecurrenceEndOptions()"><span>Never</span></label>
+                            <label class="radio-option"><input type="radio" name="se-recurrence-end" value="date" onchange="UI.updateSpokeEditorRecurrenceEndOptions()"><span>On date</span></label>
+                            <input type="date" id="se-recurrence-end-date" style="margin-left:24px;padding:8px;border:2px solid #e0e0e0;border-radius:6px;display:none;">
+                            <label class="radio-option"><input type="radio" name="se-recurrence-end" value="count" onchange="UI.updateSpokeEditorRecurrenceEndOptions()"><span>After</span></label>
+                            <div id="se-recurrence-count-input" style="display:none;margin-left:24px;">
+                                <input type="number" id="se-recurrence-count" value="10" min="1" max="999" style="width:60px;padding:8px;border:2px solid #e0e0e0;border-radius:6px;text-align:center;">
+                                <span style="margin-left:8px;">occurrences</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="UI.saveSpokeEditorSchedule()" style="margin-top:15px;width:100%;background:#4285F4;">
+                        🔁 Add to Calendar
+                    </button>
+                </div>
+
+                <!-- Disabled message for Static / List -->
+                <div id="spoke-editor-schedule-disabled" style="display:none;">
+                    <p id="spoke-editor-schedule-disabled-text" style="color:#999;font-style:italic;text-align:center;padding:40px 20px;"></p>
+                </div>
             </div>
 
-            <!-- HIDDEN UNTIL FEATURES COMPLETE
-            <div id="spoke-pending-fields" style="display: none; margin-top: 20px;">
-                <div class="input-group">
-                    <label for="pending-condition">What are you waiting for?</label>
-                    <input type="text" id="pending-condition" placeholder="e.g., 'Waiting for approval', 'Until next month'">
-                </div>
-
-                <div class="input-group">
-                    <label for="pending-next-state">When condition is met, become:</label>
-                    <select id="pending-next-state">
-                        <option value="action">Action</option>
-                        <option value="static">Static</option>
-                        <option value="repeating">Repeating</option>
-                    </select>
-                </div>
-            </div>
-            -->
-
-            <button onclick="UI.saveSpokeConfig()" style="margin-top: 20px; width: 100%;">
-                Save
-            </button>
-        </div>
-    </div>
-
-    <!-- Spoke Type Picker Overlay (for changing spoke types) -->
-    <div class="spoke-type-picker-overlay" id="spoke-type-picker-overlay" onclick="UI.closeSpokeTypePicker()">
-        <div class="spoke-type-picker-content" onclick="event.stopPropagation()">
-            <button class="menu-close" onclick="UI.closeSpokeTypePicker()">✕</button>
-            <h2>Spoke Type</h2>
-
-            <div id="spoke-type-picker-details" style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
-                <div style="font-size: 14px; color: #666;">Spoke:</div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div id="spoke-type-picker-name" style="font-size: 18px; font-weight: bold; color: #333; flex: 1;"></div>
-                    <button class="scheduler-star-btn" id="spoke-type-star-btn" onclick="UI.toggleSchedulerStar('spoke-type')" title="Add to priorities" style="position: static; width: 26px; height: 26px; font-size: 14px; flex-shrink: 0; margin-left: auto;">&#9733;</button>
-                </div>
-            </div>
-
-            <div class="spoke-type-picker-options">
-                <button class="spoke-type-picker-btn" data-spoke-type="static" onclick="UI.selectSpokeType('static')">
-                    <span class="spoke-type-picker-icon">📌</span>
-                    <span class="spoke-type-picker-label">Static</span>
-                    <span class="spoke-type-picker-desc">Persistent reminder</span>
-                </button>
-
-                <button class="spoke-type-picker-btn" data-spoke-type="single" onclick="UI.selectSpokeType('single')">
-                    <span class="spoke-type-picker-icon">📅</span>
-                    <span class="spoke-type-picker-label">Single</span>
-                    <span class="spoke-type-picker-desc">One-time schedulable task</span>
-                </button>
-
-                <button class="spoke-type-picker-btn" data-spoke-type="repeating" onclick="UI.selectSpokeType('repeating')">
-                    <span class="spoke-type-picker-icon">🔁</span>
-                    <span class="spoke-type-picker-label">Repeating</span>
-                    <span class="spoke-type-picker-desc">Recurring schedulable task</span>
-                </button>
-
-                <button class="spoke-type-picker-btn" data-spoke-type="list" onclick="UI.selectSpokeType('list')">
-                    <span class="spoke-type-picker-icon">☑️</span>
-                    <span class="spoke-type-picker-label">List</span>
-                    <span class="spoke-type-picker-desc">Container for multiple actions</span>
-                </button>
-            </div>
+            <!-- Save button -->
+            <button onclick="UI.saveSpokeEditor()" style="margin-top:20px;width:100%;">Save</button>
         </div>
     </div>
 
