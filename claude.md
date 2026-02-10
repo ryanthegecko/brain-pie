@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.13
+**Current Version:** v0.14
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -154,7 +154,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - ViewBox scaling for smaller viewports (see Responsive Design section)
 
 #### 3. **UI Controller** (`ui-controller.js`)
-- Manages all overlay states (menu, settings, datetime picker, spoke config, disclaimer, documentation)
+- Manages all overlay states (menu, settings, datetime picker, spoke editor, disclaimer, documentation)
 - Handles drag-and-drop reordering
 - Builds the category/item list in the bottom section
 - Manages the spoke builder for adding new items
@@ -166,7 +166,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Add Slices Menu
 - Settings (calendar provider selection, mobile: hide spokes + tree view toggles)
 - Date/Time Picker (for scheduling actions)
-- Spoke Configuration (set spoke type, add/schedule actions)
+- Spoke Editor (unified tabbed overlay: Type tab + Schedule tab, replaces spoke-type-picker and spoke-config)
 - Prioritiser Window (fixed, draggable, with action buttons per spoke type)
 - Disclaimer/About
 - Documentation (7-page in-app reference with nav and prev/next)
@@ -219,14 +219,13 @@ Spokes can have different types that affect their behavior:
 
 **Spoke Workflow:**
 1. Add spoke using green "+" button → created as **Static** by default
-2. Click blue "Spoke type" button to change type
-3. Based on type selection:
-   - **Static**: No change, stays as reminder
-   - **Single**: Opens date/time picker to schedule spoke itself
-   - **Repeating**: Opens recurrence picker to set up recurring event
-   - **List**: Opens spoke config to manage multiple actions
-4. For Single/Repeating: Green button shows schedule, click to reschedule
-5. For List: Click "+" to add actions, each action has its own calendar button
+2. Click spoke on chart, or its button in summary cards, to open the **Spoke Editor**
+3. The editor has two tabs:
+   - **Type tab**: Choose between Static, Single, Repeating, and List. Selecting Single or Repeating auto-switches to Schedule tab.
+   - **Schedule tab**: Embedded date/time fields for Single, recurrence fields for Repeating. Hidden for Static/List.
+4. Schedule data persists across type switches (switch to Static and back to Single — your date is still there)
+5. For List: action list appears below type buttons with Add/Add & Schedule
+6. Scheduled spokes show green pill on chart. Click to reopen editor on Schedule tab.
 
 **Calendar Event Naming:**
 - **Single/Repeating spokes**: `Spoke Name (Category/Slice)`
@@ -331,6 +330,62 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 
 ## Changelog
 
+### v0.14 (February 2026)
+Unified spoke editor, schedule pill border states, expanded view sizing, clickable URLs, and scrollable scheduler:
+
+**Unified Spoke Editor:**
+- Merged 4 separate overlays (spoke-type-picker, spoke-config, plus spoke-level datetime/recurrence scheduling) into a single tabbed `#spoke-editor-overlay`
+- **Tab 1 (Type):** 4 type buttons (Static, Single, Repeating, List) + action list section for List type
+- **Tab 2 (Schedule):** Embedded date/time fields for Single, recurrence fields for Repeating. Tab hidden for Static/List types.
+- Header shows breadcrumb (`Category / Slice`), spoke name, priority star, and close button
+- Selecting Single or Repeating auto-switches to Schedule tab
+- Schedule data persists in `pendingScheduleData` across type switches — switch to Static and back, your date is preserved
+- Opening a spoke that already has a schedule focuses the Schedule tab automatically
+- Standalone datetime/recurrence overlays kept for action-level scheduling from action popup
+- All callers updated: chart spoke clicks, summary card buttons, Tab 2 buttons, prioritiser action buttons
+- Tutorial updated with new selectors and event names
+- Deleted methods: `showSpokeTypePicker`, `closeSpokeTypePicker`, `selectSpokeType`, `showSpokeConfig`, `closeSpokeConfig`, `saveSpokeConfig`, `selectSpokeConfigType`, `updateSpokeTypeFields`, `openSpokeScheduler`, `openSpokeRecurrenceScheduler`, `openRecurrencePickerForSpoke`, `loadExistingRecurrence`, `renderExistingActions`
+- Deleted state: `pendingSpokeConfig`, `pendingSpokeTypePicker`, `pendingReturnToSpokeConfig`, `pendingRecurrenceData`, `pendingSpokeSchedule`
+- Deleted HTML: `#spoke-config-overlay`, `#spoke-type-picker-overlay`
+- Deleted CSS: `.spoke-config-overlay`, `.spoke-type-picker-overlay`, `.spoke-type-picker-content`
+- `createCalendarEvent()` simplified to action-level only (spoke-level scheduling handled by `saveSpokeEditorSchedule`)
+
+**Schedule Pill Border States (complete):**
+- Past events: pill background turns orange (`#FF9800`) with red border (`#e65100`)
+- Today's events: orange border (`#FF9800`)
+- Tomorrow's events: black border (`#000000`)
+- Future events: white border (default)
+- Applied to both pie chart SVG pills (`addSchedulePill`) and treemap inline pills
+- Previously only summary card pills and some button pills had border states
+
+**Expanded View Sizing:**
+- Clicking into a slice or category view now renders the pie 30% smaller (`outerRadius * 0.7`)
+- Spoke extensions increased: base 15→40, max 46→90 when expanded
+- Label font size increased from 12px to 18px when expanded
+- Schedule pill font size increased from 12px to 16px when expanded
+- Creates a more readable zoomed-in view with longer spokes and larger text
+
+**Clickable URLs in Action Text:**
+- URLs in action names automatically become clickable links
+- Applied to Tab 2 action lists, summary card actions, spoke editor actions, and prioritiser item names
+- New `linkifyUrls()` helper method on UI object
+- Links open in new tab with `target="_blank"` and `rel="noopener noreferrer"`
+- Only applied to actions (not spoke names, where it's less practical)
+
+**Scrollable Datetime Picker:**
+- Date/time picker overlay now has `max-height: 90vh` with `overflow-y: auto`
+- Prevents clipping on smaller screens when all fields (date, time, duration, location, notes, invitees) are visible
+
+**In-App Docs Update:**
+- "Spokes & Actions" page updated to document the new Spoke Editor (replacing old "Changing Spoke Type" section)
+- Schedule Indicators section now documents pill border states (tomorrow, today, past)
+
+**Completed Action Calendar Hiding (from stash):**
+- Calendar icon / schedule pill hidden for completed (checked) actions in the chart action popup
+- Wraps the calendar group render in an `if(!isCompleted)` guard
+
+---
+
 ### v0.13 (February 2026)
 In-app documentation and prioritiser persistence:
 
@@ -360,7 +415,7 @@ Calendar enhancements, tutorial UX improvements, and action popup fixes:
 - Google Calendar API: uses `{ date }` format (already supported in `buildEventPayload`)
 - Google Calendar URL redirect: uses `YYYYMMDD/YYYYMMDD` date format
 - Apple .ics: uses `DTSTART;VALUE=DATE:YYYYMMDD` format (no time component)
-- Schedule display shows "Feb 15 (all day)" across all views (summary cards, action popup, spoke config)
+- Schedule display shows "Feb 15 (all day)" across all views (summary cards, action popup, spoke editor)
 
 **Invitees / Attendees:**
 - New "Invitees" text input in datetime picker (comma-separated emails)
@@ -507,14 +562,15 @@ ViewBox responsive scaling, priority stars on chart, hover rework, and UI polish
 - `addPriority()` now returns 'added', 'moved', or 'already-top' (bump-to-top on re-add)
 
 **Scheduler Star Buttons:**
-- Star buttons (★) on datetime picker, recurrence picker, spoke type picker, and spoke config overlays
+- Star buttons (★) on datetime picker, recurrence picker, and spoke editor overlays
 - Positioned left of close button, grey when inactive, gold when active
 - Hidden when no data location available (e.g. during initial recurrence creation)
 
-**Spoke Config Redesign:**
-- Replaced radio buttons with button-style type picker (matching spoke type picker popup)
+**Spoke Editor (unified overlay):**
+- Replaced separate spoke-type-picker and spoke-config overlays with single tabbed spoke editor
+- Tab 1 (Type): type buttons + action list for List type
+- Tab 2 (Schedule): embedded date/time or recurrence fields
 - Blue border + light blue background for selected type
-- `selectSpokeConfigType()` method for button toggle behavior
 
 **Action Popup Enhancements:**
 - Checkbox for action completion (green when checked, line-through on text)
@@ -874,6 +930,7 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 - ~~Spoke Label Clipping~~ - Implemented as ViewBox scaling in v0.10 (render at 1920px virtual canvas, scale down via SVG viewBox for viewports <1920px)
 - ~~All-Day Events~~ - Implemented in v0.12 (checkbox in datetime picker, defaults to all-day for new events)
 - ~~Invitees / Attendees~~ - Implemented in v0.12 (comma-separated emails, Google Calendar API + Apple .ics support)
+- ~~Unified Spoke Editor~~ - Implemented in v0.14 (Phase 0 of Transforms: merged spoke-type-picker + spoke-config into tabbed editor)
 
 ## Development Notes
 
@@ -1033,9 +1090,16 @@ Debug.log('message', data)
 - [ ] **Priority stars (chart)**: Click star to bump priority
 - [ ] **Prioritiser**: Click item to navigate to chart location
 - [ ] **Prioritiser**: Click star to bump item to top
-- [ ] **Scheduler stars**: Star button on datetime picker, recurrence picker, spoke type picker, spoke config
-- [ ] **Spoke config**: Button-style type picker (not radio buttons)
-- [ ] **Spoke config**: Blue border on selected type
+- [ ] **Scheduler stars**: Star button on datetime picker, recurrence picker, spoke editor
+- [ ] **Spoke editor**: Opens with Type tab for static/unscheduled spokes
+- [ ] **Spoke editor**: Opens with Schedule tab for scheduled single/repeating spokes
+- [ ] **Spoke editor**: Tab 2 hidden for static/list types
+- [ ] **Spoke editor**: Type buttons highlight selected type
+- [ ] **Spoke editor**: Selecting Single/Repeating auto-switches to Schedule tab
+- [ ] **Spoke editor**: Schedule data persists across type switches
+- [ ] **Spoke editor**: Action list works for List type (add, remove, schedule)
+- [ ] **Spoke editor**: Save writes correct type + schedule to model
+- [ ] **Spoke editor**: All callers route through showSpokeEditor (chart, summary cards, prioritiser, tab 2)
 - [ ] **Action popup**: Checkbox for completion
 - [ ] **Action popup**: Star for prioritiser
 - [ ] **Action popup**: Programmatic open (from prioritiser navigation)
