@@ -931,8 +931,9 @@ const UI = {
                                 ? `<ul
                                     class="spoke-list"
                                     style="position: relative;">${item.subItems.map((sub, idx) => {
+                                    const spokeIndex = (typeof sub === 'object' && sub._originalIndex != null) ? sub._originalIndex : idx;
                                     const subText = typeof sub === 'string' ? sub : sub.text;
-                                    const spokeType = DataModel.getSpokeType(category.id, item.id, idx);
+                                    const spokeType = DataModel.getSpokeType(category.id, item.id, spokeIndex);
                                     const children = typeof sub === 'object' ? sub.children || [] : [];
                                     const spokeSchedule = typeof sub === 'object' ? sub.scheduled : null;
                                     const spokeRecurrence = typeof sub === 'object' && sub.metadata ? sub.metadata.recurrence : null;
@@ -945,48 +946,48 @@ const UI = {
                                             const timeStr = spokeSchedule.time ? schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                                             const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                                             const borderStyle = UI.getScheduleBorderStyle(spokeSchedule.date, spokeSchedule.time);
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${borderStyle}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${borderStyle}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Schedule">📅</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Schedule">📅</button>`;
                                         }
                                     } else if (spokeType === 'repeating') {
                                         if (spokeRecurrence) {
                                             const recBorder = UI.getScheduleBorderStyle(spokeRecurrence.startDate, spokeRecurrence.time);
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${recBorder}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${recBorder}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Set recurrence">🔁</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set recurrence">🔁</button>`;
                                         }
                                     } else if (spokeType === 'list') {
-                                        spokeTypeBtn = `<button class="" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Edit spoke">+</button>`;
+                                        spokeTypeBtn = `<button class="" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Edit spoke">+</button>`;
                                     } else {
                                         // static - show type picker
-                                        spokeTypeBtn = `<button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Set spoke type">+</button>`;
+                                        spokeTypeBtn = `<button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set spoke type">+</button>`;
                                     }
 
                                     return `
                                     <li draggable="true"
                                         data-category-id="${category.id}"
                                         data-item-id="${item.id}"
-                                        data-subitem-index="${idx}"
+                                        data-subitem-index="${spokeIndex}"
                                         ondragstart="UI.handleSubItemDragStart(event)"
                                         ondragend="UI.handleDragEnd(event)"
                                         ondragover="UI.handleSubItemDragOver(event)"
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;width: 100%; min-width: 50%;">
-                                            <button class="priority-star-btn ${UI.isPrioritised({type:'spoke', categoryId:category.id, itemId:item.id, spokeIndex:idx}) ? 'active' : ''}"
-                                                onclick="event.stopPropagation(); UI.addToPriorities({type:'spoke', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}})"
+                                            <button class="priority-star-btn ${UI.isPrioritised({type:'spoke', categoryId:category.id, itemId:item.id, spokeIndex}) ? 'active' : ''}"
+                                                onclick="event.stopPropagation(); UI.addToPriorities({type:'spoke', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${spokeIndex}})"
                                                 title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
                                             <span class="sub-item-text" contenteditable="true"
                                                 style="flex: 1;padding-right:1em;outline:none;border-radius:3px;"
                                                 onfocus="this.style.background='#f0f0f0'"
-                                                onblur="this.style.background='transparent'; if(!UI.draggedData) App.renameSpoke('${category.id}', '${item.id}', ${idx}, this.textContent)"
+                                                onblur="this.style.background='transparent'; if(!UI.draggedData) App.renameSpoke('${category.id}', '${item.id}', ${spokeIndex}, this.textContent)"
                                                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
                                             >${subText}</span>
                                             <div style="display: flex; gap: 4px;">
                                                 ${children.length > 0 ? `<span style="color: #2196F3; font-weight: bold; font-size: 18px;">(${children.length})</span>` : ''}
                                                 ${spokeTypeBtn}
-                                                <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${idx})" title="Remove spoke">
+                                                <button style="justify-self: flex-end;" class="warn" onclick="App.removeSubItem('${category.id}', '${item.id}', ${spokeIndex})" title="Remove spoke">
                                                     <img width="15" height="15" src="./assets/trash.svg" />
                                                 </button>
                                             </div>
@@ -1026,20 +1027,20 @@ const UI = {
                                                     const isActionCompleted = child.completed || false;
                                                     return `
                                                     <li style="cursor: default; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
-                                                        <button class="priority-star-btn ${UI.isPrioritised({type:'action', categoryId:category.id, itemId:item.id, spokeIndex:idx, childIndex:childIdx}) ? 'active' : ''}"
-                                                            onclick="event.stopPropagation(); UI.addToPriorities({type:'action', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${idx}, childIndex:${childIdx}})"
+                                                        <button class="priority-star-btn ${UI.isPrioritised({type:'action', categoryId:category.id, itemId:item.id, spokeIndex, childIndex:childIdx}) ? 'active' : ''}"
+                                                            onclick="event.stopPropagation(); UI.addToPriorities({type:'action', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${spokeIndex}, childIndex:${childIdx}})"
                                                             title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
                                                         <div style="flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 4px; background: #f5f5f5; border-radius: 3px;">
                                                             <input type="checkbox" class="action-checkbox"
-                                                                onchange="UI.toggleActionCompleted('${category.id}', '${item.id}', ${idx}, ${childIdx})"
+                                                                onchange="UI.toggleActionCompleted('${category.id}', '${item.id}', ${spokeIndex}, ${childIdx})"
                                                                 ${isActionCompleted ? 'checked' : ''}>
                                                             <span style="flex: 1;margin-right: 1em;" class="${isActionCompleted ? 'action-completed' : ''}">${UI.linkifyUrls(childText)}</span>
                                                             <div style="display: flex; gap: 4px;">
                                                                 ${!isActionCompleted ? `<button class="small"
                                                                         style="${buttonStyle}"
-                                                                        onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${idx}, ${childIdx})"
+                                                                        onclick="UI.openCalendarForActionWithLocation('${encodeURIComponent(childText)}', '${encodeURIComponent(subText)}', '${item.name}', '${encodeURIComponent(category.name)}', '${category.id}', '${item.id}', ${spokeIndex}, ${childIdx})"
                                                                         title="${buttonTitle}">${scheduleDisplay}</button>` : ''}
-                                                                <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${idx}, ${childIdx})" title="Remove action">
+                                                                <button class="small warn" onclick="App.removeSpokeChild('${category.id}', '${item.id}', ${spokeIndex}, ${childIdx})" title="Remove action">
                                                                     <img width="15" height="20" src="./assets/trash.svg" />
                                                                 </button>
                                                             </div>
@@ -1048,15 +1049,15 @@ const UI = {
                                                 `}).join('')}
                                             </ul>
                                         ` : ''}
-                                        <div id="add-action-${category.id}-${item.id}-${idx}" style="display: none; margin-top: 6px; margin-left: 20px;">
+                                        <div id="add-action-${category.id}-${item.id}-${spokeIndex}" style="display: none; margin-top: 6px; margin-left: 20px;">
                                             <div style="display: flex; gap: 6px; align-items: center;">
                                                 <input type="text"
-                                                       id="action-input-${category.id}-${item.id}-${idx}"
+                                                       id="action-input-${category.id}-${item.id}-${spokeIndex}"
                                                        placeholder="Action name..."
                                                        style="flex: 1; padding: 6px; border: 1px solid #2196F3; border-radius: 4px;"
-                                                       onkeydown="if(event.key==='Enter') UI.submitAddAction('${category.id}', '${item.id}', ${idx})">
-                                                <button class="small secondary" onclick="UI.submitAddAction('${category.id}', '${item.id}', ${idx})">Add</button>
-                                                <button class="small warn" onclick="UI.hideAddActionInput('${category.id}', '${item.id}', ${idx})">
+                                                       onkeydown="if(event.key==='Enter') UI.submitAddAction('${category.id}', '${item.id}', ${spokeIndex})">
+                                                <button class="small secondary" onclick="UI.submitAddAction('${category.id}', '${item.id}', ${spokeIndex})">Add</button>
+                                                <button class="small warn" onclick="UI.hideAddActionInput('${category.id}', '${item.id}', ${spokeIndex})">
                                                     <img width="15" height="20" src="./assets/trash.svg" />
                                                 </button>
                                             </div>
