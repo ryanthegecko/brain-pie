@@ -31,6 +31,9 @@ const StorageAdapter = {
     // Skip auto-sync when manual sign-in will handle it
     skipSyncOnConnect: false,
 
+    // Track if auth state listener is registered
+    _authListenerRegistered: false,
+
     /**
      * Initialize the storage adapter
      * Checks URL for Firebase config, checks localStorage for saved config
@@ -57,6 +60,7 @@ const StorageAdapter = {
                     await FirebaseAdapter.init(config);
 
                     // Set up auth state listener
+                    this._authListenerRegistered = true;
                     FirebaseAdapter.onAuthStateChanged(async (user) => {
                         if (user) {
                             this.currentMode = 'firebase';
@@ -332,8 +336,29 @@ const StorageAdapter = {
             FirebaseAdapter.saveConfigToLocal(config);
             localStorage.setItem('cloudSyncEnabled', 'true');
 
-            // Mode will switch to 'firebase' when user signs in
-            Debug.log('StorageAdapter: Cloud sync enabled');
+            // If user is already signed in, switch to firebase mode now
+            if (FirebaseAdapter.isConnected()) {
+                this.currentMode = 'firebase';
+                Debug.log('StorageAdapter: Cloud sync enabled, already connected');
+            } else {
+                Debug.log('StorageAdapter: Cloud sync enabled, waiting for auth');
+            }
+
+            // Register auth state listener if not already set up
+            // (needed when cloud sync is enabled after init)
+            if (!this._authListenerRegistered) {
+                this._authListenerRegistered = true;
+                FirebaseAdapter.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentMode = 'firebase';
+                        Debug.log('StorageAdapter: switched to firebase mode');
+                        await this.syncOnConnect();
+                    } else {
+                        this.currentMode = 'local';
+                        Debug.log('StorageAdapter: switched to local mode (not signed in)');
+                    }
+                });
+            }
 
             return true;
         } catch (e) {
