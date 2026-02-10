@@ -680,10 +680,11 @@ const TutorialManager = {
     loadLifePie() {
         this.stashUserData();
         if (typeof ExampleData !== 'undefined') {
+            this._nameActivePie('Life Pie');
             const data = ExampleData.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            this._namePieAndSave('Life Pie');
+            DataModel.saveToStorage();
             App.render();
         }
     },
@@ -694,10 +695,11 @@ const TutorialManager = {
     loadTeamPie() {
         this.stashUserData();
         if (typeof ExampleData2 !== 'undefined') {
+            this._nameActivePie('Team Pie');
             const data = ExampleData2.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            this._namePieAndSave('Team Pie');
+            DataModel.saveToStorage();
             App.render();
         }
     },
@@ -708,39 +710,24 @@ const TutorialManager = {
     loadHealthPie() {
         this.stashUserData();
         if (typeof ExampleData3 !== 'undefined') {
+            this._nameActivePie('Health Pie');
             const data = ExampleData3.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            this._namePieAndSave('Health Pie');
+            DataModel.saveToStorage();
             App.render();
         }
     },
 
     /**
-     * Set pie name and save to localStorage only (not Firebase)
+     * Set the active pie's name in DataModel and meta (before loading data)
      */
-    _namePieAndSave(name) {
+    _nameActivePie(name) {
         DataModel.currentPieName = name;
         const pieId = DataModel.getActivePieId();
-        if (pieId) {
-            // Update name in meta
-            if (DataModel.pieMeta && DataModel.pieMeta.pieNames) {
-                DataModel.pieMeta.pieNames[pieId] = name;
-                Storage.saveMeta(DataModel.pieMeta);
-            }
-            Storage.savePie(pieId, {
-                id: pieId,
-                name: name,
-                categories: DataModel.categories,
-                categoryPercentageOverrides: DataModel.categoryPercentageOverrides,
-                priorityList: DataModel.priorityList || []
-            });
-        } else {
-            Storage.save({
-                categories: DataModel.categories,
-                categoryPercentageOverrides: DataModel.categoryPercentageOverrides,
-                priorityList: DataModel.priorityList || []
-            });
+        if (pieId && DataModel.pieMeta && DataModel.pieMeta.pieNames) {
+            DataModel.pieMeta.pieNames[pieId] = name;
+            Storage.saveMeta(DataModel.pieMeta);
         }
     },
 
