@@ -640,14 +640,21 @@
                     </button>
                 </div>
             </div>
-
+            <h3>Data</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                    Back up and import
+                </p>
             <div class="settings-section button-section">
-                <button class="tertiary" onclick="App.exportData()">📥 Export Data & Settings to JSON</button>
-                <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import</button>
-                <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">
-                <button class="warn" style="margin-left: 5px;" onclick="App.removeAllData()">
-                    Fresh Pie<img width="25" height="27" style="vertical-align: middle;" src="./assets/trash.svg">
+                <button class="tertiary" onclick="App.exportData()">📥 Export Data to JSON</button>
+                <button class="tertiary" onclick="document.getElementById('import-file').click()">📤 Import JSON</button>
+                                <input type="file" id="import-file" accept=".json" onchange="App.importData(event)">                <button class="warn" style="margin-left: 5px;" onclick="App.removeAllData()">
+                    Fresh Pie<img width="22" height="24" style="padding:0 0 4px 4px;vertical-align: middle;" src="./assets/trash.svg">
                 </button>
+            </div>
+            <div class="settings-section button-section">
+                <button class="tertiary" id="calendar-import-btn" style="display:none;" onclick="UI.showCalendarImport()">📅 Import events from Google Calendar</button>
+            </div>
+            <div>
             </div>
 
             <div class="settings-section">
@@ -1090,6 +1097,94 @@
                     <button onclick="UI.executeImport()" id="import-execute-btn">
                         ✓ Import Selected Items
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Import Overlay -->
+    <div class="cal-import-overlay" id="calendar-import-overlay" onclick="UI.closeCalendarImport()">
+        <div class="cal-import-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeCalendarImport()">✕</button>
+
+            <!-- Step indicators -->
+            <div class="import-steps" id="cal-import-steps">
+                <div class="import-step active" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Select</span>
+                </div>
+                <div class="import-step" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Confirm</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Fetch & Select -->
+            <div class="cal-import-step-content active" id="cal-import-step-1">
+                <h2>Import from Google Calendar</h2>
+
+                <div class="cal-import-range">
+                    <label class="radio-option"><input type="radio" name="cal-import-range" value="30" checked onchange="UI.calendarImportRangeChanged()"><span>Last 30 days</span></label>
+                    <label class="radio-option"><input type="radio" name="cal-import-range" value="90" onchange="UI.calendarImportRangeChanged()"><span>Last 90 days</span></label>
+                    <label class="radio-option"><input type="radio" name="cal-import-range" value="custom" onchange="UI.calendarImportRangeChanged()"><span>Custom range</span></label>
+                </div>
+                <div id="cal-import-custom-range" style="display:none; margin-bottom:15px;">
+                    <label style="font-size:13px;">From: <input type="date" id="cal-import-date-from"></label>
+                    <label style="font-size:13px; margin-left:10px;">To: <input type="date" id="cal-import-date-to"></label>
+                    <button class="small secondary" style="margin-left:10px;" onclick="UI.fetchCalendarEvents()">Fetch</button>
+                </div>
+
+                <div class="cal-import-target">
+                    <h3 style="margin-bottom:8px;">Default target</h3>
+                    <div class="cal-import-target-row">
+                        <label>Category:</label>
+                        <select id="cal-import-category" onchange="UI.onCalImportCategoryChanged()">
+                            <option value="">Select...</option>
+                        </select>
+                        <button class="small secondary" onclick="UI.calImportNewCategory()">+ New</button>
+                    </div>
+                    <div class="cal-import-target-row">
+                        <label>Slice:</label>
+                        <select id="cal-import-slice" disabled>
+                            <option value="">Select category first...</option>
+                        </select>
+                        <button class="small secondary" onclick="UI.calImportNewSlice()">+ New</button>
+                    </div>
+                </div>
+
+                <div id="cal-import-loading" style="display:none; text-align:center; padding:20px; color:#666;">
+                    Loading events...
+                </div>
+
+                <div id="cal-import-event-controls" style="display:none;">
+                    <div class="import-selection-controls">
+                        <button class="small secondary" onclick="UI.calImportSelectAll()">Select All</button>
+                        <button class="small secondary" onclick="UI.calImportDeselectAll()">Deselect All</button>
+                        <span id="cal-import-count" style="color:#666; font-size:13px;"></span>
+                    </div>
+                </div>
+
+                <div id="cal-import-event-list" class="cal-import-event-list">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="import-actions">
+                    <button class="secondary" onclick="UI.closeCalendarImport()">Cancel</button>
+                    <button onclick="UI.calendarImportNextStep()" id="cal-import-continue-btn" disabled>Review Selected →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Review & Confirm -->
+            <div class="cal-import-step-content" id="cal-import-step-2">
+                <h2>Confirm Import</h2>
+
+                <div id="cal-import-review" class="cal-import-review">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="import-actions">
+                    <button class="secondary" onclick="UI.calendarImportPrevStep()">← Back</button>
+                    <button onclick="UI.executeCalendarImport()" id="cal-import-execute-btn">Import Events</button>
                 </div>
             </div>
         </div>

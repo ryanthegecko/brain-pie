@@ -291,6 +291,129 @@ const CalendarAdapter = {
     },
 
     /**
+     * List events from Google Calendar within a time range
+     * @param {string} timeMin - ISO date string for range start
+     * @param {string} timeMax - ISO date string for range end
+     * @returns {Promise<Array|null>} Array of event objects, or null on failure
+     */
+    async listEvents(timeMin, timeMax) {
+        const token = await this.getToken();
+        if (!token) {
+            Debug.log('CalendarAdapter: No access token available');
+            return null;
+        }
+
+        try {
+            let allEvents = [];
+            let pageToken = null;
+
+            do {
+                const params = new URLSearchParams({
+                    timeMin: new Date(timeMin).toISOString(),
+                    timeMax: new Date(timeMax).toISOString(),
+                    singleEvents: 'false',
+                    maxResults: '250',
+                    orderBy: 'updated'
+                });
+                if (pageToken) params.set('pageToken', pageToken);
+
+                const response = await fetch(
+                    `${this.API_BASE}/calendars/primary/events?${params}`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    Debug.log('CalendarAdapter: listEvents failed:', error.error?.message || response.status);
+                    return null;
+                }
+
+                const data = await response.json();
+                allEvents = allEvents.concat(data.items || []);
+                pageToken = data.nextPageToken || null;
+            } while (pageToken);
+
+            // Filter out cancelled events
+            allEvents = allEvents.filter(e => e.status !== 'cancelled');
+
+            Debug.log('CalendarAdapter: listEvents returned', allEvents.length, 'events');
+            return allEvents;
+        } catch (e) {
+            Debug.log('CalendarAdapter: listEvents error:', e.message);
+            return null;
+        }
+    },
+
+    /**
+     * Parse a Google Calendar RRULE string into Brain Pie's recurrence format.
+     * Output matches the format used by buildRRule() and the recurrence picker UI:
+     *   frequency: uppercase ('DAILY','WEEKLY','MONTHLY','YEARLY')
+     *   byDay: array of RRULE day codes (['MO','TU',...])
+     *   byMonthDay: number
+     *   until/count: end conditions
+     * @param {string} rruleString - RRULE string (with or without 'RRULE:' prefix)
+     * @param {Object} event - The Google Calendar event (for start time info)
+     * @returns {Object} Brain Pie recurrence object
+     */
+    parseRecurrence(rruleString, event) {
+        const rule = rruleString.replace(/^RRULE:/, '');
+        const parts = {};
+        rule.split(';').forEach(part => {
+            const [key, value] = part.split('=');
+            parts[key] = value;
+        });
+
+        const recurrence = {
+            frequency: parts.FREQ || 'WEEKLY',
+            interval: parseInt(parts.INTERVAL) || 1,
+            byDay: null,
+            byMonthDay: null,
+            time: null,
+            duration: 60,
+            allDay: false,
+            startDate: null,
+            until: null,
+            count: null
+        };
+
+        // Parse BYDAY — keep as RRULE day codes (MO, TU, etc.)
+        if (parts.BYDAY) {
+            recurrence.byDay = parts.BYDAY.split(',');
+        }
+
+        // Parse BYMONTHDAY
+        if (parts.BYMONTHDAY) {
+            recurrence.byMonthDay = parseInt(parts.BYMONTHDAY);
+        }
+
+        // Parse end conditions
+        if (parts.UNTIL) {
+            const u = parts.UNTIL;
+            recurrence.until = u.length >= 8 ? `${u.slice(0,4)}-${u.slice(4,6)}-${u.slice(6,8)}` : u;
+        } else if (parts.COUNT) {
+            recurrence.count = parseInt(parts.COUNT);
+        }
+
+        // Extract time, duration, and start date from event
+        if (event) {
+            if (event.start?.dateTime) {
+                const start = new Date(event.start.dateTime);
+                recurrence.time = start.toTimeString().slice(0, 5);
+                recurrence.startDate = start.toISOString().split('T')[0];
+                if (event.end?.dateTime) {
+                    const end = new Date(event.end.dateTime);
+                    recurrence.duration = Math.round((end - start) / 60000);
+                }
+            } else if (event.start?.date) {
+                recurrence.allDay = true;
+                recurrence.startDate = event.start.date;
+            }
+        }
+
+        return recurrence;
+    },
+
+    /**
      * Sync all scheduled actions with Google Calendar
      * Fetches current state of events and updates local data
      * @returns {Promise<Object>} Summary of sync results
