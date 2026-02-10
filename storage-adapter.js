@@ -16,8 +16,14 @@ const StorageAdapter = {
     // Callback for real-time updates
     updateCallback: null,
 
+    // Callback for priority updates
+    priorityUpdateCallback: null,
+
     // Track if we're currently saving (prevent feedback loops)
     isSaving: false,
+
+    // Track if we're currently saving priorities (prevent feedback loops)
+    isSavingPriorities: false,
 
     // Unique ID for each save to identify our own updates
     lastSaveId: null,
@@ -107,6 +113,20 @@ const StorageAdapter = {
 
             if (this.updateCallback) {
                 this.updateCallback(data);
+            }
+        });
+
+        // Subscribe to per-user priority changes (same user, other devices)
+        FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
+            if (this.isSavingPriorities) {
+                Debug.log('StorageAdapter: Skipping priority update (currently saving)');
+                return;
+            }
+
+            Debug.log('StorageAdapter: Received remote priority update');
+
+            if (this.priorityUpdateCallback) {
+                this.priorityUpdateCallback(priorityList);
             }
         });
     },
@@ -228,6 +248,50 @@ const StorageAdapter = {
         const localData = Storage.load();
         Debug.log('StorageAdapter: Loaded from localStorage');
         return localData;
+    },
+
+    /**
+     * Save priorities to per-user storage
+     * In Firebase mode, writes to userPriorities/{uid} path
+     * In localStorage mode, this is a no-op (priorities saved with main blob)
+     * @param {Array} priorityList - Priority list array
+     * @returns {Promise}
+     */
+    async savePriorities(priorityList) {
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            this.isSavingPriorities = true;
+            try {
+                await FirebaseAdapter.savePriorities(priorityList);
+            } finally {
+                setTimeout(() => {
+                    this.isSavingPriorities = false;
+                }, 1000);
+            }
+        }
+        // localStorage: priorities are saved as part of the main blob via save()
+    },
+
+    /**
+     * Load priorities from per-user storage
+     * In Firebase mode, reads from userPriorities/{uid} path
+     * In localStorage mode, returns null (priorities loaded with main blob)
+     * @returns {Promise<Array|null>}
+     */
+    async loadPriorities() {
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            return await FirebaseAdapter.loadPriorities();
+        }
+        return null;
+    },
+
+    /**
+     * Subscribe to per-user priority changes (Firebase only)
+     * @param {Function} callback - Called with priority array when remote changes occur
+     */
+    subscribeToPriorityChanges(callback) {
+        this.priorityUpdateCallback = callback;
+
+        // If already connected, listener was set up in setupFirebaseListener
     },
 
     /**
