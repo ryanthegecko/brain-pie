@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.15
+**Current Version:** v0.16
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -59,6 +59,8 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Manages percentage calculations and normalization
 - Handles category percentage overrides (manual adjustments)
 - Manages priority list (add, remove, reorder, resolve, validate references, per-user Firebase save)
+- Manages multi-pie meta state (pie list, active pie, pie names)
+- Pie CRUD: create, delete, rename, switch, reorder
 
 **Key Data Structure:**
 ```javascript
@@ -163,6 +165,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Calendar integration (Google Calendar & Apple iCal)
 - Spoke configuration and action scheduling workflow
 - Prioritiser window (draggable, toggle show/hide, drag-to-reorder items)
+- Pie tab bar rendering, drag-to-reorder tabs, context menu (rename/delete)
 
 **Overlays:**
 - Add Slices Menu
@@ -174,17 +177,19 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Documentation (7-page in-app reference with nav and prev/next)
 
 #### 4. **Storage** (`storage.js`)
-- localStorage persistence with auto-save
-- JSON import/export functionality
+- Multi-key localStorage persistence: meta key + per-pie keys
+- JSON import/export functionality (per active pie)
+- Migration from old single-blob format to multi-pie
 - Status notifications
 - Error handling
 
 #### 5. **App Controller** (`app.js`)
-- Application initialization
+- Application initialization (multi-pie migration + active pie load)
 - Delegates user actions to appropriate modules
 - Coordinates between DataModel, UI, and ChartRenderer
+- Pie switching, creation, deletion, renaming orchestration
 - Handles window resize events
-- Contains example data for first-time users
+- Contains example data for first-time users (3 named pies: Life, Team, Health)
 
 ## Key Features
 
@@ -268,9 +273,13 @@ Optional real-time sync using Firebase Realtime Database:
 **Firebase Path Structure:**
 ```
 brainpie/{projectId}/
-├── data/                              ← shared blob (categories, settings, overrides)
-└── userPriorities/{uid}/              ← per-user priority list
-    └── [{ type, categoryId, itemId, spokeIndex, childIndex }]
+├── meta                              ← SHARED: { pieIds: [...], pieNames: { id: "name" } }
+├── pies/
+│   ├── {pieId}                       ← SHARED: { categories, categoryPercentageOverrides }
+│   └── ...
+└── userPriorities/{uid}/
+    ├── {pieId}                       ← PER-USER PER-PIE: [priority refs]
+    └── ...
 ```
 
 ### 7. Responsive Design
@@ -330,9 +339,8 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 ### Limitations
 1. **No spoke deletion from chart** - Must delete from list view
 2. **No undo/redo** functionality
-3. **Single document model** - Can't have multiple "pies"
-4. **Pending spoke type** - Not yet implemented
-5. **Recurring event sync is one-way** - Changes made to recurring events in Google Calendar (moving single instances, moving all following events) won't sync back to Brain Pie. The app will continue showing the original recurrence pattern. Deleting the entire series from Google Calendar will remove the action locally.
+3. **Pending spoke type** - Not yet implemented
+4. **Recurring event sync is one-way** - Changes made to recurring events in Google Calendar (moving single instances, moving all following events) won't sync back to Brain Pie. The app will continue showing the original recurrence pattern. Deleting the entire series from Google Calendar will remove the action locally.
 
 ### Known Behaviors
 1. **Percentage normalization** sometimes unintuitive for users
@@ -340,6 +348,62 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.16 (February 2026)
+Multi-pie support with tab-based switching, Firebase shared pies, and drag-to-reorder tabs:
+
+**Multi-Pie System:**
+- Users can now create, switch between, rename, and delete multiple independent pies
+- Each pie has its own categories, slices, spokes, actions, and percentage overrides
+- Pill-style tab bar below the title for switching between pies
+- "+" button to create new pies, click active tab for rename/delete context menu
+- Tab bar hidden when only one pie exists (no visual change from previous versions)
+- Drag-and-drop reorder for pie tabs (HTML5 drag API)
+- Tab bar capped at 25vw width (wraps on overflow), full width on mobile
+
+**localStorage Multi-Pie Storage:**
+- Meta key (`brainPie_meta`) stores pie list, active pie ID, and pie names
+- Per-pie keys (`brainPie_pie_{id}`) store categories, overrides, and priorities independently
+- `activePieId` tracked in meta (persists across page reloads)
+- Automatic migration from old single-blob `brainPieChartData` format on first load
+
+**Firebase Multi-Pie Storage:**
+- Shared `meta` node: `{ pieIds, pieNames }` — all team members see the same set of pies
+- Shared `pies/{pieId}` nodes: categories and percentage overrides per pie
+- Per-user per-pie priorities: `userPriorities/{uid}/{pieId}` (extends v0.15 per-user model)
+- `activePieId` stays in localStorage only (each user picks their own view)
+- Real-time meta listener: new pies created by team members appear as tabs automatically
+- Per-pie data + priority listeners: detach and reattach on pie switch
+- Automatic migration from old single-blob `data/` format (first team member to load triggers)
+
+**Pie Lifecycle:**
+- **Create**: Generates unique ID, adds to meta, creates empty pie with default example data
+- **Switch**: Saves current pie, loads target pie, re-renders chart and cards, reattaches Firebase listeners
+- **Rename**: Updates meta and pie data, re-renders tab bar
+- **Delete**: Removes from meta, deletes pie data + user priorities (Firebase: also cleans `userPriorities/{uid}/{pieId}`), switches to next pie or creates fresh default if last pie deleted
+
+**Firebase Sync Fixes:**
+- `enableCloudSync()` now registers auth listener and sets `currentMode = 'firebase'` immediately when called after `init()` (fixes first-time sign-in from Settings not syncing)
+- `skipSyncOnConnect` flag prevents double-subscription when `reloadDataFromFirebase()` handles Firebase data
+- Local-only pies silently pushed to Firebase on connect (pies not in Firebase meta are uploaded automatically)
+
+**Tutorial Updates:**
+- Example pies now named: "Life Pie", "Team Pie", "Health Pie" (appear in tab bar)
+- `_nameActivePie(name)` sets pie name before `setCategories()` to prevent "My Pie" fallback
+- Tutorial completion: "Continue With This Pie" as primary button (user stays on Health Pie)
+- All `console.log('[Tutorial]')` messages moved to `Debug.log()` (only visible with debug mode)
+
+**Import/Export:**
+- Export filename includes active pie name (e.g., `brain-pie-life-pie-2026-02-10.json`)
+- Import selection shows source/target pie context banner
+- Quick Replace confirm dialog names the target pie
+- Import/export operates on active pie only (same merge logic as before)
+
+**Spoke Editor Fix:**
+- Tab 2 (Schedule) bottom button now shows "Done" instead of "Save" to reduce confusion with "Add to Calendar"
+- "Done" on Schedule tab saves the spoke type without triggering calendar scheduling
+
+---
 
 ### v0.15 (February 2026)
 Per-user priorities for Firebase team collaboration:
@@ -976,6 +1040,7 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 - ~~Invitees / Attendees~~ - Implemented in v0.12 (comma-separated emails, Google Calendar API + Apple .ics support)
 - ~~Unified Spoke Editor~~ - Implemented in v0.14 (Phase 0 of Transforms: merged spoke-type-picker + spoke-config into tabbed editor)
 - ~~Per-User Priorities~~ - Implemented in v0.15 (Firebase priorities stored at `userPriorities/{uid}`, team isolation, migration from shared blob)
+- ~~Multi-Pie Support~~ - Implemented in v0.16 (tab-based switching, per-pie storage, Firebase shared pies with per-user per-pie priorities)
 
 ## Development Notes
 
@@ -1195,6 +1260,33 @@ Debug.log('message', data)
 - [ ] **Per-user priorities (shared sync)**: Categories, spokes, schedules still sync between team members
 - [ ] **Per-user priorities (orphan cleanup)**: `validatePriorityList()` runs after load/sync
 - [ ] **Per-user priorities (import/export)**: Priorities included in export, imported to user path
+- [ ] **Multi-pie (localStorage)**: Old single-blob data auto-migrates on first load
+- [ ] **Multi-pie (localStorage)**: Meta, per-pie keys created correctly
+- [ ] **Multi-pie (Firebase)**: Old `data/` blob auto-migrates to `meta` + `pies/{id}`
+- [ ] **Multi-pie (tab bar)**: Tabs show all pies, active highlighted green
+- [ ] **Multi-pie (tab bar)**: Tab bar hidden when only 1 pie
+- [ ] **Multi-pie (tab bar)**: "+" button creates new pie and switches to it
+- [ ] **Multi-pie (tab bar)**: Click active tab shows rename/delete context menu
+- [ ] **Multi-pie (tab bar)**: Drag-and-drop reorder tabs
+- [ ] **Multi-pie (tab bar)**: Max 25vw width, wraps on overflow
+- [ ] **Multi-pie (tab bar)**: Mobile full width
+- [ ] **Multi-pie (switch)**: Switching pies loads correct categories, spokes, priorities
+- [ ] **Multi-pie (switch)**: Chart and summary cards re-render correctly
+- [ ] **Multi-pie (rename)**: Tab label updates, pie data updated
+- [ ] **Multi-pie (delete)**: Pie removed from meta and storage
+- [ ] **Multi-pie (delete)**: Switches to another pie after deletion
+- [ ] **Multi-pie (delete)**: Delete last pie creates fresh default
+- [ ] **Multi-pie (Firebase)**: Shared meta syncs (new pie on one device appears on others)
+- [ ] **Multi-pie (Firebase)**: Per-pie data syncs between team members
+- [ ] **Multi-pie (Firebase)**: Per-user per-pie priorities (extends v0.15)
+- [ ] **Multi-pie (Firebase)**: Local-only pies pushed to Firebase on connect
+- [ ] **Multi-pie (Firebase)**: First-time sign-in from Settings syncs correctly
+- [ ] **Multi-pie (Firebase)**: Pie deletion cleans up `userPriorities/{uid}/{pieId}`
+- [ ] **Multi-pie (import/export)**: Export filename includes pie name
+- [ ] **Multi-pie (import/export)**: Import shows source/target pie context
+- [ ] **Multi-pie (tutorial)**: Example pies named Life Pie, Team Pie, Health Pie
+- [ ] **Multi-pie (tutorial)**: Pie names appear in tab bar
+- [ ] **Multi-pie (tutorial)**: Tutorial console messages only in debug mode
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
@@ -1232,7 +1324,7 @@ The project is currently in active development. Key areas for improvement:
 3. Performance optimization for large datasets
 4. Additional export formats (CSV, Markdown, PDF)
 5. Undo/redo system
-6. Multiple document support
+6. ~~Multiple document support~~ (implemented in v0.16)
 
 ## License
 [Add license information]
