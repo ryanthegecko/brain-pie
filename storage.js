@@ -1,6 +1,87 @@
 const Storage = {
     STORAGE_KEY: 'brainPieChartData',
-    
+    META_KEY: 'brainPie_meta',
+    PIE_KEY_PREFIX: 'brainPie_pie_',
+
+    // --- Multi-pie localStorage methods ---
+
+    saveMeta(meta) {
+        try {
+            localStorage.setItem(this.META_KEY, JSON.stringify(meta));
+            return true;
+        } catch (error) {
+            console.error('Meta save error:', error);
+            return false;
+        }
+    },
+
+    loadMeta() {
+        try {
+            const json = localStorage.getItem(this.META_KEY);
+            return json ? JSON.parse(json) : null;
+        } catch (error) {
+            console.error('Meta load error:', error);
+            return null;
+        }
+    },
+
+    savePie(pieId, data) {
+        try {
+            localStorage.setItem(this.PIE_KEY_PREFIX + pieId, JSON.stringify(data));
+            return true;
+        } catch (error) {
+            console.error('Pie save error:', error);
+            return false;
+        }
+    },
+
+    loadPie(pieId) {
+        try {
+            const json = localStorage.getItem(this.PIE_KEY_PREFIX + pieId);
+            return json ? JSON.parse(json) : null;
+        } catch (error) {
+            console.error('Pie load error:', error);
+            return null;
+        }
+    },
+
+    deletePie(pieId) {
+        localStorage.removeItem(this.PIE_KEY_PREFIX + pieId);
+    },
+
+    /**
+     * Migrate old single-blob format to multi-pie format.
+     * Returns the meta object if migration happened, null if no old data.
+     */
+    migrateToMultiPie() {
+        // Already migrated?
+        const existing = this.loadMeta();
+        if (existing) return existing;
+
+        // Check for old format
+        const oldData = this.load();
+        if (!oldData || !oldData.categories) return null;
+
+        const pieId = 'pie-' + Date.now();
+        const meta = { pieIds: [pieId], activePieId: pieId, pieNames: { [pieId]: 'My Pie' } };
+        const pieData = {
+            id: pieId,
+            name: 'My Pie',
+            categories: oldData.categories,
+            categoryPercentageOverrides: oldData.categoryPercentageOverrides || {},
+            priorityList: oldData.priorityList || []
+        };
+
+        this.saveMeta(meta);
+        this.savePie(pieId, pieData);
+
+        // Remove old key
+        localStorage.removeItem(this.STORAGE_KEY);
+
+        Debug.log('Migrated old localStorage data to multi-pie format, pieId:', pieId);
+        return meta;
+    },
+
     save(data) {
         try {
             const jsonData = JSON.stringify(data);
@@ -72,7 +153,10 @@ const Storage = {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `brain-pie-chart-${new Date().toISOString().split('T')[0]}.json`;
+        const pieName = (typeof DataModel !== 'undefined' && DataModel.currentPieName)
+            ? DataModel.currentPieName.replace(/[^a-zA-Z0-9-_ ]/g, '').trim().replace(/\s+/g, '-').toLowerCase()
+            : 'chart';
+        a.download = `brain-pie-${pieName}-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

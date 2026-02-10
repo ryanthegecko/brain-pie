@@ -30,11 +30,11 @@
             <div class="top-bar-left">
                 <div style="display:flex;">
                     <h1><span style="vertical-align:bottom;margin-right: 15px;">🥧</span>Brain Pie</h1>
-                    <button class="blank"><span style="vertical-align:bottom;margin-left: 15px;position:relative;top:4px;" class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></button> 
+                    <button class="blank"><span style="vertical-align:bottom;margin-left: 15px;position:relative;top:4px;" class="info-icon" onclick="UI.showDisclaimer()">ⓘ</span></button>
                 </div>
-                
-                
-                
+                <div class="pie-tabs" id="pie-tabs">
+                    <!-- Rendered dynamically by UI.renderPieTabs() -->
+                </div>
             </div>
             <div class="top-bar-right">
                 <div>
@@ -1314,8 +1314,8 @@
                 </div>
             </div>
 
-            <!-- Save button -->
-            <button onclick="UI.saveSpokeEditor()" style="margin-top:20px;width:100%;">Save</button>
+            <!-- Save/Done button -->
+            <button id="spoke-editor-save-btn" onclick="UI.saveSpokeEditor()" style="margin-top:20px;width:100%;">Save</button>
         </div>
     </div>
 

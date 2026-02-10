@@ -2387,6 +2387,11 @@ const UI = {
             this.renderTab2Spokes();
         }
         App.render();
+
+        // Notify tutorial (spoke editor close acts like datetime-picker-closed)
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('datetime-picker-closed');
+        }
     },
 
     switchSpokeEditorTab(tab) {
@@ -2396,6 +2401,14 @@ const UI = {
         });
         document.getElementById('spoke-editor-tab-1').classList.toggle('active', tab === 1);
         document.getElementById('spoke-editor-tab-2').classList.toggle('active', tab === 2);
+
+        // Update bottom button: "Done" on schedule tab (skip scheduling), "Save" on type tab
+        const saveBtn = document.getElementById('spoke-editor-save-btn');
+        if (saveBtn) {
+            const type = this._getSelectedSpokeEditorType();
+            const isScheduleTab = tab === 2 && (type === 'single' || type === 'repeating');
+            saveBtn.textContent = isScheduleTab ? 'Done' : 'Save';
+        }
 
         if (tab === 2) this.populateSpokeEditorScheduleTab();
     },
@@ -2687,9 +2700,10 @@ const UI = {
         const type = this._getSelectedSpokeEditorType();
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
 
-        // If on Tab 2 with Single/Repeating, save schedule (which also saves type)
+        // If on Tab 2 with Single/Repeating, "Done" = save type only, skip scheduling
         if (this.spokeEditorTab === 2 && (type === 'single' || type === 'repeating')) {
-            await this.saveSpokeEditorSchedule();
+            DataModel.updateSpokeType(categoryId, itemId, spokeIndex, type);
+            this.closeSpokeEditor();
             return;
         }
 
@@ -3011,6 +3025,8 @@ const UI = {
     async signInWithGoogle() {
         try {
             this.updateSyncStatus('connecting', 'Signing in...');
+            // Prevent auto-sync — reloadDataFromFirebase() handles it
+            StorageAdapter.skipSyncOnConnect = true;
             await FirebaseAdapter.signInWithGoogle();
             // Explicitly update UI after sign-in completes
             this.updateAuthUI();
@@ -3075,21 +3091,65 @@ const UI = {
 
     /**
      * Reload data from Firebase after sign-in
-     * Handles first-time sync: if Firebase is empty but local data exists, offer to push
+     * Multi-pie aware: checks meta → pies, migrates old format, or offers first-time push
      */
     async reloadDataFromFirebase() {
-        // First, try to load directly from Firebase (not through adapter)
-        const firebaseData = await FirebaseAdapter.load();
-        const localData = Storage.load();
+        // 1. Check for multi-pie meta
+        let meta = await FirebaseAdapter.loadMeta();
 
-        if (firebaseData && firebaseData.categories && firebaseData.categories.length > 0) {
-            // Firebase has data - use it
-            DataModel.categories = firebaseData.categories;
-            DataModel.categoryPercentageOverrides = firebaseData.categoryPercentageOverrides || {};
+        if (!meta) {
+            // 2. No meta — try migrating old single-blob format
+            meta = await FirebaseAdapter.migrateToMultiPie();
+        }
+
+        if (meta && meta.pieIds) {
+            // Firebase has multi-pie data — load it
+            const pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+            const activePieId = pieIds[0]; // Default to first pie
+
+            // Update local meta to match Firebase
+            DataModel.pieMeta = {
+                pieIds: pieIds,
+                pieNames: meta.pieNames || {},
+                activePieId: activePieId
+            };
+            DataModel.setActivePieId(activePieId);
+            Storage.saveMeta(DataModel.pieMeta);
+
+            // Load the active pie data
+            const pieData = await FirebaseAdapter.loadPie(activePieId);
+            if (pieData && pieData.categories) {
+                DataModel.categories = pieData.categories;
+                DataModel.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
+                DataModel.currentPieName = meta.pieNames?.[activePieId] || pieData.name || 'My Pie';
+                DataModel.normalizeAllSpokes();
+
+                // Save to localStorage backup
+                Storage.savePie(activePieId, {
+                    id: activePieId,
+                    name: DataModel.currentPieName,
+                    categories: DataModel.categories,
+                    categoryPercentageOverrides: DataModel.categoryPercentageOverrides,
+                    priorityList: DataModel.priorityList || []
+                });
+            }
+
+            // Load per-user priorities for this pie
+            const priorities = await FirebaseAdapter.loadPriorities(activePieId);
+            DataModel.priorityList = priorities || [];
+            DataModel.validatePriorityList();
+
+            // Set up listeners for the correct pie
+            StorageAdapter.setupFirebaseListener();
+
             App.render();
             Storage.showStatus('Synced from cloud', 'success');
-        } else if (localData && localData.categories && localData.categories.length > 0) {
-            // Firebase is empty but we have local data - offer to push
+            return;
+        }
+
+        // 3. Firebase is completely empty — offer to push local data
+        const hasLocalData = DataModel.categories && DataModel.categories.length > 0;
+        if (hasLocalData) {
             const shouldPush = confirm(
                 'Firebase is empty but you have local data.\n\n' +
                 'Would you like to upload your existing data to the cloud?\n\n' +
@@ -3097,28 +3157,46 @@ const UI = {
             );
 
             if (shouldPush) {
-                // Push local data to Firebase
-                const success = await FirebaseAdapter.save({
-                    categories: localData.categories,
-                    categoryPercentageOverrides: localData.categoryPercentageOverrides || {},
-                    settings: localData.settings || {},
-                    lastModified: Date.now()
+                // Create multi-pie structure in Firebase from local data
+                const pieId = DataModel.getActivePieId() || DataModel.generatePieId();
+                const pieName = DataModel.currentPieName || 'My Pie';
+                const newMeta = {
+                    pieIds: [pieId],
+                    pieNames: { [pieId]: pieName }
+                };
+
+                await FirebaseAdapter.saveMeta(newMeta);
+                await FirebaseAdapter.savePie(pieId, {
+                    id: pieId,
+                    name: pieName,
+                    categories: DataModel.categories,
+                    categoryPercentageOverrides: DataModel.categoryPercentageOverrides || {}
                 });
 
-                if (success) {
-                    Storage.showStatus('Local data uploaded to cloud', 'success');
-                } else {
-                    Storage.showStatus('Failed to upload data', 'error');
+                // Update local meta
+                DataModel.pieMeta = { ...newMeta, activePieId: pieId };
+                DataModel.setActivePieId(pieId);
+                Storage.saveMeta(DataModel.pieMeta);
+
+                // Push priorities
+                if (DataModel.priorityList && DataModel.priorityList.length > 0) {
+                    await FirebaseAdapter.savePriorities(DataModel.priorityList, pieId);
                 }
+
+                StorageAdapter.setupFirebaseListener();
+                App.render();
+                Storage.showStatus('Local data uploaded to cloud', 'success');
             } else {
-                // User wants to start fresh - keep empty state
                 DataModel.categories = [];
                 DataModel.categoryPercentageOverrides = {};
+                StorageAdapter.setupFirebaseListener();
                 App.render();
                 Storage.showStatus('Starting fresh', 'success');
             }
+        } else {
+            // No local data, no Firebase data — just set up listeners
+            StorageAdapter.setupFirebaseListener();
         }
-        // If both are empty, just continue with whatever DataModel has (example data)
     },
 
     /**
@@ -3351,6 +3429,15 @@ const UI = {
 
         let html = '';
 
+        // Show source and target pie context
+        const sourcePie = ImportManager.importData?.pieName;
+        const targetPie = DataModel.currentPieName || 'My Pie';
+        if (sourcePie) {
+            html += `<div style="font-size:13px;color:#666;margin-bottom:10px;padding:6px 10px;background:#f5f5f5;border-radius:6px;">Importing from <strong>${this.escapeHtml(sourcePie)}</strong> into <strong>${this.escapeHtml(targetPie)}</strong></div>`;
+        } else {
+            html += `<div style="font-size:13px;color:#666;margin-bottom:10px;padding:6px 10px;background:#f5f5f5;border-radius:6px;">Importing into <strong>${this.escapeHtml(targetPie)}</strong></div>`;
+        }
+
         for (const cat of tree) {
             const catClass = cat.selected ? '' : 'deselected';
 
@@ -3480,7 +3567,8 @@ const UI = {
      * Quick replace all data with import
      */
     async importQuickReplace() {
-        if (!confirm('This will completely replace all existing data with the imported data. Continue?')) {
+        const targetPie = DataModel.currentPieName || 'My Pie';
+        if (!confirm(`This will completely replace all data in "${targetPie}" with the imported data. Continue?`)) {
             return;
         }
 
@@ -3535,6 +3623,9 @@ const UI = {
      * Execute the selective import
      */
     async executeImport() {
+        // Ensure data is normalized (Firebase may convert arrays to objects)
+        DataModel.normalizeAllSpokes();
+
         // Snapshot existing unlinked scheduled actions BEFORE import
         const beforeImport = this.getUnlinkedScheduledActionKeys();
 
@@ -3652,7 +3743,8 @@ const UI = {
         const keys = new Set();
 
         for (const category of DataModel.categories) {
-            for (const item of category.items) {
+            const items = !category.items ? [] : Array.isArray(category.items) ? category.items : Object.values(category.items);
+            for (const item of items) {
                 if (!item.subItems) continue;
 
                 for (let spokeIdx = 0; spokeIdx < item.subItems.length; spokeIdx++) {
@@ -4097,7 +4189,10 @@ const UI = {
      */
     executeExport() {
         const includeActions = document.getElementById('export-include-actions').checked;
-        const exportData = { categories: [] };
+        const exportData = {
+            pieName: DataModel.currentPieName || 'My Pie',
+            categories: []
+        };
 
         for (const category of DataModel.categories) {
             const catSelected = this.exportSelectedItems[category.id]?.selected;
@@ -4510,5 +4605,137 @@ const UI = {
             onMove(t.clientX, t.clientY);
         }, { passive: true });
         document.addEventListener('touchend', onEnd);
+    },
+
+    // --- Multi-pie tab UI ---
+
+    renderPieTabs() {
+        const container = document.getElementById('pie-tabs');
+        if (!container) return;
+
+        const pies = DataModel.getPieList();
+
+        if (pies.length === 0) {
+            container.innerHTML = '';
+            container.classList.add('hidden');
+            return;
+        }
+
+        container.classList.remove('hidden');
+        container.innerHTML = '';
+
+        pies.forEach(pie => {
+            const btn = document.createElement('button');
+            btn.className = 'pie-tab' + (pie.active ? ' active' : '');
+            btn.textContent = pie.name;
+            btn.dataset.pieId = pie.id;
+
+            btn.addEventListener('click', (e) => {
+                if (pie.active) {
+                    this.showPieContextMenu(pie.id, e, btn);
+                } else {
+                    App.switchPie(pie.id);
+                }
+            });
+
+            btn.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                this.showPieContextMenu(pie.id, e);
+            });
+
+            // Long-press for mobile
+            let longPressTimer = null;
+            btn.addEventListener('touchstart', (e) => {
+                longPressTimer = setTimeout(() => {
+                    e.preventDefault();
+                    this.showPieContextMenu(pie.id, e.touches[0]);
+                }, 600);
+            }, { passive: false });
+            btn.addEventListener('touchend', () => clearTimeout(longPressTimer));
+            btn.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+
+            container.appendChild(btn);
+        });
+
+        // Add "+ New" button
+        const addBtn = document.createElement('button');
+        addBtn.className = 'pie-tab pie-tab-add';
+        addBtn.textContent = '+';
+        addBtn.title = 'New pie';
+        addBtn.addEventListener('click', () => this.promptNewPie());
+        container.appendChild(addBtn);
+    },
+
+    showPieContextMenu(pieId, event, anchorEl) {
+        // Remove any existing context menu
+        this.closePieContextMenu();
+
+        const menu = document.createElement('div');
+        menu.className = 'pie-context-menu';
+
+        if (anchorEl) {
+            // Position below the tab button
+            const rect = anchorEl.getBoundingClientRect();
+            menu.style.left = rect.left + 'px';
+            menu.style.top = (rect.bottom + 4) + 'px';
+        } else {
+            menu.style.left = (event.clientX || event.pageX) + 'px';
+            menu.style.top = (event.clientY || event.pageY) + 'px';
+        }
+
+        const renameBtn = document.createElement('button');
+        renameBtn.textContent = 'Rename';
+        renameBtn.addEventListener('click', () => {
+            this.closePieContextMenu();
+            this.promptRenamePie(pieId);
+        });
+        menu.appendChild(renameBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'danger';
+        deleteBtn.addEventListener('click', () => {
+            this.closePieContextMenu();
+            this.confirmDeletePie(pieId);
+        });
+        menu.appendChild(deleteBtn);
+
+        document.body.appendChild(menu);
+
+        // Close on click outside
+        const closeHandler = (e) => {
+            if (!menu.contains(e.target)) {
+                this.closePieContextMenu();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 0);
+    },
+
+    closePieContextMenu() {
+        const existing = document.querySelector('.pie-context-menu');
+        if (existing) existing.remove();
+    },
+
+    promptNewPie() {
+        const name = prompt('New pie name:');
+        if (name && name.trim()) {
+            App.createPie(name.trim());
+        }
+    },
+
+    promptRenamePie(pieId) {
+        const currentName = DataModel.getPieName(pieId);
+        const name = prompt('Rename pie:', currentName);
+        if (name && name.trim() && name.trim() !== currentName) {
+            App.renamePie(pieId, name.trim());
+        }
+    },
+
+    confirmDeletePie(pieId) {
+        const name = DataModel.getPieName(pieId);
+        if (confirm(`Delete "${name}" and all its data? This cannot be undone.`)) {
+            App.deletePie(pieId);
+        }
     }
 };

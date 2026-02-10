@@ -7,10 +7,263 @@ const DataModel = {
     // Priority list - ordered array of item references (index 0 = highest)
     priorityList: [],
 
-    async loadFromStorageOrExample() {
-        let data;
+    // Multi-pie meta: { pieIds: [...], activePieId: "..." }
+    pieMeta: null,
 
-        // Use StorageAdapter if available (supports Firebase)
+    // Current pie name
+    currentPieName: 'My Pie',
+
+    // --- Multi-pie methods ---
+
+    generatePieId() {
+        return 'pie-' + Date.now();
+    },
+
+    /**
+     * Load meta from storage (localStorage or Firebase).
+     * Handles migration from old format.
+     * Returns meta object.
+     */
+    async loadMeta() {
+        let meta;
+        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            meta = await StorageAdapter.loadMeta();
+            if (!meta) {
+                meta = await StorageAdapter.migrateToMultiPie();
+            }
+        } else {
+            meta = Storage.loadMeta();
+            if (!meta) {
+                meta = Storage.migrateToMultiPie();
+            }
+        }
+
+        if (meta) {
+            // Normalize pieIds (Firebase may convert arrays to objects)
+            if (meta.pieIds && !Array.isArray(meta.pieIds)) {
+                meta.pieIds = Object.values(meta.pieIds);
+            }
+            this.pieMeta = meta;
+            // Restore activePieId from localStorage (per-user, not synced)
+            const storedActive = this.loadActivePieId();
+            if (storedActive && meta.pieIds && meta.pieIds.includes(storedActive)) {
+                this.pieMeta.activePieId = storedActive;
+            } else if (!this.pieMeta.activePieId && meta.pieIds && meta.pieIds.length > 0) {
+                this.pieMeta.activePieId = meta.pieIds[0];
+            }
+        }
+        return meta;
+    },
+
+    saveMeta() {
+        if (!this.pieMeta) return;
+        // Save activePieId to localStorage only
+        if (this.pieMeta.activePieId) {
+            localStorage.setItem('brainPie_activePieId', this.pieMeta.activePieId);
+        }
+        // For Firebase, strip activePieId (it's per-user, not shared)
+        const metaForStorage = {
+            pieIds: this.pieMeta.pieIds,
+            pieNames: this.pieMeta.pieNames || {}
+        };
+        if (typeof StorageAdapter !== 'undefined') {
+            StorageAdapter.saveMeta(metaForStorage).catch(e => {
+                console.error('saveMeta failed:', e);
+            });
+        } else {
+            // localStorage saves the full meta including activePieId
+            Storage.saveMeta(this.pieMeta);
+        }
+    },
+
+    getActivePieId() {
+        if (!this.pieMeta) return null;
+        // activePieId stored in localStorage only (each user picks their own view)
+        return this.pieMeta.activePieId || (this.pieMeta.pieIds && this.pieMeta.pieIds[0]) || null;
+    },
+
+    setActivePieId(pieId) {
+        if (!this.pieMeta) return;
+        this.pieMeta.activePieId = pieId;
+        // Only persist activePieId to localStorage (not Firebase)
+        localStorage.setItem('brainPie_activePieId', pieId);
+    },
+
+    loadActivePieId() {
+        return localStorage.getItem('brainPie_activePieId');
+    },
+
+    getPieName(pieId) {
+        if (this.pieMeta && this.pieMeta.pieNames && this.pieMeta.pieNames[pieId]) {
+            return this.pieMeta.pieNames[pieId];
+        }
+        return this.currentPieName || 'My Pie';
+    },
+
+    getPieList() {
+        if (!this.pieMeta) return [];
+        // Normalize pieIds (Firebase may convert arrays to objects)
+        let ids = this.pieMeta.pieIds || [];
+        if (!Array.isArray(ids)) ids = Object.values(ids);
+        const activeId = this.getActivePieId();
+        return ids.map(id => ({
+            id,
+            name: this.getPieName(id),
+            active: id === activeId
+        }));
+    },
+
+    async createPie(name) {
+        const pieId = this.generatePieId();
+        if (!this.pieMeta) {
+            this.pieMeta = { pieIds: [], activePieId: null, pieNames: {} };
+        }
+        this.pieMeta.pieIds.push(pieId);
+        if (!this.pieMeta.pieNames) this.pieMeta.pieNames = {};
+        this.pieMeta.pieNames[pieId] = name;
+        this.saveMeta();
+
+        // Save empty pie data
+        const emptyPie = {
+            id: pieId,
+            name: name,
+            categories: [],
+            categoryPercentageOverrides: {},
+            priorityList: []
+        };
+        if (typeof StorageAdapter !== 'undefined') {
+            await StorageAdapter.savePie(pieId, emptyPie);
+        } else {
+            Storage.savePie(pieId, emptyPie);
+        }
+
+        return pieId;
+    },
+
+    async deletePie(pieId) {
+        if (!this.pieMeta) return;
+        this.pieMeta.pieIds = this.pieMeta.pieIds.filter(id => id !== pieId);
+        if (this.pieMeta.pieNames) delete this.pieMeta.pieNames[pieId];
+
+        // Delete pie storage
+        if (typeof StorageAdapter !== 'undefined') {
+            await StorageAdapter.deletePie(pieId);
+        } else {
+            Storage.deletePie(pieId);
+        }
+
+        // If we deleted the active pie, switch to the first remaining one
+        if (this.pieMeta.activePieId === pieId) {
+            if (this.pieMeta.pieIds.length > 0) {
+                await this.switchPie(this.pieMeta.pieIds[0]);
+            } else {
+                // No pies left — create a fresh default
+                const newId = await this.createPie('My Pie');
+                await this.switchPie(newId);
+                // Load example data into the fresh pie
+                const example = ExampleData.get();
+                this.categories = example.categories;
+                this.categoryPercentageOverrides = example.categoryPercentageOverrides || {};
+                this.priorityList = [];
+                this.saveToStorage();
+            }
+        }
+
+        this.saveMeta();
+    },
+
+    async renamePie(pieId, newName) {
+        if (!this.pieMeta) return;
+        if (!this.pieMeta.pieNames) this.pieMeta.pieNames = {};
+        this.pieMeta.pieNames[pieId] = newName;
+
+        // Also update name in the pie data itself
+        if (pieId === this.pieMeta.activePieId) {
+            this.currentPieName = newName;
+        }
+
+        this.saveMeta();
+        // Save pie data with updated name if it's active
+        if (pieId === this.pieMeta.activePieId) {
+            this.saveToStorage();
+        }
+    },
+
+    /**
+     * Save current pie data, load target pie, update activePieId.
+     */
+    async switchPie(pieId) {
+        if (!this.pieMeta) return;
+        if (this.pieMeta.activePieId === pieId) return;
+
+        // Save current pie first
+        this.saveToStorage();
+
+        // Update active
+        this.setActivePieId(pieId);
+
+        // Load target pie
+        let pieData;
+        if (typeof StorageAdapter !== 'undefined') {
+            pieData = await StorageAdapter.loadPie(pieId);
+        } else {
+            pieData = Storage.loadPie(pieId);
+        }
+
+        if (pieData) {
+            this.categories = pieData.categories || [];
+            this.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
+            this.priorityList = pieData.priorityList || [];
+            this.currentPieName = pieData.name || this.getPieName(pieId);
+            this.normalizeAllSpokes();
+            this.validatePriorityList();
+        } else {
+            // Pie data missing — start empty
+            this.categories = [];
+            this.categoryPercentageOverrides = {};
+            this.priorityList = [];
+            this.currentPieName = this.getPieName(pieId);
+        }
+
+        // Switch Firebase listeners if in Firebase mode
+        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            StorageAdapter.switchPieListeners(pieId);
+
+            // Load per-user priorities for this pie
+            const userPriorities = await StorageAdapter.loadPriorities(pieId);
+            if (userPriorities !== null && userPriorities.length > 0) {
+                this.priorityList = userPriorities;
+                this.validatePriorityList();
+            }
+        }
+    },
+
+    async loadFromStorageOrExample() {
+        // --- Multi-pie path ---
+        const meta = await this.loadMeta();
+
+        if (meta && meta.activePieId) {
+            // Load active pie
+            let pieData;
+            if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+                pieData = await StorageAdapter.loadPie(meta.activePieId);
+            } else {
+                pieData = Storage.loadPie(meta.activePieId);
+            }
+
+            if (pieData && pieData.categories) {
+                this.categories = pieData.categories;
+                this.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
+                this.priorityList = pieData.priorityList || [];
+                this.currentPieName = pieData.name || this.getPieName(meta.activePieId);
+                this.normalizeAllSpokes();
+                this.validatePriorityList();
+                return;
+            }
+        }
+
+        // --- Legacy single-blob fallback (Firebase without multi-pie meta) ---
+        let data;
         if (typeof StorageAdapter !== 'undefined') {
             data = await StorageAdapter.load();
         } else {
@@ -18,12 +271,20 @@ const DataModel = {
         }
 
         if (data && data.categories) {
-            // Returning user: use stored data
             this.categories = data.categories;
             this.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
             this.priorityList = data.priorityList || [];
-            this.normalizeAllSpokes(); // Restore fields Firebase may have dropped
+            this.normalizeAllSpokes();
             this.validatePriorityList();
+
+            // Migrate to multi-pie on the fly
+            if (!this.pieMeta) {
+                const pieId = this.generatePieId();
+                this.pieMeta = { pieIds: [pieId], activePieId: pieId, pieNames: { [pieId]: 'My Pie' } };
+                this.currentPieName = 'My Pie';
+                this.saveMeta();
+                this.saveToStorage();
+            }
             return;
         }
 
@@ -33,12 +294,17 @@ const DataModel = {
             }
         }
 
-        // First time: load example data (Life Pie)
+        // First time: create default pie with example data
+        const pieId = this.generatePieId();
+        this.pieMeta = { pieIds: [pieId], activePieId: pieId, pieNames: { [pieId]: 'My Pie' } };
+        this.currentPieName = 'My Pie';
+
         const example = ExampleData.get();
         this.categories = example.categories;
         this.categoryPercentageOverrides = example.categoryPercentageOverrides || {};
+        this.priorityList = [];
 
-        // Persist it so next visit is treated as "returning"
+        this.saveMeta();
         this.saveToStorage();
     },
 
@@ -70,25 +336,34 @@ const DataModel = {
     },
 
     saveToStorage() {
-        const calendarProvider = localStorage.getItem('calendarProvider') || 'google';
+        const pieId = this.getActivePieId();
 
-        const data = {
+        const pieData = {
+            id: pieId,
+            name: this.currentPieName || 'My Pie',
             categories: this.categories,
             categoryPercentageOverrides: this.categoryPercentageOverrides,
             priorityList: this.priorityList,
-            settings: {
-                calendarProvider: calendarProvider
-            },
-            lastModified: Date.now()  // For sync conflict resolution
+            lastModified: Date.now()
         };
 
-        // Use StorageAdapter if available (supports Firebase)
         if (typeof StorageAdapter !== 'undefined') {
-            StorageAdapter.save(data).catch(e => {
-                console.error('StorageAdapter.save failed:', e);
-            });
+            if (pieId) {
+                StorageAdapter.savePie(pieId, pieData).catch(e => {
+                    console.error('StorageAdapter.savePie failed:', e);
+                });
+            } else {
+                // Fallback: no multi-pie yet, use old save path
+                StorageAdapter.save(pieData).catch(e => {
+                    console.error('StorageAdapter.save failed:', e);
+                });
+            }
         } else {
-            Storage.save(data);
+            if (pieId) {
+                Storage.savePie(pieId, pieData);
+            } else {
+                Storage.save(pieData);
+            }
         }
     },
 

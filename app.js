@@ -121,26 +121,25 @@ const App = {
         if (typeof StorageAdapter !== 'undefined') {
             await StorageAdapter.init();
 
-            // Subscribe to real-time updates from Firebase (shared data — no priorities)
+            // Subscribe to real-time updates from Firebase (shared pie data — no priorities)
             StorageAdapter.subscribeToUpdates((data) => {
                 if (data && data.categories) {
                     Debug.log('Received remote data update');
-                    // Clean internal metadata
-                    const { _saveId, _savedBy, priorityList: _ignoredPriorities, ...cleanData } = data;
-                    DataModel.categories = cleanData.categories;
+                    const { _saveId, _savedBy, priorityList: _ignoredPriorities, lastModified, lastModifiedBy, ...cleanData } = data;
+                    DataModel.categories = cleanData.categories || [];
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
-                    // Do NOT overwrite priorityList from shared data — priorities are per-user
-                    DataModel.normalizeAllSpokes(); // Restore fields Firebase drops
-                    DataModel.validatePriorityList(); // Clean up orphans after shared data changes
+                    DataModel.normalizeAllSpokes();
+                    DataModel.validatePriorityList();
 
-                    // Save to localStorage so it's up-to-date on next page load
-                    // Include current user's priorities in the local backup
-                    Storage.save({ ...cleanData, priorityList: DataModel.priorityList });
+                    // Save to localStorage backup
+                    const pieId = DataModel.getActivePieId();
+                    if (pieId) {
+                        Storage.savePie(pieId, { ...cleanData, priorityList: DataModel.priorityList });
+                    }
 
                     this.render();
                     Storage.showStatus('Synced from cloud', 'success');
 
-                    // Update main sync indicator
                     if (typeof UI !== 'undefined' && UI.updateMainSyncIndicator) {
                         UI.updateMainSyncIndicator('synced', StorageAdapter.getProjectId());
                     }
@@ -154,23 +153,37 @@ const App = {
                 DataModel.validatePriorityList();
                 this.render();
             });
+
+            // Subscribe to meta updates (team members adding/renaming/deleting pies)
+            StorageAdapter.subscribeToMetaUpdates((meta) => {
+                Debug.log('Received remote meta update');
+                // Preserve local activePieId (not synced via Firebase)
+                const currentActive = DataModel.getActivePieId();
+                // Normalize pieIds (Firebase may convert arrays to objects)
+                if (meta.pieIds && !Array.isArray(meta.pieIds)) {
+                    meta.pieIds = Object.values(meta.pieIds);
+                }
+                meta.activePieId = currentActive;
+                DataModel.pieMeta = meta;
+                // Save locally with activePieId
+                Storage.saveMeta(meta);
+                UI.renderPieTabs();
+            });
         }
 
         // Load data (now async to support Firebase)
         await DataModel.loadFromStorageOrExample();
 
-        // Per-user priorities: load from Firebase user path if available
+        // Per-user priorities: load from Firebase user path if available (per-pie)
         if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
-            const userPriorities = await StorageAdapter.loadPriorities();
+            const activePieId = DataModel.getActivePieId();
+            const userPriorities = await StorageAdapter.loadPriorities(activePieId);
             if (userPriorities !== null && userPriorities.length > 0) {
-                // User has priorities in their per-user path — use those
                 DataModel.priorityList = userPriorities;
                 DataModel.validatePriorityList();
             } else if (DataModel.priorityList.length > 0) {
-                // Migration: user has priorities from the shared blob but none in per-user path
-                // Copy them to the per-user path as a one-time migration
                 Debug.log('Migrating shared priorities to per-user path');
-                await StorageAdapter.savePriorities(DataModel.priorityList);
+                await StorageAdapter.savePriorities(DataModel.priorityList, activePieId);
             }
         }
 
@@ -428,10 +441,39 @@ const App = {
         event.target.value = '';
     },
 
+    async switchPie(pieId) {
+        await DataModel.switchPie(pieId);
+        ChartRenderer.expandedView = null;
+        ChartRenderer.collapseIfBranchExpanded();
+        ChartRenderer.init('chart-container');
+        this.render();
+    },
+
+    async createPie(name) {
+        const pieId = await DataModel.createPie(name);
+        await this.switchPie(pieId);
+        UI.renderPieTabs();
+    },
+
+    async deletePie(pieId) {
+        await DataModel.deletePie(pieId);
+        ChartRenderer.expandedView = null;
+        ChartRenderer.collapseIfBranchExpanded();
+        ChartRenderer.init('chart-container');
+        this.render();
+        UI.renderPieTabs();
+    },
+
+    async renamePie(pieId, name) {
+        await DataModel.renamePie(pieId, name);
+        UI.renderPieTabs();
+    },
+
     render() {
         const categories = DataModel.getCategories();
         ChartRenderer.render(categories);
         UI.renderCategoriesList(categories);
+        UI.renderPieTabs();
         if (document.getElementById('prioritiser-window').classList.contains('active')) {
             UI.renderPriorityList();
         }

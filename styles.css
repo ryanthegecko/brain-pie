@@ -50,6 +50,78 @@ h2 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Multi-pie tab bar */
+.pie-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px 0 0;
+}
+.pie-tabs:empty,
+.pie-tabs.hidden {
+    display: none;
+}
+.pie-tab {
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
+    color: #666;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+.pie-tab.active {
+    background: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+.pie-tab:hover:not(.active) {
+    background: #e8e8e8;
+}
+.pie-tab-add {
+    background: transparent;
+    border: 1px dashed #ccc;
+    color: #999;
+}
+.pie-tab-add:hover {
+    background: #f0f0f0;
+    color: #666;
+}
+
+/* Pie tab context menu */
+.pie-context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10000;
+    min-width: 140px;
+    padding: 4px 0;
+}
+.pie-context-menu button {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+}
+.pie-context-menu button:hover {
+    background: #f0f0f0;
+}
+.pie-context-menu button.danger {
+    color: #e53935;
+}
+.pie-context-menu button.danger:hover {
+    background: #fce4ec;
+}
+
 .top-bar-right,
 .top-bar-right-mobile {
     position: absolute;
@@ -343,6 +415,12 @@ h2 {
         width: 100%;
         box-sizing: border-box;
         margin-bottom: 10px;
+    }
+
+    .pie-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
