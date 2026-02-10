@@ -4636,6 +4636,7 @@ const UI = {
             btn.className = 'pie-tab' + (pie.active ? ' active' : '');
             btn.textContent = pie.name;
             btn.dataset.pieId = pie.id;
+            btn.draggable = true;
 
             btn.addEventListener('click', (e) => {
                 if (pie.active) {
@@ -4650,7 +4651,37 @@ const UI = {
                 this.showPieContextMenu(pie.id, e);
             });
 
-            // Long-press for mobile
+            // Drag-and-drop reorder
+            btn.addEventListener('dragstart', (e) => {
+                btn.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', pie.id);
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            btn.addEventListener('dragend', () => {
+                btn.classList.remove('dragging');
+                container.querySelectorAll('.pie-tab').forEach(t => t.classList.remove('drag-over'));
+            });
+            btn.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                // Only highlight pie tabs, not the "+" button
+                if (btn.dataset.pieId && !btn.classList.contains('dragging')) {
+                    btn.classList.add('drag-over');
+                }
+            });
+            btn.addEventListener('dragleave', () => {
+                btn.classList.remove('drag-over');
+            });
+            btn.addEventListener('drop', (e) => {
+                e.preventDefault();
+                btn.classList.remove('drag-over');
+                const draggedId = e.dataTransfer.getData('text/plain');
+                if (draggedId && draggedId !== pie.id) {
+                    this.reorderPie(draggedId, pie.id);
+                }
+            });
+
+            // Long-press for mobile context menu
             let longPressTimer = null;
             btn.addEventListener('touchstart', (e) => {
                 longPressTimer = setTimeout(() => {
@@ -4671,6 +4702,20 @@ const UI = {
         addBtn.title = 'New pie';
         addBtn.addEventListener('click', () => this.promptNewPie());
         container.appendChild(addBtn);
+    },
+
+    reorderPie(draggedId, targetId) {
+        if (!DataModel.pieMeta || !DataModel.pieMeta.pieIds) return;
+        const ids = [...DataModel.pieMeta.pieIds];
+        const fromIdx = ids.indexOf(draggedId);
+        const toIdx = ids.indexOf(targetId);
+        if (fromIdx === -1 || toIdx === -1) return;
+
+        ids.splice(fromIdx, 1);
+        ids.splice(toIdx, 0, draggedId);
+        DataModel.pieMeta.pieIds = ids;
+        DataModel.saveMeta();
+        this.renderPieTabs();
     },
 
     showPieContextMenu(pieId, event, anchorEl) {
