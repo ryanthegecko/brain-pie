@@ -123,9 +123,15 @@ const StorageAdapter = {
 
             if (meta && meta.pieIds) {
                 // Firebase has multi-pie data — use Firebase's pie structure
-                const pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+                let pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+                let pieNames = meta.pieNames || {};
 
-                // Use local activePieId if it's valid in Firebase, otherwise default to first
+                // Check for local-only pies and offer to push them
+                const merged = await this.pushLocalOnlyPies(pieIds, pieNames);
+                pieIds = merged.pieIds;
+                pieNames = merged.pieNames;
+
+                // Use local activePieId if it's valid, otherwise default to first
                 let activePieId = DataModel.getActivePieId();
                 if (!activePieId || !pieIds.includes(activePieId)) {
                     activePieId = pieIds[0];
@@ -133,7 +139,7 @@ const StorageAdapter = {
 
                 DataModel.pieMeta = {
                     pieIds: pieIds,
-                    pieNames: meta.pieNames || {},
+                    pieNames: pieNames,
                     activePieId: activePieId
                 };
                 DataModel.setActivePieId(activePieId);
@@ -144,7 +150,7 @@ const StorageAdapter = {
                 if (pieData && pieData.categories) {
                     DataModel.categories = pieData.categories;
                     DataModel.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
-                    DataModel.currentPieName = meta.pieNames?.[activePieId] || pieData.name || 'My Pie';
+                    DataModel.currentPieName = pieNames[activePieId] || pieData.name || 'My Pie';
                     DataModel.normalizeAllSpokes();
 
                     Storage.savePie(activePieId, {
@@ -171,6 +177,56 @@ const StorageAdapter = {
 
         // Set up real-time listeners
         this.setupFirebaseListener();
+    },
+
+    /**
+     * Push any local-only pies to Firebase that aren't in the remote meta.
+     * Silently uploads them and returns updated pieIds and pieNames.
+     */
+    async pushLocalOnlyPies(firebasePieIds, firebasePieNames) {
+        const localMeta = Storage.loadMeta();
+        if (!localMeta || !localMeta.pieIds) return { pieIds: firebasePieIds, pieNames: firebasePieNames };
+
+        const localPieIds = Array.isArray(localMeta.pieIds) ? localMeta.pieIds : Object.values(localMeta.pieIds);
+        const localPieNames = localMeta.pieNames || {};
+        const unsyncedIds = localPieIds.filter(id => !firebasePieIds.includes(id));
+
+        if (unsyncedIds.length === 0) return { pieIds: firebasePieIds, pieNames: firebasePieNames };
+
+        // Load each unsynced pie from localStorage and check it has data
+        const piesToPush = [];
+        for (const id of unsyncedIds) {
+            const pieData = Storage.loadPie(id);
+            if (pieData && pieData.categories && pieData.categories.length > 0) {
+                piesToPush.push({ id, data: pieData, name: localPieNames[id] || pieData.name || 'My Pie' });
+            }
+        }
+
+        if (piesToPush.length === 0) return { pieIds: firebasePieIds, pieNames: firebasePieNames };
+
+        const updatedPieIds = [...firebasePieIds];
+        const updatedPieNames = { ...firebasePieNames };
+
+        for (const pie of piesToPush) {
+            await FirebaseAdapter.savePie(pie.id, {
+                id: pie.id,
+                name: pie.name,
+                categories: pie.data.categories,
+                categoryPercentageOverrides: pie.data.categoryPercentageOverrides || {}
+            });
+            updatedPieIds.push(pie.id);
+            updatedPieNames[pie.id] = pie.name;
+
+            // Push priorities if any
+            if (pie.data.priorityList && pie.data.priorityList.length > 0) {
+                await FirebaseAdapter.savePriorities(pie.data.priorityList, pie.id);
+            }
+        }
+
+        // Update Firebase meta with new pies
+        await FirebaseAdapter.saveMeta({ pieIds: updatedPieIds, pieNames: updatedPieNames });
+        Debug.log('StorageAdapter: pushed', piesToPush.length, 'local pies to Firebase');
+        return { pieIds: updatedPieIds, pieNames: updatedPieNames };
     },
 
     /**
