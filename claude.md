@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** February 2026
-**Current Version:** v0.14
+**Current Version:** v0.15
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -58,7 +58,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Handles CRUD operations for categories, items (slices), spokes, and actions
 - Manages percentage calculations and normalization
 - Handles category percentage overrides (manual adjustments)
-- Manages priority list (add, remove, reorder, resolve, validate references)
+- Manages priority list (add, remove, reorder, resolve, validate references, per-user Firebase save)
 
 **Key Data Structure:**
 ```javascript
@@ -120,6 +120,8 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
   },
   priorityList: [
     // Ordered array of item references (index 0 = highest priority)
+    // In Firebase mode: stored per-user at userPriorities/{uid}, NOT in shared blob
+    // In localStorage mode: stored here as part of the main data blob
     { type: "spoke", categoryId: "cat-id", itemId: "item-id", spokeIndex: 0 },
     { type: "action", categoryId: "cat-id", itemId: "item-id", spokeIndex: 1, childIndex: 0 },
     { type: "slice", categoryId: "cat-id", itemId: "item-id" }
@@ -257,10 +259,19 @@ Optional real-time sync using Firebase Realtime Database:
 - **URL-based config** - Share `?config=base64...` URL for easy setup
 - **Google authentication** - Each user/team uses their own Firebase project
 - **Real-time sync** - Changes appear instantly across all connected devices
+- **Per-user priorities** - Priority lists stored per-user at `userPriorities/{uid}`, not in shared data
 - **First-time sync prompt** - Option to push local data or start fresh
 - **Export Firebase config** - Download config as JSON for sharing
 - **Offline fallback** - Automatically uses localStorage when disconnected
 - **Visual indicator** - Shows project name and sync status in main UI
+
+**Firebase Path Structure:**
+```
+brainpie/{projectId}/
+├── data/                              ← shared blob (categories, settings, overrides)
+└── userPriorities/{uid}/              ← per-user priority list
+    └── [{ type, categoryId, itemId, spokeIndex, childIndex }]
+```
 
 ### 7. Responsive Design
 
@@ -329,6 +340,39 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.15 (February 2026)
+Per-user priorities for Firebase team collaboration:
+
+**Per-User Priority Storage:**
+- Priority lists now stored per-user in Firebase at `userPriorities/{uid}` instead of in the shared data blob
+- Each team member on a shared Firebase project sees only their own priorities
+- Same-user multi-device sync: priority changes on one device appear on other devices (same user)
+- Team members' categories/slices/spokes still sync as shared data — only priorities are personal
+- localStorage mode unchanged: priorities remain in the main data blob (single user)
+
+**Firebase Path Structure:**
+- Shared data: `brainpie/{projectId}/data/` (categories, settings, overrides — no priorityList)
+- Per-user priorities: `brainpie/{projectId}/userPriorities/{uid}/` (priority array)
+- `FirebaseAdapter.save()` now strips `priorityList` from shared data before writing
+- New methods: `getUserPriorityPath()`, `savePriorities()`, `loadPriorities()`, `subscribeToPriorityChanges()`, `unsubscribeFromPriorityChanges()`
+
+**Storage Adapter Routing:**
+- New `StorageAdapter.savePriorities()` routes to Firebase per-user path in Firebase mode, no-op in localStorage mode
+- New `StorageAdapter.loadPriorities()` reads from per-user path in Firebase mode
+- New `StorageAdapter.subscribeToPriorityChanges()` for real-time priority sync
+- Firebase listener no longer overwrites `DataModel.priorityList` from shared data callback
+
+**Data Model:**
+- Priority CRUD methods (`addPriority`, `removePriority`, `reorderPriority`) now call `savePrioritiesToStorage()` for immediate Firebase writes
+- New `savePrioritiesToStorage()` helper method
+
+**Migration:**
+- On first load after upgrade: if shared data contains `priorityList` but per-user path is empty, copies shared priorities to per-user path
+- Shared blob's `priorityList` gets stripped on next save naturally
+- Each team member gets the existing shared list as their starting point
+
+---
 
 ### v0.14 (February 2026)
 Unified spoke editor, schedule pill border states, expanded view sizing, clickable URLs, and scrollable scheduler:
@@ -931,6 +975,7 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 - ~~All-Day Events~~ - Implemented in v0.12 (checkbox in datetime picker, defaults to all-day for new events)
 - ~~Invitees / Attendees~~ - Implemented in v0.12 (comma-separated emails, Google Calendar API + Apple .ics support)
 - ~~Unified Spoke Editor~~ - Implemented in v0.14 (Phase 0 of Transforms: merged spoke-type-picker + spoke-config into tabbed editor)
+- ~~Per-User Priorities~~ - Implemented in v0.15 (Firebase priorities stored at `userPriorities/{uid}`, team isolation, migration from shared blob)
 
 ## Development Notes
 
@@ -1142,6 +1187,14 @@ Debug.log('message', data)
 - [ ] **Docs popup**: Mobile responsive (nav wraps, fits 90vh)
 - [ ] **Docs popup**: All page content accurate and covers app features
 - [ ] **Prioritiser state**: Window open/closed and position restored on page load
+- [ ] **Per-user priorities (localStorage)**: Priorities save/load as before (no regression)
+- [ ] **Per-user priorities (Firebase)**: Priorities written to `userPriorities/{uid}`, not in shared `data/`
+- [ ] **Per-user priorities (multi-device)**: Change priority on one device → appears on other device (same user)
+- [ ] **Per-user priorities (team isolation)**: User A's priorities don't appear for User B
+- [ ] **Per-user priorities (migration)**: Existing shared `priorityList` copied to user path on first load
+- [ ] **Per-user priorities (shared sync)**: Categories, spokes, schedules still sync between team members
+- [ ] **Per-user priorities (orphan cleanup)**: `validatePriorityList()` runs after load/sync
+- [ ] **Per-user priorities (import/export)**: Priorities included in export, imported to user path
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
