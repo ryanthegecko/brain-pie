@@ -547,23 +547,23 @@ const UI = {
                     const timeStr = spokeSchedule.time ? schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                     const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                     const borderStyle = UI.getScheduleBorderStyle(spokeSchedule.date, spokeSchedule.time);
-                    spokeTypeButton = `<button style="background: #4CAF50; ${borderStyle}" onclick="UI.openSpokeScheduler('${categoryId}', '${itemId}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
+                    spokeTypeButton = `<button style="background: #4CAF50; ${borderStyle}" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
                 } else {
-                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.openSpokeScheduler('${categoryId}', '${itemId}', ${idx})" title="Schedule">📅 Schedule</button>`;
+                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Schedule">📅 Schedule</button>`;
                 }
             } else if (spokeType === 'repeating') {
                 if (spokeRecurrence) {
                     const recurrenceText = this.formatRecurrenceDescriptionCompact(spokeRecurrence);
                     const recBorder = UI.getScheduleBorderStyle(spokeRecurrence.startDate, spokeRecurrence.time);
-                    spokeTypeButton = `<button style="background: #4CAF50; ${recBorder}" onclick="UI.openSpokeRecurrenceScheduler('${categoryId}', '${itemId}', ${idx})" title="Edit recurrence">${recurrenceText}</button>`;
+                    spokeTypeButton = `<button style="background: #4CAF50; ${recBorder}" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Edit recurrence">${recurrenceText}</button>`;
                 } else {
-                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.openSpokeRecurrenceScheduler('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">🔁 Set recurrence</button>`;
+                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">🔁 Set recurrence</button>`;
                 }
             } else if (spokeType === 'list') {
-                spokeTypeButton = `<button class="secondary" onclick="UI.openSpokeConfigFromTab2(${idx})" title="Manage actions">☑️ Actions</button>`;
+                spokeTypeButton = `<button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Manage actions">☑️ Actions</button>`;
             } else {
                 // static - show type picker button
-                spokeTypeButton = `<button class="secondary" onclick="UI.showSpokeTypePicker('${categoryId}', '${itemId}', ${idx})" title="Change spoke type">Spoke type</button>`;
+                spokeTypeButton = `<button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Change spoke type">Spoke type</button>`;
             }
 
             div.innerHTML = `
@@ -695,8 +695,7 @@ const UI = {
         const spoke = item.subItems[spokeIndex];
         const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
 
-        // Use existing spoke config popup
-        this.showSpokeConfig(categoryId, itemId, spokeIndex, spokeName, item.name, category.name);
+        this.showSpokeEditor(categoryId, itemId, spokeIndex);
     },
     
     closeMenuIfOutside(event) {
@@ -946,22 +945,22 @@ const UI = {
                                             const timeStr = spokeSchedule.time ? schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                                             const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                                             const borderStyle = UI.getScheduleBorderStyle(spokeSchedule.date, spokeSchedule.time);
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${borderStyle}" onclick="UI.openSpokeScheduler('${category.id}', '${item.id}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${borderStyle}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.openSpokeScheduler('${category.id}', '${item.id}', ${idx})" title="Schedule">📅</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Schedule">📅</button>`;
                                         }
                                     } else if (spokeType === 'repeating') {
                                         if (spokeRecurrence) {
                                             const recBorder = UI.getScheduleBorderStyle(spokeRecurrence.startDate, spokeRecurrence.time);
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${recBorder}" onclick="UI.openSpokeRecurrenceScheduler('${category.id}', '${item.id}', ${idx})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${recBorder}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.openSpokeRecurrenceScheduler('${category.id}', '${item.id}', ${idx})" title="Set recurrence">🔁</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Set recurrence">🔁</button>`;
                                         }
                                     } else if (spokeType === 'list') {
-                                        spokeTypeBtn = `<button class="" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${idx})" title="Add action">+</button>`;
+                                        spokeTypeBtn = `<button class="" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Edit spoke">+</button>`;
                                     } else {
                                         // static - show type picker
-                                        spokeTypeBtn = `<button class="secondary" onclick="UI.showSpokeTypePicker('${category.id}', '${item.id}', ${idx})" title="Set spoke type">+</button>`;
+                                        spokeTypeBtn = `<button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${idx})" title="Set spoke type">+</button>`;
                                     }
 
                                     return `
@@ -1600,13 +1599,12 @@ const UI = {
     closeDateTimePicker() {
         document.getElementById('datetime-overlay').classList.remove('active');
         this.pendingCalendarEvent = null;
-        this.pendingSpokeSchedule = null;
 
-        // Return to spoke config if we came from there
-        if (this.pendingReturnToSpokeConfig && this.pendingSpokeConfig) {
-            this.pendingReturnToSpokeConfig = false;
-            document.getElementById('spoke-config-overlay').classList.add('active');
-            this.renderExistingActions();
+        // Return to spoke editor if we came from there (action-level scheduling)
+        if (this.pendingReturnToSpokeEditor && this.pendingSpokeEditor) {
+            this.pendingReturnToSpokeEditor = false;
+            document.getElementById('spoke-editor-overlay').classList.add('active');
+            this.renderSpokeEditorActions();
         } else {
             this.renderTab2Spokes();
             App.render();
@@ -1621,12 +1619,11 @@ const UI = {
     skipScheduling() {
         document.getElementById('datetime-overlay').classList.remove('active');
         this.pendingCalendarEvent = null;
-        this.pendingSpokeSchedule = null;
 
-        if (this.pendingReturnToSpokeConfig && this.pendingSpokeConfig) {
-            this.pendingReturnToSpokeConfig = false;
-            document.getElementById('spoke-config-overlay').classList.add('active');
-            this.renderExistingActions();
+        if (this.pendingReturnToSpokeEditor && this.pendingSpokeEditor) {
+            this.pendingReturnToSpokeEditor = false;
+            document.getElementById('spoke-editor-overlay').classList.add('active');
+            this.renderSpokeEditorActions();
         } else {
             this.renderTab2Spokes();
             App.render();
@@ -1639,25 +1636,11 @@ const UI = {
     },
 
     async createCalendarEvent() {
-        // Handle both action-level scheduling (pendingCalendarEvent) and spoke-level scheduling (pendingSpokeSchedule)
-        const isSpokeLevel = !this.pendingCalendarEvent && this.pendingSpokeSchedule;
-
-        if (!this.pendingCalendarEvent && !this.pendingSpokeSchedule) return;
+        // Action-level scheduling only (spoke-level scheduling handled by saveSpokeEditorSchedule)
+        if (!this.pendingCalendarEvent) return;
 
         let actionText, spokeText, sliceName, categoryName, dataLocation;
-
-        if (isSpokeLevel) {
-            // Spoke-level scheduling (for Single type)
-            const { spokeName, sliceName: sName, categoryName: cName, categoryId, itemId, spokeIndex } = this.pendingSpokeSchedule;
-            actionText = spokeName; // For spoke-level, spoke is the "action"
-            spokeText = spokeName;
-            sliceName = sName;
-            categoryName = cName;
-            dataLocation = { categoryId, itemId, spokeIndex, isSpokeLevel: true };
-        } else {
-            // Action-level scheduling (existing behavior)
-            ({ actionText, spokeText, sliceName, categoryName, dataLocation } = this.pendingCalendarEvent);
-        }
+        ({ actionText, spokeText, sliceName, categoryName, dataLocation } = this.pendingCalendarEvent);
 
         // Get user-selected date/time and optional fields
         const dateStr = document.getElementById('event-date').value;
@@ -1688,13 +1671,7 @@ const UI = {
                 const item = category.items.find(i => i.id === dataLocation.itemId);
                 if (item && item.subItems[dataLocation.spokeIndex]) {
                     const spoke = item.subItems[dataLocation.spokeIndex];
-                    if (dataLocation.isSpokeLevel) {
-                        // Spoke-level scheduling
-                        if (typeof spoke === 'object' && spoke.scheduled && spoke.scheduled.calendarEventId) {
-                            existingEventId = spoke.scheduled.calendarEventId;
-                        }
-                    } else if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
-                        // Action-level scheduling
+                    if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
                         const existingScheduled = spoke.children[dataLocation.childIndex].scheduled;
                         if (existingScheduled && existingScheduled.calendarEventId) {
                             existingEventId = existingScheduled.calendarEventId;
@@ -1718,21 +1695,12 @@ const UI = {
         const provider = this.getCalendarProvider();
 
         // Build description with user notes first, then context
-        // For spoke-level: "Spoke Name (Category/Slice)"
-        // For action-level: "Action Name (Spoke/Slice/Category)"
         let description = '';
         if (notes) {
             description += notes + '\n\n---\n\n';
         }
-
-        let eventTitle;
-        if (isSpokeLevel) {
-            description += `Spoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
-            eventTitle = `${spokeText} (${categoryName}/${sliceName})`;
-        } else {
-            description += `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
-            eventTitle = `${actionText} (${spokeText}/${sliceName}/${categoryName})`;
-        }
+        description += `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
+        const eventTitle = `${actionText} (${spokeText}/${sliceName}/${categoryName})`;
 
         // For Google, try API first, fall back to URL redirect
         if (provider === 'google' && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
@@ -1809,24 +1777,7 @@ const UI = {
                 const item = category.items.find(i => i.id === dataLocation.itemId);
                 if (item && item.subItems[dataLocation.spokeIndex]) {
                     const spoke = item.subItems[dataLocation.spokeIndex];
-                    if (dataLocation.isSpokeLevel) {
-                        // Spoke-level scheduling (for Single type)
-                        if (typeof spoke === 'object') {
-                            spoke.scheduled = scheduledData;
-                            DataModel.saveToStorage();
-                        } else {
-                            // Convert string spoke to object
-                            item.subItems[dataLocation.spokeIndex] = {
-                                text: spoke,
-                                type: 'single',
-                                children: [],
-                                scheduled: scheduledData,
-                                metadata: {}
-                            };
-                            DataModel.saveToStorage();
-                        }
-                    } else if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
-                        // Action-level scheduling
+                    if (typeof spoke === 'object' && spoke.children && spoke.children[dataLocation.childIndex]) {
                         spoke.children[dataLocation.childIndex].scheduled = scheduledData;
                         DataModel.saveToStorage();
                     }
@@ -1834,15 +1785,14 @@ const UI = {
             }
         }
 
-        // Close and return to spoke config if needed
+        // Close and return to spoke editor if needed
         document.getElementById('datetime-overlay').classList.remove('active');
         this.pendingCalendarEvent = null;
-        this.pendingSpokeSchedule = null;
 
-        if (this.pendingReturnToSpokeConfig && this.pendingSpokeConfig) {
-            this.pendingReturnToSpokeConfig = false;
-            document.getElementById('spoke-config-overlay').classList.add('active');
-            this.renderExistingActions();
+        if (this.pendingReturnToSpokeEditor && this.pendingSpokeEditor) {
+            this.pendingReturnToSpokeEditor = false;
+            document.getElementById('spoke-editor-overlay').classList.add('active');
+            this.renderSpokeEditorActions();
         } else {
             this.renderTab2Spokes();
             App.render();
@@ -2366,147 +2316,416 @@ const UI = {
     },
 
     // Spoke Configuration
-    pendingSpokeConfig: null,
+    // ==========================================
+    // Unified Spoke Editor
+    // ==========================================
 
-    showSpokeConfig(categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName) {
-        this.pendingSpokeConfig = {
-            categoryId,
-            itemId,
-            spokeIndex,
-            spokeName,
-            sliceName,
-            categoryName
-        };
+    pendingSpokeEditor: null,
+    spokeEditorTab: 1,
+    pendingScheduleData: { single: null, repeating: null },
+    pendingReturnToSpokeEditor: false,
 
-        // Show spoke details
-        document.getElementById('spoke-config-name').textContent = spokeName;
-        document.getElementById('spoke-config-context').textContent = `${categoryName} → ${sliceName}`;
+    showSpokeEditor(categoryId, itemId, spokeIndex) {
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        if (!category) return;
+        const item = category.items.find(i => i.id === itemId);
+        if (!item || !item.subItems[spokeIndex]) return;
+        const spoke = item.subItems[spokeIndex];
+        const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
 
-        // Get current spoke type and metadata
+        this.pendingSpokeEditor = { categoryId, itemId, spokeIndex, spokeName, sliceName: item.name, categoryName: category.name };
+
+        // Header
+        document.getElementById('spoke-editor-breadcrumb').textContent = `${category.name} / ${item.name}`;
+        document.getElementById('spoke-editor-name').textContent = spokeName;
+
+        // Type buttons
         const spokeType = DataModel.getSpokeType(categoryId, itemId, spokeIndex) || 'static';
-
-        // Highlight current type button
-        document.querySelectorAll('.spoke-config-content .spoke-type-picker-btn').forEach(btn => {
+        document.querySelectorAll('#spoke-editor-type-btns .spoke-type-picker-btn').forEach(btn => {
             btn.classList.toggle('selected', btn.dataset.spokeType === spokeType);
         });
 
-        // Clear and populate existing actions
-        this.renderExistingActions();
+        // Pre-populate schedule data from existing spoke
+        this.pendingScheduleData = { single: null, repeating: null };
+        if (typeof spoke === 'object' && spoke.scheduled && spoke.scheduled.date) {
+            this.pendingScheduleData.single = { ...spoke.scheduled };
+        }
+        if (typeof spoke === 'object' && spoke.metadata && spoke.metadata.recurrence) {
+            this.pendingScheduleData.repeating = { ...spoke.metadata.recurrence };
+        }
 
-        // Clear new action input
-        const newActionInput = document.getElementById('new-spoke-action-input');
-        if (newActionInput) newActionInput.value = '';
+        // Actions section for list type
+        this._updateSpokeEditorActionsVisibility(spokeType);
 
-        // Show appropriate fields
-        this.updateSpokeTypeFields(spokeType);
+        // Clear action input
+        const input = document.getElementById('spoke-editor-new-action');
+        if (input) input.value = '';
 
-        // Update star button state
-        this.updateSchedulerStar('spoke-config-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
+        // Star button
+        this.updateSchedulerStar('spoke-editor-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
 
-        // Show modal
-        document.getElementById('spoke-config-overlay').classList.add('active');
+        // If spoke has schedule data, open to Tab 2; otherwise Tab 1
+        const hasSchedule = (spokeType === 'single' && this.pendingScheduleData.single) ||
+                            (spokeType === 'repeating' && this.pendingScheduleData.repeating);
+        this.switchSpokeEditorTab(hasSchedule ? 2 : 1);
+
+        document.getElementById('spoke-editor-overlay').classList.add('active');
+
+        // Notify tutorial
+        if (typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('spoke-editor-opened');
+        }
     },
 
-    closeSpokeConfig() {
-        document.getElementById('spoke-config-overlay').classList.remove('active');
-        this.pendingSpokeConfig = null;
-        this.pendingReturnToSpokeConfig = false;
-        this.pendingRecurrenceData = null;
+    closeSpokeEditor() {
+        document.getElementById('spoke-editor-overlay').classList.remove('active');
+        this.pendingSpokeEditor = null;
+        this.pendingScheduleData = { single: null, repeating: null };
+        this.pendingReturnToSpokeEditor = false;
 
-        // Reset form
-        document.querySelectorAll('.spoke-config-content .spoke-type-picker-btn').forEach(btn => {
-            btn.classList.toggle('selected', btn.dataset.spokeType === 'static');
-        });
-        document.getElementById('spoke-existing-actions').innerHTML = '';
-        document.getElementById('spoke-actions-fields').style.display = 'none';
-        document.getElementById('spoke-repeating-fields').style.display = 'none';
-        document.getElementById('recurrence-description').textContent = 'Not set';
-        const newActionInput = document.getElementById('new-spoke-action-input');
-        if (newActionInput) newActionInput.value = '';
-
-        // Refresh Tab 2 spokes list if menu is open
         if (document.getElementById('menu-overlay').classList.contains('active')) {
             this.renderTab2Spokes();
         }
-
         App.render();
     },
 
-    selectSpokeConfigType(type) {
-        document.querySelectorAll('.spoke-config-content .spoke-type-picker-btn').forEach(btn => {
+    switchSpokeEditorTab(tab) {
+        this.spokeEditorTab = tab;
+        document.querySelectorAll('.spoke-editor-tab').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.editorTab) === tab);
+        });
+        document.getElementById('spoke-editor-tab-1').classList.toggle('active', tab === 1);
+        document.getElementById('spoke-editor-tab-2').classList.toggle('active', tab === 2);
+
+        if (tab === 2) this.populateSpokeEditorScheduleTab();
+    },
+
+    selectSpokeEditorType(type) {
+        // Toggle button selection
+        document.querySelectorAll('#spoke-editor-type-btns .spoke-type-picker-btn').forEach(btn => {
             btn.classList.toggle('selected', btn.dataset.spokeType === type);
         });
-        this.updateSpokeTypeFields(type);
-    },
 
-    updateSpokeTypeFields(type) {
-        // Show/hide sections based on type
-        const actionsFields = document.getElementById('spoke-actions-fields');
-        const repeatingFields = document.getElementById('spoke-repeating-fields');
+        // Show/hide actions section
+        this._updateSpokeEditorActionsVisibility(type);
 
-        // List type shows actions fields
-        actionsFields.style.display = type === 'list' ? 'block' : 'none';
-        repeatingFields.style.display = type === 'repeating' ? 'block' : 'none';
-
-        // Render existing actions when switching to list type
-        if (type === 'list') {
-            this.renderExistingActions();
+        // Notify tutorial
+        if (type === 'single' && typeof TutorialManager !== 'undefined') {
+            TutorialManager.notifyEvent('single-type-selected');
         }
 
-        // Load existing recurrence when switching to repeating type
-        if (type === 'repeating' && this.pendingSpokeConfig) {
-            this.loadExistingRecurrence();
+        // Auto-switch to Tab 2 for schedulable types
+        if (type === 'single' || type === 'repeating') {
+            this.switchSpokeEditorTab(2);
         }
     },
 
-    pendingRecurrenceData: null,
+    _updateSpokeEditorActionsVisibility(type) {
+        const section = document.getElementById('spoke-editor-actions-section');
+        section.style.display = type === 'list' ? 'block' : 'none';
+        if (type === 'list') this.renderSpokeEditorActions();
 
-    loadExistingRecurrence() {
-        if (!this.pendingSpokeConfig) return;
+        // Hide Schedule tab for static/list, show for single/repeating
+        const hasSchedule = type === 'single' || type === 'repeating';
+        const tab2Btn = document.querySelector('.spoke-editor-tab[data-editor-tab="2"]');
+        if (tab2Btn) tab2Btn.style.display = hasSchedule ? '' : 'none';
 
-        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
-        const category = DataModel.categories.find(c => c.id === categoryId);
-        if (!category) return;
+        // If on Tab 2 and switching to non-schedulable type, go back to Tab 1
+        if (!hasSchedule && this.spokeEditorTab === 2) {
+            this.switchSpokeEditorTab(1);
+        }
+    },
 
-        const item = category.items.find(i => i.id === itemId);
-        if (!item || !item.subItems[spokeIndex]) return;
+    _getSelectedSpokeEditorType() {
+        const btn = document.querySelector('#spoke-editor-type-btns .spoke-type-picker-btn.selected');
+        return btn ? btn.dataset.spokeType : 'static';
+    },
 
-        const spoke = item.subItems[spokeIndex];
-        if (typeof spoke === 'object' && spoke.metadata && spoke.metadata.recurrence) {
-            this.pendingRecurrenceData = spoke.metadata.recurrence;
-            document.getElementById('recurrence-description').textContent =
-                this.formatRecurrenceDescription(spoke.metadata.recurrence);
+    populateSpokeEditorScheduleTab() {
+        const type = this._getSelectedSpokeEditorType();
+
+        document.getElementById('spoke-editor-single-fields').style.display = 'none';
+        document.getElementById('spoke-editor-repeating-fields').style.display = 'none';
+        document.getElementById('spoke-editor-schedule-disabled').style.display = 'none';
+
+        if (type === 'single') {
+            document.getElementById('spoke-editor-single-fields').style.display = 'block';
+            this._populateSingleFields();
+        } else if (type === 'repeating') {
+            document.getElementById('spoke-editor-repeating-fields').style.display = 'block';
+            this._populateRepeatingFields();
         } else {
-            this.pendingRecurrenceData = null;
-            document.getElementById('recurrence-description').textContent = 'Not set';
+            document.getElementById('spoke-editor-schedule-disabled').style.display = 'block';
+            document.getElementById('spoke-editor-schedule-disabled-text').textContent =
+                type === 'list' ? 'List spokes use per-action scheduling.' : "Static spokes don't have schedules.";
         }
     },
 
-    openRecurrencePickerForSpoke() {
-        this.showRecurrencePicker((recurrence) => {
-            this.pendingRecurrenceData = recurrence;
-            document.getElementById('recurrence-description').textContent =
-                this.formatRecurrenceDescription(recurrence);
-        });
+    _populateSingleFields() {
+        const data = this.pendingScheduleData.single;
+        if (data && data.date) {
+            document.getElementById('se-event-date').value = data.date;
+            const [hour, minute] = (data.time || '09:00').split(':');
+            document.getElementById('se-event-hour').value = hour;
+            document.getElementById('se-event-minute').value = String(Math.round(parseInt(minute) / 15) * 15).padStart(2, '0');
+            document.getElementById('se-event-duration').value = data.duration || '60';
+            document.getElementById('se-event-location').value = data.location || '';
+            document.getElementById('se-event-notes').value = data.notes || '';
+            document.getElementById('se-event-invitees').value = (data.invitees || []).join(', ');
+            document.getElementById('se-event-allday').checked = !!data.allDay;
+        } else {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('se-event-date').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('se-event-hour').value = '09';
+            document.getElementById('se-event-minute').value = '00';
+            document.getElementById('se-event-duration').value = '60';
+            document.getElementById('se-event-location').value = '';
+            document.getElementById('se-event-notes').value = '';
+            document.getElementById('se-event-invitees').value = '';
+            document.getElementById('se-event-allday').checked = true;
+        }
+        this.toggleSpokeEditorAllDay();
     },
 
-    renderExistingActions() {
-        if (!this.pendingSpokeConfig) return;
+    _populateRepeatingFields() {
+        const data = this.pendingScheduleData.repeating;
+        if (data) {
+            document.getElementById('se-recurrence-interval').value = data.interval || 1;
+            document.getElementById('se-recurrence-frequency').value = data.frequency || 'WEEKLY';
+            document.getElementById('se-recurrence-start-date').value = data.startDate || new Date().toISOString().split('T')[0];
+            document.getElementById('se-recurrence-all-day').checked = data.allDay !== false;
+            document.getElementById('se-recurrence-time-picker').style.display = data.allDay !== false ? 'none' : 'flex';
+            if (data.time) {
+                const [h, m] = data.time.split(':');
+                document.getElementById('se-recurrence-hour').value = h;
+                document.getElementById('se-recurrence-minute').value = m;
+            }
+            document.getElementById('se-recurrence-duration').value = data.duration || 60;
+            document.querySelectorAll('input[name="se-recurrence-day"]').forEach(cb => {
+                cb.checked = data.byDay && data.byDay.includes(cb.value);
+            });
+            document.getElementById('se-recurrence-monthday').value = data.byMonthDay || 1;
+            if (data.until) {
+                document.querySelector('input[name="se-recurrence-end"][value="date"]').checked = true;
+                document.getElementById('se-recurrence-end-date').value = data.until;
+            } else if (data.count) {
+                document.querySelector('input[name="se-recurrence-end"][value="count"]').checked = true;
+                document.getElementById('se-recurrence-count').value = data.count;
+            } else {
+                document.querySelector('input[name="se-recurrence-end"][value="never"]').checked = true;
+            }
+        } else {
+            document.getElementById('se-recurrence-interval').value = 1;
+            document.getElementById('se-recurrence-frequency').value = 'WEEKLY';
+            document.getElementById('se-recurrence-all-day').checked = true;
+            document.getElementById('se-recurrence-time-picker').style.display = 'none';
+            document.getElementById('se-recurrence-hour').value = '09';
+            document.getElementById('se-recurrence-minute').value = '00';
+            document.getElementById('se-recurrence-duration').value = '60';
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('se-recurrence-start-date').value = tomorrow.toISOString().split('T')[0];
+            document.querySelectorAll('input[name="se-recurrence-day"]').forEach(cb => cb.checked = false);
+            document.getElementById('se-recurrence-monthday').value = '1';
+            document.querySelector('input[name="se-recurrence-end"][value="never"]').checked = true;
+        }
+        this.updateSpokeEditorRecurrenceOptions();
+        this.updateSpokeEditorRecurrenceEndOptions();
+    },
 
-        const container = document.getElementById('spoke-existing-actions');
+    toggleSpokeEditorAllDay() {
+        const allDay = document.getElementById('se-event-allday').checked;
+        document.getElementById('se-time-section').style.display = allDay ? 'none' : 'block';
+        document.getElementById('se-duration-section').style.display = allDay ? 'none' : 'block';
+    },
+
+    toggleSpokeEditorRecurrenceTime() {
+        const allDay = document.getElementById('se-recurrence-all-day').checked;
+        document.getElementById('se-recurrence-time-picker').style.display = allDay ? 'none' : 'flex';
+    },
+
+    updateSpokeEditorRecurrenceOptions() {
+        const freq = document.getElementById('se-recurrence-frequency').value;
+        document.getElementById('se-recurrence-weekly-options').style.display = freq === 'WEEKLY' ? 'block' : 'none';
+        document.getElementById('se-recurrence-monthly-options').style.display = freq === 'MONTHLY' ? 'block' : 'none';
+    },
+
+    updateSpokeEditorRecurrenceEndOptions() {
+        const selected = document.querySelector('input[name="se-recurrence-end"]:checked');
+        const val = selected ? selected.value : 'never';
+        document.getElementById('se-recurrence-end-date').style.display = val === 'date' ? 'block' : 'none';
+        document.getElementById('se-recurrence-count-input').style.display = val === 'count' ? 'block' : 'none';
+    },
+
+    _readSingleFieldsData() {
+        const allDay = document.getElementById('se-event-allday').checked;
+        const inviteesStr = document.getElementById('se-event-invitees').value.trim();
+        return {
+            date: document.getElementById('se-event-date').value,
+            time: allDay ? null : `${document.getElementById('se-event-hour').value}:${document.getElementById('se-event-minute').value}`,
+            duration: allDay ? null : parseInt(document.getElementById('se-event-duration').value),
+            allDay: allDay || null,
+            location: document.getElementById('se-event-location').value.trim() || null,
+            notes: document.getElementById('se-event-notes').value.trim() || null,
+            invitees: inviteesStr ? inviteesStr.split(',').map(e => e.trim()).filter(e => e) : null
+        };
+    },
+
+    _readRepeatingFieldsData() {
+        const allDay = document.getElementById('se-recurrence-all-day').checked;
+        const byDay = [];
+        document.querySelectorAll('input[name="se-recurrence-day"]:checked').forEach(cb => byDay.push(cb.value));
+        const endSelected = document.querySelector('input[name="se-recurrence-end"]:checked');
+        const endVal = endSelected ? endSelected.value : 'never';
+
+        return {
+            frequency: document.getElementById('se-recurrence-frequency').value,
+            interval: parseInt(document.getElementById('se-recurrence-interval').value) || 1,
+            startDate: document.getElementById('se-recurrence-start-date').value,
+            byDay: byDay.length > 0 ? byDay : null,
+            byMonthDay: document.getElementById('se-recurrence-frequency').value === 'MONTHLY' ? document.getElementById('se-recurrence-monthday').value : null,
+            allDay: allDay,
+            time: allDay ? null : `${document.getElementById('se-recurrence-hour').value}:${document.getElementById('se-recurrence-minute').value}`,
+            duration: allDay ? null : parseInt(document.getElementById('se-recurrence-duration').value),
+            until: endVal === 'date' ? document.getElementById('se-recurrence-end-date').value : null,
+            count: endVal === 'count' ? parseInt(document.getElementById('se-recurrence-count').value) : null
+        };
+    },
+
+    async saveSpokeEditorSchedule() {
+        if (!this.pendingSpokeEditor) return;
+        const type = this._getSelectedSpokeEditorType();
+        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeEditor;
+
+        if (type === 'single') {
+            const data = this._readSingleFieldsData();
+            if (!data.date) { alert('Please select a date'); return; }
+
+            // Update type in model
+            DataModel.updateSpokeType(categoryId, itemId, spokeIndex, 'single');
+
+            // Save schedule to spoke
+            const category = DataModel.categories.find(c => c.id === categoryId);
+            const item = category.items.find(i => i.id === itemId);
+            const spoke = item.subItems[spokeIndex];
+
+            // Check for existing calendar event
+            const existingEventId = typeof spoke === 'object' && spoke.scheduled ? spoke.scheduled.calendarEventId : null;
+            const scheduledData = { ...data };
+
+            // Calendar integration
+            const provider = this.getCalendarProvider();
+            const eventTitle = `${spokeName} (${categoryName}/${sliceName})`;
+            let description = data.notes ? data.notes + '\n\n---\n\n' : '';
+            description += `Spoke: ${spokeName}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
+
+            if (provider === 'google' && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                const eventData = { title: eventTitle, date: data.date, time: data.time, duration: data.duration, allDay: data.allDay, location: data.location, description, attendees: data.invitees };
+                let event;
+                if (existingEventId) {
+                    event = await CalendarAdapter.updateEvent(existingEventId, eventData);
+                    if (event && event.id) { scheduledData.calendarEventId = event.id; Storage.showStatus('Calendar event updated', 'success'); }
+                }
+                if (!event || !event.id) {
+                    event = await CalendarAdapter.createEvent(eventData);
+                    if (event && event.id) { scheduledData.calendarEventId = event.id; Storage.showStatus('Added to Google Calendar', 'success'); }
+                }
+                if (!event || !event.id) {
+                    // Fallback to URL redirect
+                    if (data.allDay) { this.openGoogleCalendarEvent(spokeName, spokeName, sliceName, categoryName, null, null, data.location, data.notes, true, data.date); }
+                    else { const s = new Date(`${data.date}T${data.time}`); this.openGoogleCalendarEvent(spokeName, spokeName, sliceName, categoryName, s, new Date(s.getTime() + data.duration * 60000), data.location, data.notes); }
+                }
+            } else if (provider === 'apple') {
+                if (data.allDay) { this.downloadAppleCalendarEvent(spokeName, spokeName, sliceName, categoryName, null, null, null, data.location, data.notes, data.invitees, true, data.date); }
+                else { const s = new Date(`${data.date}T${data.time}`); this.downloadAppleCalendarEvent(spokeName, spokeName, sliceName, categoryName, s, new Date(s.getTime() + data.duration * 60000), null, data.location, data.notes, data.invitees); }
+            } else {
+                if (data.allDay) { this.openGoogleCalendarEvent(spokeName, spokeName, sliceName, categoryName, null, null, data.location, data.notes, true, data.date); }
+                else { const s = new Date(`${data.date}T${data.time}`); this.openGoogleCalendarEvent(spokeName, spokeName, sliceName, categoryName, s, new Date(s.getTime() + data.duration * 60000), data.location, data.notes); }
+            }
+
+            spoke.scheduled = scheduledData;
+            DataModel.saveToStorage();
+            this.closeSpokeEditor();
+
+        } else if (type === 'repeating') {
+            const recurrence = this._readRepeatingFieldsData();
+            if (!recurrence.startDate) { alert('Please select a start date'); return; }
+
+            const category = DataModel.categories.find(c => c.id === categoryId);
+            const item = category.items.find(i => i.id === itemId);
+            const spoke = item.subItems[spokeIndex];
+
+            // Delete old calendar event
+            const oldEventId = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.calendarEventId : null;
+            if (oldEventId && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                await CalendarAdapter.deleteEvent(oldEventId);
+            }
+
+            // Update type + metadata
+            DataModel.updateSpokeType(categoryId, itemId, spokeIndex, 'repeating', { recurrence });
+
+            // Create recurring calendar event
+            if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
+                const rrule = CalendarAdapter.buildRRule(recurrence);
+                const eventData = { title: `${spokeName} (${categoryName}/${sliceName})`, date: recurrence.startDate, description: `Repeating spoke: ${spokeName}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`, rrule };
+                if (recurrence.allDay) { eventData.allDay = true; } else { eventData.time = recurrence.time || '09:00'; eventData.duration = recurrence.duration || 60; }
+                const event = await CalendarAdapter.createEvent(eventData);
+                if (event && event.id) {
+                    const updatedSpoke = item.subItems[spokeIndex];
+                    if (typeof updatedSpoke === 'object') { if (!updatedSpoke.metadata) updatedSpoke.metadata = {}; updatedSpoke.metadata.calendarEventId = event.id; DataModel.saveToStorage(); }
+                    Storage.showStatus('Recurring event added to calendar', 'success');
+                }
+            }
+
+            this.closeSpokeEditor();
+        }
+    },
+
+    async saveSpokeEditor() {
+        if (!this.pendingSpokeEditor) return;
+        const type = this._getSelectedSpokeEditorType();
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
+
+        // If on Tab 2 with Single/Repeating, save schedule (which also saves type)
+        if (this.spokeEditorTab === 2 && (type === 'single' || type === 'repeating')) {
+            await this.saveSpokeEditorSchedule();
+            return;
+        }
+
+        // Otherwise just save the type
+        DataModel.updateSpokeType(categoryId, itemId, spokeIndex, type);
+
+        // For static type, clear spoke-level schedule
+        if (type === 'static') {
+            const category = DataModel.categories.find(c => c.id === categoryId);
+            const item = category.items.find(i => i.id === itemId);
+            const spoke = item.subItems[spokeIndex];
+            if (typeof spoke === 'object') {
+                spoke.scheduled = null;
+                if (spoke.metadata) spoke.metadata.recurrence = null;
+                DataModel.saveToStorage();
+            }
+        }
+
+        this.closeSpokeEditor();
+    },
+
+    // Action management within spoke editor (List type)
+    renderSpokeEditorActions() {
+        if (!this.pendingSpokeEditor) return;
+        const container = document.getElementById('spoke-editor-existing-actions');
         container.innerHTML = '';
-
-        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
 
         const category = DataModel.categories.find(c => c.id === categoryId);
         if (!category) return;
-
         const item = category.items.find(i => i.id === itemId);
         if (!item || !item.subItems[spokeIndex]) return;
 
         const spoke = item.subItems[spokeIndex];
         if (typeof spoke !== 'object' || !spoke.children || spoke.children.length === 0) {
-            container.innerHTML = '<div style="color: #999; font-size: 13px; padding: 8px 0;">No actions yet. Add one below.</div>';
+            container.innerHTML = '<div style="color:#999;font-size:13px;padding:8px 0;">No actions yet. Add one below.</div>';
             return;
         }
 
@@ -2566,506 +2785,86 @@ const UI = {
     },
 
     _addActionToSpoke() {
-        if (!this.pendingSpokeConfig) return null;
-
-        const input = document.getElementById('new-spoke-action-input');
+        if (!this.pendingSpokeEditor) return null;
+        const input = document.getElementById('spoke-editor-new-action');
         const actionText = input.value.trim();
+        if (!actionText) { alert('Please enter an action name'); return null; }
 
-        if (!actionText) {
-            alert('Please enter an action name');
-            return null;
-        }
-
-        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
-
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
         const category = DataModel.categories.find(c => c.id === categoryId);
         if (!category) return null;
-
         const item = category.items.find(i => i.id === itemId);
         if (!item) return null;
 
-        // Convert spoke to object if needed
         if (typeof item.subItems[spokeIndex] === 'string') {
-            item.subItems[spokeIndex] = {
-                text: item.subItems[spokeIndex],
-                type: 'list',
-                children: [],
-                scheduled: null,
-                metadata: {}
-            };
+            item.subItems[spokeIndex] = { text: item.subItems[spokeIndex], type: 'list', children: [], scheduled: null, metadata: {} };
         }
+        if (!item.subItems[spokeIndex].children) item.subItems[spokeIndex].children = [];
 
-        // Ensure children array exists
-        if (!item.subItems[spokeIndex].children) {
-            item.subItems[spokeIndex].children = [];
-        }
-
-        // Add the new action
         const childIndex = item.subItems[spokeIndex].children.length;
-        item.subItems[spokeIndex].children.push({
-            text: actionText,
-            children: [],
-            completed: false
-        });
-
-        // Set spoke type to list (has children)
+        item.subItems[spokeIndex].children.push({ text: actionText, children: [], completed: false });
         item.subItems[spokeIndex].type = 'list';
         DataModel.saveToStorage();
-
-        // Clear input
         input.value = '';
-
-        // Update display
-        this.renderExistingActions();
-
+        this.renderSpokeEditorActions();
         return { actionText, childIndex };
     },
 
-    addAction() {
+    addSpokeEditorAction() {
         const result = this._addActionToSpoke();
         if (!result) return;
         App.render();
     },
 
-    addAndScheduleAction() {
+    addAndScheduleSpokeEditorAction() {
         const result = this._addActionToSpoke();
         if (!result) return;
-
-        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
-
-        // Close spoke config temporarily and open scheduler
-        document.getElementById('spoke-config-overlay').classList.remove('active');
-
-        // Open scheduler with return-to-config flag
-        this.pendingReturnToSpokeConfig = true;
+        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeEditor;
+        document.getElementById('spoke-editor-overlay').classList.remove('active');
+        this.pendingReturnToSpokeEditor = true;
         const dataLocation = { categoryId, itemId, spokeIndex, childIndex: result.childIndex };
         this.showDateTimePicker(result.actionText, spokeName, sliceName, categoryName, dataLocation);
     },
 
     rescheduleAction(childIndex) {
-        if (!this.pendingSpokeConfig) return;
-
-        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
-
+        if (!this.pendingSpokeEditor) return;
+        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeEditor;
         const category = DataModel.categories.find(c => c.id === categoryId);
         if (!category) return;
-
         const item = category.items.find(i => i.id === itemId);
         if (!item || !item.subItems[spokeIndex]) return;
-
         const spoke = item.subItems[spokeIndex];
         if (typeof spoke !== 'object' || !spoke.children || !spoke.children[childIndex]) return;
-
         const action = spoke.children[childIndex];
         const actionText = typeof action === 'string' ? action : action.text;
 
-        // Close spoke config temporarily
-        document.getElementById('spoke-config-overlay').classList.remove('active');
-
-        // Open scheduler with return-to-config flag
-        this.pendingReturnToSpokeConfig = true;
+        document.getElementById('spoke-editor-overlay').classList.remove('active');
+        this.pendingReturnToSpokeEditor = true;
         const dataLocation = { categoryId, itemId, spokeIndex, childIndex };
         this.showDateTimePicker(actionText, spokeName, sliceName, categoryName, dataLocation);
     },
 
     async removeAction(childIndex) {
-        if (!this.pendingSpokeConfig) return;
-
-        const { categoryId, itemId, spokeIndex } = this.pendingSpokeConfig;
-
+        if (!this.pendingSpokeEditor) return;
+        const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
         const category = DataModel.categories.find(c => c.id === categoryId);
         if (!category) return;
-
         const item = category.items.find(i => i.id === itemId);
         if (!item || !item.subItems[spokeIndex]) return;
-
         const spoke = item.subItems[spokeIndex];
         if (typeof spoke !== 'object' || !spoke.children) return;
 
-        // Check if action has a calendar event to delete
         const action = spoke.children[childIndex];
         if (action && action.scheduled && action.scheduled.calendarEventId) {
             if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
                 const deleted = await CalendarAdapter.deleteEvent(action.scheduled.calendarEventId);
-                if (deleted) {
-                    Storage.showStatus('Calendar event deleted', 'success');
-                }
+                if (deleted) Storage.showStatus('Calendar event deleted', 'success');
             }
         }
 
         spoke.children.splice(childIndex, 1);
         DataModel.saveToStorage();
-
-        this.renderExistingActions();
-    },
-
-    pendingReturnToSpokeConfig: false,
-
-    async saveSpokeConfig() {
-        if (!this.pendingSpokeConfig) return;
-
-        const selectedBtn = document.querySelector('.spoke-config-content .spoke-type-picker-btn.selected');
-        const selectedType = selectedBtn ? selectedBtn.dataset.spokeType : 'static';
-        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeConfig;
-
-        // Build metadata based on type
-        const metadata = {};
-
-        if (selectedType === 'repeating' && this.pendingRecurrenceData) {
-            metadata.recurrence = this.pendingRecurrenceData;
-
-            // Create recurring calendar event if calendar access is available
-            if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
-                // Build RRULE string from recurrence data
-                const rrule = CalendarAdapter.buildRRule(this.pendingRecurrenceData);
-
-                const eventData = {
-                    title: `${spokeName} (${sliceName}/${categoryName})`,
-                    date: this.pendingRecurrenceData.startDate,
-                    description: `Repeating spoke: ${spokeName}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`,
-                    rrule: rrule
-                };
-
-                // Set time or all-day
-                if (this.pendingRecurrenceData.allDay) {
-                    eventData.allDay = true;
-                } else {
-                    eventData.time = this.pendingRecurrenceData.time || '09:00';
-                    eventData.duration = this.pendingRecurrenceData.duration || 60;
-                }
-
-                const event = await CalendarAdapter.createEvent(eventData);
-                if (event && event.id) {
-                    metadata.calendarEventId = event.id;
-                    Storage.showStatus('Recurring event added to calendar', 'success');
-                }
-            }
-        }
-
-        // Update the spoke type and metadata
-        DataModel.updateSpokeType(categoryId, itemId, spokeIndex, selectedType, metadata);
-
-        // Clear pending recurrence data
-        this.pendingRecurrenceData = null;
-
-        this.closeSpokeConfig();
-    },
-
-    // ==========================================
-    // Spoke Type Picker (new flow for spoke type selection)
-    // ==========================================
-
-    pendingSpokeTypePicker: null,
-
-    /**
-     * Show the spoke type picker overlay
-     */
-    showSpokeTypePicker(categoryId, itemId, spokeIndex) {
-        const category = DataModel.categories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
-        if (!item || !item.subItems[spokeIndex]) return;
-
-        const spoke = item.subItems[spokeIndex];
-        const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
-
-        this.pendingSpokeTypePicker = {
-            categoryId,
-            itemId,
-            spokeIndex,
-            spokeName,
-            sliceName: item.name,
-            categoryName: category.name
-        };
-
-        // Show spoke name in picker
-        document.getElementById('spoke-type-picker-name').textContent = spokeName;
-
-        // Highlight current spoke type
-        const currentType = DataModel.getSpokeType(categoryId, itemId, spokeIndex);
-        document.querySelectorAll('.spoke-type-picker-btn').forEach(btn => {
-            btn.classList.toggle('selected', btn.dataset.spokeType === currentType);
-        });
-
-        // Update star button state
-        this.updateSchedulerStar('spoke-type-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
-
-        document.getElementById('spoke-type-picker-overlay').classList.add('active');
-
-        // Notify tutorial
-        if (typeof TutorialManager !== 'undefined') {
-            TutorialManager.notifyEvent('spoke-type-picker-opened');
-        }
-    },
-
-    /**
-     * Close the spoke type picker
-     */
-    closeSpokeTypePicker() {
-        document.getElementById('spoke-type-picker-overlay').classList.remove('active');
-        this.pendingSpokeTypePicker = null;
-    },
-
-    /**
-     * Handle spoke type selection from the picker
-     */
-    selectSpokeType(type) {
-        if (!this.pendingSpokeTypePicker) return;
-
-        const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeTypePicker;
-
-        // Close the picker first
-        this.closeSpokeTypePicker();
-
-        // Update the spoke type
-        DataModel.updateSpokeType(categoryId, itemId, spokeIndex, type);
-
-        // Based on type, open appropriate follow-up UI
-        if (type === 'single') {
-            // Notify tutorial before opening scheduler
-            if (typeof TutorialManager !== 'undefined') {
-                TutorialManager.notifyEvent('single-type-selected');
-            }
-            // Open date/time picker for single spoke
-            this.openSpokeScheduler(categoryId, itemId, spokeIndex);
-        } else if (type === 'repeating') {
-            // Open recurrence picker for repeating spoke
-            this.openSpokeRecurrenceScheduler(categoryId, itemId, spokeIndex);
-        } else if (type === 'list') {
-            // Open spoke config to manage actions
-            this.showSpokeConfig(categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName);
-        }
-        // For 'static', just close and update
-
-        // Re-render
-        this.renderTab2Spokes();
-        App.render();
-    },
-
-    /**
-     * Open the date/time scheduler for a Single spoke
-     */
-    openSpokeScheduler(categoryId, itemId, spokeIndex) {
-        const category = DataModel.categories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
-        if (!item || !item.subItems[spokeIndex]) return;
-
-        const spoke = item.subItems[spokeIndex];
-        const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
-
-        // Store pending data for when calendar event is created
-        this.pendingSpokeSchedule = {
-            categoryId,
-            itemId,
-            spokeIndex,
-            spokeName,
-            sliceName: item.name,
-            categoryName: category.name
-        };
-
-        // Get existing schedule if any
-        const existingSchedule = typeof spoke === 'object' ? spoke.scheduled : null;
-
-        // Show action details (reusing datetime picker for spoke scheduling)
-        document.getElementById('action-name').textContent = spokeName;
-        document.getElementById('action-context').textContent = `${category.name} → ${item.name}`;
-
-        // Set date/time from existing schedule or default to tomorrow at 9 AM
-        if (existingSchedule && existingSchedule.date) {
-            document.getElementById('event-date').value = existingSchedule.date;
-            const [hour, minute] = (existingSchedule.time || '09:00').split(':');
-            document.getElementById('event-hour').value = hour;
-            document.getElementById('event-minute').value = String(Math.round(parseInt(minute) / 15) * 15).padStart(2, '0');
-            document.getElementById('event-duration').value = existingSchedule.duration || '60';
-            document.getElementById('event-location').value = existingSchedule.location || '';
-            document.getElementById('event-notes').value = existingSchedule.notes || '';
-            document.getElementById('event-invitees').value = (existingSchedule.invitees || []).join(', ');
-            document.getElementById('event-allday').checked = !!existingSchedule.allDay;
-            this.toggleAllDay();
-        } else {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('event-date').value = tomorrow.toISOString().split('T')[0];
-            document.getElementById('event-hour').value = '09';
-            document.getElementById('event-minute').value = '00';
-            document.getElementById('event-duration').value = '60';
-            document.getElementById('event-location').value = '';
-            document.getElementById('event-notes').value = '';
-            document.getElementById('event-invitees').value = '';
-            document.getElementById('event-allday').checked = true;
-            this.toggleAllDay();
-        }
-
-        // Update title, button text, and reminder
-        const isReschedule = existingSchedule && existingSchedule.date;
-        const titleEl = document.getElementById('datetime-picker-title');
-        const addButton = document.getElementById('calendar-submit-btn');
-        const rescheduleReminder = document.getElementById('reschedule-reminder');
-
-        if (titleEl) {
-            titleEl.textContent = isReschedule ? `Reschedule: ${spokeName}` : `Schedule: ${spokeName}`;
-        }
-        if (addButton) {
-            addButton.textContent = isReschedule ? '📅 Reschedule' : '📅 Add to Calendar';
-        }
-        if (rescheduleReminder) {
-            rescheduleReminder.style.display = isReschedule ? 'block' : 'none';
-        }
-
-        // Clear action-level pending data and set spoke-level
-        this.pendingCalendarEvent = null;
-
-        // Update star button state for spoke
-        const spokeStarBtn = document.getElementById('datetime-star-btn');
-        if (spokeStarBtn) spokeStarBtn.style.display = '';
-        this.updateSchedulerStar('datetime-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
-
-        document.getElementById('datetime-overlay').classList.add('active');
-    },
-
-    // Pending spoke schedule data
-    pendingSpokeSchedule: null,
-
-    /**
-     * Open recurrence picker for a Repeating spoke
-     */
-    openSpokeRecurrenceScheduler(categoryId, itemId, spokeIndex) {
-        const category = DataModel.categories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
-        if (!item || !item.subItems[spokeIndex]) return;
-
-        const spoke = item.subItems[spokeIndex];
-        const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
-        const existingRecurrence = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.recurrence : null;
-
-        // Pre-fill recurrence picker if there's existing recurrence
-        if (existingRecurrence) {
-            document.getElementById('recurrence-interval').value = existingRecurrence.interval || 1;
-            document.getElementById('recurrence-frequency').value = existingRecurrence.frequency || 'WEEKLY';
-
-            if (existingRecurrence.allDay) {
-                document.getElementById('recurrence-all-day').checked = true;
-                document.getElementById('recurrence-time-picker').style.display = 'none';
-            } else {
-                document.getElementById('recurrence-all-day').checked = false;
-                document.getElementById('recurrence-time-picker').style.display = 'flex';
-                if (existingRecurrence.time) {
-                    const [hour, minute] = existingRecurrence.time.split(':');
-                    document.getElementById('recurrence-hour').value = hour;
-                    document.getElementById('recurrence-minute').value = minute;
-                }
-            }
-            document.getElementById('recurrence-duration').value = existingRecurrence.duration || 60;
-
-            // Start date
-            document.getElementById('recurrence-start-date').value = existingRecurrence.startDate || new Date().toISOString().split('T')[0];
-
-            // Day checkboxes for weekly
-            document.querySelectorAll('input[name="recurrence-day"]').forEach(cb => {
-                cb.checked = existingRecurrence.byDay && existingRecurrence.byDay.includes(cb.value);
-            });
-
-            // Monthly day
-            document.getElementById('recurrence-monthday').value = existingRecurrence.byMonthDay || 1;
-
-            // End options
-            if (existingRecurrence.until) {
-                document.querySelector('input[name="recurrence-end"][value="date"]').checked = true;
-                document.getElementById('recurrence-end-date').value = existingRecurrence.until;
-            } else if (existingRecurrence.count) {
-                document.querySelector('input[name="recurrence-end"][value="count"]').checked = true;
-                document.getElementById('recurrence-count').value = existingRecurrence.count;
-            } else {
-                document.querySelector('input[name="recurrence-end"][value="never"]').checked = true;
-            }
-        } else {
-            // Reset to defaults
-            document.getElementById('recurrence-interval').value = 1;
-            document.getElementById('recurrence-frequency').value = 'WEEKLY';
-            document.getElementById('recurrence-all-day').checked = true;
-            document.getElementById('recurrence-time-picker').style.display = 'none';
-            document.getElementById('recurrence-hour').value = '09';
-            document.getElementById('recurrence-minute').value = '00';
-            document.getElementById('recurrence-duration').value = '60';
-            // Default start date to tomorrow
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            document.getElementById('recurrence-start-date').value = tomorrow.toISOString().split('T')[0];
-            document.querySelectorAll('input[name="recurrence-day"]').forEach(cb => cb.checked = false);
-            document.getElementById('recurrence-monthday').value = '1';
-            document.querySelector('input[name="recurrence-end"][value="never"]').checked = true;
-        }
-
-        this.updateRecurrenceOptions();
-        this.updateRecurrenceEndOptions();
-
-        // Update title and button based on whether this is an update
-        const recTitleEl = document.getElementById('recurrence-picker-title');
-        const recSubmitBtn = document.getElementById('recurrence-submit-btn');
-        if (recTitleEl) {
-            recTitleEl.textContent = existingRecurrence ? `Update Recurrence: ${spokeName}` : `Set Recurrence: ${spokeName}`;
-        }
-        if (recSubmitBtn) {
-            recSubmitBtn.textContent = existingRecurrence ? '🔁 Update Recurrence' : '🔁 Set Recurrence';
-        }
-
-        // Set up callback for when recurrence is saved
-        this.pendingRecurrence = {
-            callback: async (recurrence) => {
-                // Delete old calendar event if it exists
-                const oldEventId = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.calendarEventId : null;
-                if (oldEventId && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
-                    await CalendarAdapter.deleteEvent(oldEventId);
-                }
-
-                // Update spoke metadata with recurrence
-                DataModel.updateSpokeType(categoryId, itemId, spokeIndex, 'repeating', { recurrence });
-
-                // Create calendar event
-                if (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
-                    const rrule = CalendarAdapter.buildRRule(recurrence);
-                    const eventData = {
-                        title: `${spokeName} (${category.name}/${item.name})`,
-                        date: recurrence.startDate,
-                        description: `Repeating spoke: ${spokeName}\nSlice: ${item.name}\nCategory: ${category.name}\nCreated from Brain Pie`,
-                        rrule: rrule
-                    };
-
-                    if (recurrence.allDay) {
-                        eventData.allDay = true;
-                    } else {
-                        eventData.time = recurrence.time || '09:00';
-                        eventData.duration = recurrence.duration || 60;
-                    }
-
-                    const event = await CalendarAdapter.createEvent(eventData);
-                    if (event && event.id) {
-                        // Update calendarEventId
-                        const updatedSpoke = item.subItems[spokeIndex];
-                        if (typeof updatedSpoke === 'object') {
-                            if (!updatedSpoke.metadata) updatedSpoke.metadata = {};
-                            updatedSpoke.metadata.calendarEventId = event.id;
-                            DataModel.saveToStorage();
-                        }
-                        Storage.showStatus('Recurring event added to calendar', 'success');
-                    }
-                }
-
-                // Re-render
-                this.renderTab2Spokes();
-                App.render();
-            }
-        };
-
-        // Update star button state for spoke
-        this.updateSchedulerStar('recurrence-star-btn', { type: 'spoke', categoryId, itemId, spokeIndex });
-
-        document.getElementById('recurrence-overlay').classList.add('active');
+        this.renderSpokeEditorActions();
     },
 
     clearInputs() {
@@ -4392,7 +4191,7 @@ const UI = {
         DataModel.saveToStorage();
         if (!skipRender) {
             this.renderTab2Spokes();
-            this.renderExistingActions();
+            this.renderSpokeEditorActions();
             App.render();
         }
     },
@@ -4486,7 +4285,7 @@ const UI = {
 
     toggleSchedulerStar(type) {
         if (!this.schedulerStarRef) return;
-        const btnIds = { 'datetime': 'datetime-star-btn', 'recurrence': 'recurrence-star-btn', 'spoke-type': 'spoke-type-star-btn', 'spoke-config': 'spoke-config-star-btn' };
+        const btnIds = { 'datetime': 'datetime-star-btn', 'recurrence': 'recurrence-star-btn', 'spoke-editor': 'spoke-editor-star-btn' };
         const btn = document.getElementById(btnIds[type]);
         this.addToPriorities(this.schedulerStarRef);
         if (btn) btn.classList.toggle('active', this.isPrioritised(this.schedulerStarRef));
@@ -4534,18 +4333,18 @@ const UI = {
                             const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                             const timeStr = sched.time ? ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                             const borderStyle = UI.getScheduleBorderStyle(sched.date, sched.time);
-                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${borderStyle}cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Reschedule">${dateStr}${timeStr}</button>`;
+                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${borderStyle}cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Reschedule">${dateStr}${timeStr}</button>`;
                         } else {
-                            actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Schedule">📅</button>`;
+                            actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Schedule">📅</button>`;
                         }
                     } else if (spokeType === 'repeating') {
                         const recurrence = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.recurrence : null;
                         if (recurrence) {
                             const recText = UI.formatRecurrenceDescriptionCompact(recurrence);
                             const recBorder = UI.getScheduleBorderStyle(recurrence.startDate, recurrence.time);
-                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${recBorder}cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeRecurrenceScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Edit recurrence">${recText}</button>`;
+                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${recBorder}cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Edit recurrence">${recText}</button>`;
                         } else {
-                            actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.openSpokeRecurrenceScheduler('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Set recurrence">🔁</button>`;
+                            actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Set recurrence">🔁</button>`;
                         }
                     } else if (spokeType === 'list') {
                         actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.navigateToPriority(${idx})" title="Edit actions">✏️</button>`;

@@ -1099,6 +1099,8 @@ textarea {
     padding: 30px;
     max-width: 400px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
 
     @media (max-width: 1024px) {
@@ -1304,7 +1306,8 @@ select:focus {
 }
 
 /* Spoke Configuration Overlay */
-.spoke-config-overlay {
+/* Unified Spoke Editor */
+.spoke-editor-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -1314,29 +1317,64 @@ select:focus {
     display: none;
     justify-content: center;
     align-items: center;
-    z-index: 2002;
+    z-index: 2003;
 }
+.spoke-editor-overlay.active { display: flex; }
 
-.spoke-config-overlay.active {
-    display: flex;
-}
-
-.spoke-config-content {
+.spoke-editor-content {
     background: white;
     border-radius: 12px;
     padding: 30px;
-    max-width: 500px;
+    max-width: 520px;
     width: 90%;
     max-height: 85vh;
     overflow-y: auto;
     position: relative;
 }
 
-.spoke-config-content h2 {
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 22px;
+.spoke-editor-breadcrumb {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 4px;
 }
+.spoke-editor-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.spoke-editor-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    flex: 1;
+}
+
+.spoke-editor-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+.spoke-editor-tab {
+    padding: 8px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: #999;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+}
+.spoke-editor-tab:hover { color: #666; }
+.spoke-editor-tab.active {
+    color: #333;
+    border-bottom-color: #4CAF50;
+}
+
+.spoke-editor-tab-content { display: none; }
+.spoke-editor-tab-content.active { display: block; }
 
 .spoke-type-options {
     display: flex;
@@ -1447,38 +1485,6 @@ select:focus {
 }
 
 /* Spoke Type Picker Overlay (simple type selection) */
-.spoke-type-picker-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 2003;
-}
-
-.spoke-type-picker-overlay.active {
-    display: flex;
-}
-
-.spoke-type-picker-content {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    max-width: 400px;
-    width: 90%;
-    position: relative;
-}
-
-.spoke-type-picker-content h2 {
-    color: #333;
-    margin-bottom: 15px;
-    font-size: 20px;
-}
-
 .spoke-type-picker-options {
     display: flex;
     flex-direction: column;
@@ -1526,7 +1532,7 @@ select:focus {
 }
 
 @media (max-width: 1024px) {
-    .spoke-type-picker-content {
+    .spoke-editor-content {
         width: 96vw;
         max-width: 96vw;
         padding: 20px;

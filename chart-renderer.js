@@ -406,18 +406,10 @@ const ChartRenderer = {
             const sliceName = sliceData.data ? sliceData.data.name : '';
             const categoryName = catData.data ? catData.data.name : '';
             ChartRenderer.showActionPopup(event, subItem, categoryName, sliceName, categoryId, itemId, spokeIndex);
-        } else if (spokeType === 'single') {
-            // For single type, open date/time picker directly
-            this.collapseIfBranchExpanded();
-            UI.openSpokeScheduler(categoryId, itemId, spokeIndex);
-        } else if (spokeType === 'repeating') {
-            // For repeating type, open recurrence picker directly
-            this.collapseIfBranchExpanded();
-            UI.openSpokeRecurrenceScheduler(categoryId, itemId, spokeIndex);
         } else {
-            // For static type or list without children, show spoke type picker
+            // For static, single, and repeating types, open spoke editor
             this.collapseIfBranchExpanded();
-            UI.showSpokeTypePicker(categoryId, itemId, spokeIndex);
+            UI.showSpokeEditor(categoryId, itemId, spokeIndex);
         }
     },
     
