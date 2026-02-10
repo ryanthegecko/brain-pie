@@ -814,6 +814,57 @@ const DataModel = {
         return this.categories;
     },
 
+    getFilteredCategories() {
+        if (this.priorityList.length === 0) return [];
+
+        // Build sets of what's visible from priorityList
+        const visibleSlices = new Set(); // "categoryId:itemId" — show all spokes
+        const visibleSpokes = new Map(); // "categoryId:itemId" → Set of spokeIndices
+
+        for (const ref of this.priorityList) {
+            const sliceKey = `${ref.categoryId}:${ref.itemId}`;
+            if (ref.type === 'slice') {
+                visibleSlices.add(sliceKey);
+            } else if (ref.type === 'spoke' || ref.type === 'action') {
+                if (!visibleSlices.has(sliceKey)) {
+                    if (!visibleSpokes.has(sliceKey)) {
+                        visibleSpokes.set(sliceKey, new Set());
+                    }
+                    visibleSpokes.get(sliceKey).add(ref.spokeIndex);
+                }
+            }
+        }
+
+        const filtered = [];
+        for (const cat of this.categories) {
+            const filteredItems = [];
+            for (const item of (cat.items || [])) {
+                const sliceKey = `${cat.id}:${item.id}`;
+                if (visibleSlices.has(sliceKey)) {
+                    // Prioritised slice — include all spokes
+                    filteredItems.push({ ...item, subItems: [...(item.subItems || [])] });
+                } else if (visibleSpokes.has(sliceKey)) {
+                    // Only include specific spokes, annotated with original index
+                    const indices = visibleSpokes.get(sliceKey);
+                    const filteredSubItems = [];
+                    (item.subItems || []).forEach((spoke, idx) => {
+                        if (indices.has(idx)) {
+                            const s = typeof spoke === 'string' ? { text: spoke, _originalIndex: idx } : { ...spoke, _originalIndex: idx };
+                            filteredSubItems.push(s);
+                        }
+                    });
+                    if (filteredSubItems.length > 0) {
+                        filteredItems.push({ ...item, subItems: filteredSubItems });
+                    }
+                }
+            }
+            if (filteredItems.length > 0) {
+                filtered.push({ ...cat, items: filteredItems });
+            }
+        }
+        return filtered;
+    },
+
     setCategories(categories) {
         this.categories = categories;
         this.categoryPercentageOverrides = {};
