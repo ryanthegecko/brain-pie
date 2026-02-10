@@ -524,7 +524,7 @@ const ChartRenderer = {
         this.svg.selectAll('*').remove();
         this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
 
-        const totalItems = categories.reduce((sum, cat) => sum + cat.items.length, 0);
+        const totalItems = categories.reduce((sum, cat) => sum + (cat.items ? cat.items.length : 0), 0);
 
         if (totalItems === 0) {
             this.svg.append('text')
@@ -972,7 +972,7 @@ const ChartRenderer = {
         this.svg.selectAll('*').remove();
         this.highlightGroup = this.svg.append('g').attr('class', 'highlight-layer');
 
-        const totalItems = categories.reduce((sum, cat) => sum + cat.items.length, 0);
+        const totalItems = categories.reduce((sum, cat) => sum + (cat.items ? cat.items.length : 0), 0);
 
         if (totalItems === 0) {
             this.svg.append('text')

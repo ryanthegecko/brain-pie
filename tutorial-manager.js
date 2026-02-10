@@ -93,7 +93,7 @@ const TutorialManager = {
             noSpotlight: true,
             highlight: '#tab1-done-btn',
             title: 'Close the Menu',
-            content: 'Click "Done" to close the menu and see your pie!',
+            content: 'Click "Done" to close the menu and see your pie (scroll down if the Done button isn\'t visible).',
             nextEvent: 'menu-closed'
         },
         {
@@ -139,7 +139,7 @@ const TutorialManager = {
             id: 'calendar-done',
             type: 'spotlight',
             title: 'Schedule Your Yoga Class',
-            content: "Set the date to next Wednesday, time to 6:45pm. You can add the studio's address in the Location field. Click 'Add to Calendar' or 'Skip' when done!",
+            content: "You're on the Schedule tab. Set the date to next Wednesday, time to 6:45pm. You can add the studio's address in the Location field. Click 'Add to Calendar' to schedule it, or 'Done' to skip. (scroll down if the Done button isn\'t visible)",
             noSpotlight: true,
             nextEvent: 'datetime-picker-closed'
         },
@@ -147,7 +147,7 @@ const TutorialManager = {
             id: 'close-menu',
             type: 'spotlight',
             title: 'Close the Menu',
-            content: 'All done! Your event should soon appear in your calendar app. Click "Done" to see your scheduled Spoke on the pie. You can also make Spokes repeating (e.g. weekly yoga), or turn them into a list of individually scheduled actions.',
+            content: 'All done! Your event should soon appear in your calendar app. Click "Done" to close the menu and see your pie. You can also make Spokes repeating (e.g. weekly yoga), or turn them into a list of individually scheduled actions.',
             highlight: '.menu-nav-buttons button:last-child',
             noSpotlight: true,
             nextEvent: 'menu-closed'
@@ -169,18 +169,19 @@ const TutorialManager = {
             id: 'complete',
             type: 'modal',
             title: "You're All Set! 🎉",
-            content: "You've learned the basics! Your data is saved to your browser's local storage only—completely private. For cloud sync across devices, you can connect your own Firebase project in Settings. You can start fresh, or load one of the example pies below.",
+            content: "You've learned the basics! Your data is saved to your browser's local storage only—completely private. For cloud sync across devices, you can connect your own Firebase project in Settings.",
             getButtons: () => {
                 const buttons = [
-                    { text: 'Load Life Pie', action: 'loadLifePie', class: 'secondary' },
-                    { text: 'Load Team Pie', action: 'loadTeamPie', class: 'secondary' }
+                    { text: 'Continue With This Pie', action: 'continuePie', class: 'primary' }
                 ];
                 if (TutorialManager.hasStashedData()) {
-                    buttons.push({ text: 'Back to Your Pie', action: 'restorePie', class: 'primary' });
-                } else {
-                    buttons.push({ text: 'Continue With This Pie', action: 'continuePie', class: 'primary' });
+                    buttons.push({ text: 'Back to Your Pie', action: 'restorePie', class: 'secondary' });
                 }
-                buttons.push({ text: 'Start Fresh', action: 'startFresh', class: 'secondary' });
+                buttons.push(
+                    { text: 'Load Life Pie', action: 'loadLifePie', class: 'secondary' },
+                    { text: 'Load Team Pie', action: 'loadTeamPie', class: 'secondary' },
+                    { text: 'Start Fresh', action: 'startFresh', class: 'secondary' }
+                );
                 return buttons;
             }
         }
@@ -232,7 +233,7 @@ const TutorialManager = {
             this._autoProgressTimer = null;
         }
         const prevStep = this.steps[this.currentStepIndex];
-        console.log(`[Tutorial] nextStep() from: ${prevStep ? prevStep.id : 'none'} (index ${this.currentStepIndex})`);
+        Debug.log(`[Tutorial] nextStep() from: ${prevStep ? prevStep.id : 'none'} (index ${this.currentStepIndex})`);
         this.hideAll();
         this.isExploring = false;
         this.currentStepIndex++;
@@ -245,7 +246,7 @@ const TutorialManager = {
         }
 
         const nextStepObj = this.steps[this.currentStepIndex];
-        console.log(`[Tutorial] → advancing to: ${nextStepObj ? nextStepObj.id : 'none'} (index ${this.currentStepIndex})`);
+        Debug.log(`[Tutorial] → advancing to: ${nextStepObj ? nextStepObj.id : 'none'} (index ${this.currentStepIndex})`);
         this.renderCurrentStep();
     },
 
@@ -354,9 +355,9 @@ const TutorialManager = {
      */
     renderCurrentStep() {
         const step = this.steps[this.currentStepIndex];
-        if (!step) { console.log('[Tutorial] renderCurrentStep: no step found'); return; }
+        if (!step) { Debug.log('[Tutorial] renderCurrentStep: no step found'); return; }
 
-        console.log(`[Tutorial] renderCurrentStep: ${step.id} (type: ${step.type}, delay: ${step.delay || 0})`);
+        Debug.log(`[Tutorial] renderCurrentStep: ${step.id} (type: ${step.type}, delay: ${step.delay || 0})`);
 
         // Clear any pending auto-progress timer
         if (this._autoProgressTimer) {
@@ -366,10 +367,10 @@ const TutorialManager = {
 
         // Support optional delay before showing the step
         if (step.delay) {
-            console.log(`[Tutorial]   delaying by ${step.delay}ms`);
+            Debug.log(`[Tutorial]   delaying by ${step.delay}ms`);
             setTimeout(() => {
                 if (step.onEnter) {
-                    console.log(`[Tutorial]   onEnter: ${step.onEnter}`);
+                    Debug.log(`[Tutorial]   onEnter: ${step.onEnter}`);
                     this[step.onEnter]();
                 }
                 this.showStep(step);
@@ -379,7 +380,7 @@ const TutorialManager = {
             }, step.delay);
         } else {
             if (step.onEnter) {
-                console.log(`[Tutorial]   onEnter: ${step.onEnter}`);
+                Debug.log(`[Tutorial]   onEnter: ${step.onEnter}`);
                 this[step.onEnter]();
             }
             this.showStep(step);
@@ -393,7 +394,7 @@ const TutorialManager = {
      * Show a step (modal or spotlight)
      */
     showStep(step) {
-        console.log(`[Tutorial] showStep: ${step.id} (type: ${step.type})`);
+        Debug.log(`[Tutorial] showStep: ${step.id} (type: ${step.type})`);
         if (step.type === 'modal') {
             this.showModal(step);
         } else if (step.type === 'spotlight') {
@@ -441,6 +442,9 @@ const TutorialManager = {
                     break;
                 case 'loadTeamPie':
                     onclick = 'TutorialManager.finishWithTeamPie()';
+                    break;
+                case 'loadHealthPie':
+                    onclick = 'TutorialManager.finishWithHealthPie()';
                     break;
                 case 'continuePie':
                     onclick = 'TutorialManager.continuePie()';
@@ -495,17 +499,17 @@ const TutorialManager = {
         }
 
         const targetEl = selector ? document.querySelector(selector) : null;
-        console.log(`[Tutorial] showSpotlight: ${step.id}, selector: ${selector}, found: ${!!targetEl}, noSpotlight: ${!!step.noSpotlight}`);
+        Debug.log(`[Tutorial] showSpotlight: ${step.id}, selector: ${selector}, found: ${!!targetEl}, noSpotlight: ${!!step.noSpotlight}`);
 
         if (!targetEl) {
-            console.warn('[Tutorial] Target element not found:', selector);
+            Debug.log('[Tutorial] Target element not found:', selector);
             this.showFloatingTooltip(step);
             return;
         }
 
         // noSpotlight: show floating tooltip without dark overlay (for steps inside menus)
         if (step.noSpotlight) {
-            console.log(`[Tutorial]   using floating tooltip (noSpotlight)`);
+            Debug.log(`[Tutorial]   using floating tooltip (noSpotlight)`);
             this.showFloatingTooltip(step);
             return;
         }
@@ -549,7 +553,7 @@ const TutorialManager = {
      * Show tooltip without spotlight (fallback)
      */
     showFloatingTooltip(step) {
-        console.log(`[Tutorial] showFloatingTooltip: ${step.id}, title: "${step.title}"`);
+        Debug.log(`[Tutorial] showFloatingTooltip: ${step.id}, title: "${step.title}"`);
         const overlay = document.getElementById('tutorial-overlay');
         const spotlight = document.getElementById('tutorial-spotlight');
         const tooltip = document.getElementById('tutorial-tooltip');
@@ -568,7 +572,7 @@ const TutorialManager = {
         tooltip.style.transform = 'translateX(-50%)';
 
         overlay.classList.add('active');
-        console.log(`[Tutorial]   overlay.active: ${overlay.classList.contains('active')}, display: ${getComputedStyle(overlay).display}`);
+        Debug.log(`[Tutorial]   overlay.active: ${overlay.classList.contains('active')}, display: ${getComputedStyle(overlay).display}`);
     },
 
     /**
@@ -614,14 +618,14 @@ const TutorialManager = {
      * Called by app code when events happen
      */
     notifyEvent(eventType, data) {
-        const step = this.steps[this.currentStepIndex];
-        console.log(`[Tutorial] notifyEvent: '${eventType}', active: ${this.isActive}, exploring: ${this.isExploring}, currentStep: ${step ? step.id : 'none'} (type: ${step ? step.type : '-'}), expecting: ${step ? step.nextEvent : '-'}`);
-
         if (!this.isActive || this.isExploring) return;
+
+        const step = this.steps[this.currentStepIndex];
+        Debug.log(`[Tutorial] notifyEvent: '${eventType}', currentStep: ${step ? step.id : 'none'} (type: ${step ? step.type : '-'}), expecting: ${step ? step.nextEvent : '-'}`);
         if (!step || step.type !== 'spotlight') return;
 
         if (step.nextEvent === eventType) {
-            console.log(`[Tutorial]   ✓ MATCH! Advancing in 300ms`);
+            Debug.log(`[Tutorial]   ✓ MATCH! Advancing in 300ms`);
             setTimeout(() => this.nextStep(), 300);
         }
     },
@@ -679,7 +683,7 @@ const TutorialManager = {
             const data = ExampleData.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            Storage.save({ categories: DataModel.categories, categoryPercentageOverrides: DataModel.categoryPercentageOverrides, priorityList: DataModel.priorityList || [] }); // localStorage only — don't push tutorial data to Firebase
+            this._namePieAndSave('Life Pie');
             App.render();
         }
     },
@@ -693,8 +697,50 @@ const TutorialManager = {
             const data = ExampleData2.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            Storage.save({ categories: DataModel.categories, categoryPercentageOverrides: DataModel.categoryPercentageOverrides, priorityList: DataModel.priorityList || [] }); // localStorage only — don't push tutorial data to Firebase
+            this._namePieAndSave('Team Pie');
             App.render();
+        }
+    },
+
+    /**
+     * Load the "Health Pie" example data
+     */
+    loadHealthPie() {
+        this.stashUserData();
+        if (typeof ExampleData3 !== 'undefined') {
+            const data = ExampleData3.get();
+            DataModel.setCategories(data.categories);
+            DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
+            this._namePieAndSave('Health Pie');
+            App.render();
+        }
+    },
+
+    /**
+     * Set pie name and save to localStorage only (not Firebase)
+     */
+    _namePieAndSave(name) {
+        DataModel.currentPieName = name;
+        const pieId = DataModel.getActivePieId();
+        if (pieId) {
+            // Update name in meta
+            if (DataModel.pieMeta && DataModel.pieMeta.pieNames) {
+                DataModel.pieMeta.pieNames[pieId] = name;
+                Storage.saveMeta(DataModel.pieMeta);
+            }
+            Storage.savePie(pieId, {
+                id: pieId,
+                name: name,
+                categories: DataModel.categories,
+                categoryPercentageOverrides: DataModel.categoryPercentageOverrides,
+                priorityList: DataModel.priorityList || []
+            });
+        } else {
+            Storage.save({
+                categories: DataModel.categories,
+                categoryPercentageOverrides: DataModel.categoryPercentageOverrides,
+                priorityList: DataModel.priorityList || []
+            });
         }
     },
 
@@ -737,20 +783,6 @@ const TutorialManager = {
     },
 
     /**
-     * Load the "Health Pie" example data
-     */
-    loadHealthPie() {
-        this.stashUserData();
-        if (typeof ExampleData3 !== 'undefined') {
-            const data = ExampleData3.get();
-            DataModel.setCategories(data.categories);
-            DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            Storage.save({ categories: DataModel.categories, categoryPercentageOverrides: DataModel.categoryPercentageOverrides, priorityList: DataModel.priorityList || [] }); // localStorage only — don't push tutorial data to Firebase
-            App.render();
-        }
-    },
-
-    /**
      * Sign in for calendar (wrapper for UI method)
      */
     signInForCalendar() {
@@ -775,6 +807,14 @@ const TutorialManager = {
      */
     finishWithTeamPie() {
         this.loadTeamPie();
+        this.complete();
+    },
+
+    /**
+     * Complete tutorial and load the Health Pie
+     */
+    finishWithHealthPie() {
+        this.loadHealthPie();
         this.complete();
     },
 

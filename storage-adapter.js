@@ -28,6 +28,9 @@ const StorageAdapter = {
     // Unique ID for each save to identify our own updates
     lastSaveId: null,
 
+    // Skip auto-sync when manual sign-in will handle it
+    skipSyncOnConnect: false,
+
     /**
      * Initialize the storage adapter
      * Checks URL for Firebase config, checks localStorage for saved config
@@ -54,13 +57,13 @@ const StorageAdapter = {
                     await FirebaseAdapter.init(config);
 
                     // Set up auth state listener
-                    FirebaseAdapter.onAuthStateChanged((user) => {
+                    FirebaseAdapter.onAuthStateChanged(async (user) => {
                         if (user) {
                             this.currentMode = 'firebase';
                             Debug.log('StorageAdapter: switched to firebase mode');
 
-                            // Subscribe to changes
-                            this.setupFirebaseListener();
+                            // Sync Firebase data before setting up listeners
+                            await this.syncOnConnect();
                         } else {
                             this.currentMode = 'local';
                             Debug.log('StorageAdapter: switched to local mode (not signed in)');
@@ -92,43 +95,222 @@ const StorageAdapter = {
         Debug.log('StorageAdapter initialized in', this.currentMode, 'mode');
     },
 
+    // Callback for meta updates (pie list changes)
+    metaUpdateCallback: null,
+
     /**
-     * Set up Firebase real-time listener
+     * Sync data from Firebase on auto-connect (page load with existing auth).
+     * Loads Firebase meta/pies, migrates old format if needed, and aligns local state.
+     */
+    async syncOnConnect() {
+        if (this.skipSyncOnConnect) {
+            this.skipSyncOnConnect = false;
+            // reloadDataFromFirebase() will handle sync and set up listeners
+            return;
+        }
+        try {
+            // Check for multi-pie meta in Firebase
+            let meta = await FirebaseAdapter.loadMeta();
+
+            if (!meta) {
+                // Try migrating old single-blob format
+                meta = await FirebaseAdapter.migrateToMultiPie();
+            }
+
+            if (meta && meta.pieIds) {
+                // Firebase has multi-pie data — use Firebase's pie structure
+                const pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+
+                // Use local activePieId if it's valid in Firebase, otherwise default to first
+                let activePieId = DataModel.getActivePieId();
+                if (!activePieId || !pieIds.includes(activePieId)) {
+                    activePieId = pieIds[0];
+                }
+
+                DataModel.pieMeta = {
+                    pieIds: pieIds,
+                    pieNames: meta.pieNames || {},
+                    activePieId: activePieId
+                };
+                DataModel.setActivePieId(activePieId);
+                Storage.saveMeta(DataModel.pieMeta);
+
+                // Load the active pie data from Firebase
+                const pieData = await FirebaseAdapter.loadPie(activePieId);
+                if (pieData && pieData.categories) {
+                    DataModel.categories = pieData.categories;
+                    DataModel.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
+                    DataModel.currentPieName = meta.pieNames?.[activePieId] || pieData.name || 'My Pie';
+                    DataModel.normalizeAllSpokes();
+
+                    Storage.savePie(activePieId, {
+                        id: activePieId,
+                        name: DataModel.currentPieName,
+                        categories: DataModel.categories,
+                        categoryPercentageOverrides: DataModel.categoryPercentageOverrides,
+                        priorityList: DataModel.priorityList || []
+                    });
+                }
+
+                // Load per-user priorities
+                const priorities = await FirebaseAdapter.loadPriorities(activePieId);
+                DataModel.priorityList = priorities || [];
+                DataModel.validatePriorityList();
+
+                if (typeof App !== 'undefined') App.render();
+                Debug.log('StorageAdapter: synced from Firebase on connect');
+            }
+            // If Firebase is empty, keep local data as-is (will push on next save)
+        } catch (e) {
+            Debug.log('StorageAdapter: syncOnConnect failed:', e.message);
+        }
+
+        // Set up real-time listeners
+        this.setupFirebaseListener();
+    },
+
+    /**
+     * Set up Firebase real-time listeners for active pie + priorities + meta
      */
     setupFirebaseListener() {
-        FirebaseAdapter.subscribeToChanges((data) => {
-            // Skip if we just saved this data (prevent feedback loop)
-            if (this.isSaving) {
-                Debug.log('StorageAdapter: Skipping update (currently saving)');
-                return;
-            }
+        const activePieId = DataModel.getActivePieId();
 
-            // Skip if this is our own save coming back (check saveId)
-            if (data._saveId && data._saveId === this.lastSaveId) {
-                Debug.log('StorageAdapter: Skipping update (our own save)');
-                return;
-            }
+        if (activePieId) {
+            // Multi-pie mode: subscribe to active pie
+            FirebaseAdapter.subscribeToPie(activePieId, (data) => {
+                if (this.isSaving) return;
+                Debug.log('StorageAdapter: Received remote pie update');
+                if (this.updateCallback) {
+                    this.updateCallback(data);
+                }
+            });
 
-            Debug.log('StorageAdapter: Received remote update from', data._savedBy || 'unknown');
+            // Subscribe to per-user priorities for active pie
+            FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
+                if (this.isSavingPriorities) return;
+                Debug.log('StorageAdapter: Received remote priority update');
+                if (this.priorityUpdateCallback) {
+                    this.priorityUpdateCallback(priorityList);
+                }
+            }, activePieId);
 
+            // Subscribe to meta changes (team members adding/deleting pies)
+            FirebaseAdapter.subscribeToMeta((meta) => {
+                Debug.log('StorageAdapter: Received remote meta update');
+                if (this.metaUpdateCallback) {
+                    this.metaUpdateCallback(meta);
+                }
+            });
+        } else {
+            // Legacy single-pie mode
+            FirebaseAdapter.subscribeToChanges((data) => {
+                if (this.isSaving) return;
+                if (data._saveId && data._saveId === this.lastSaveId) return;
+                Debug.log('StorageAdapter: Received remote update from', data._savedBy || 'unknown');
+                if (this.updateCallback) {
+                    this.updateCallback(data);
+                }
+            });
+
+            FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
+                if (this.isSavingPriorities) return;
+                if (this.priorityUpdateCallback) {
+                    this.priorityUpdateCallback(priorityList);
+                }
+            });
+        }
+    },
+
+    /**
+     * Switch pie listeners: detach old, attach new
+     */
+    switchPieListeners(pieId) {
+        if (this.currentMode !== 'firebase' || !FirebaseAdapter.isConnected()) return;
+
+        // Detach old listeners
+        FirebaseAdapter.unsubscribeFromChanges();
+        FirebaseAdapter.unsubscribeFromPriorityChanges();
+
+        // Attach new listeners for the new pie
+        FirebaseAdapter.subscribeToPie(pieId, (data) => {
+            if (this.isSaving) return;
+            Debug.log('StorageAdapter: Received remote pie update (switched)');
             if (this.updateCallback) {
                 this.updateCallback(data);
             }
         });
 
-        // Subscribe to per-user priority changes (same user, other devices)
         FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
-            if (this.isSavingPriorities) {
-                Debug.log('StorageAdapter: Skipping priority update (currently saving)');
-                return;
-            }
-
-            Debug.log('StorageAdapter: Received remote priority update');
-
+            if (this.isSavingPriorities) return;
             if (this.priorityUpdateCallback) {
                 this.priorityUpdateCallback(priorityList);
             }
-        });
+        }, pieId);
+    },
+
+    // --- Multi-pie routing methods ---
+
+    async saveMeta(meta) {
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            await FirebaseAdapter.saveMeta(meta);
+            // Also save to localStorage for offline access
+            Storage.saveMeta(meta);
+        } else {
+            Storage.saveMeta(meta);
+        }
+    },
+
+    async loadMeta() {
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            const meta = await FirebaseAdapter.loadMeta();
+            if (meta) return meta;
+        }
+        return Storage.loadMeta();
+    },
+
+    async savePie(pieId, data) {
+        this.isSaving = true;
+        try {
+            if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+                await FirebaseAdapter.savePie(pieId, data);
+                // Also save to localStorage as backup
+                Storage.savePie(pieId, data);
+            } else {
+                Storage.savePie(pieId, data);
+            }
+            return true;
+        } finally {
+            setTimeout(() => { this.isSaving = false; }, 1000);
+        }
+    },
+
+    async loadPie(pieId) {
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            const data = await FirebaseAdapter.loadPie(pieId);
+            if (data) return data;
+        }
+        return Storage.loadPie(pieId);
+    },
+
+    async deletePie(pieId) {
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            await FirebaseAdapter.deletePie(pieId);
+        }
+        Storage.deletePie(pieId);
+    },
+
+    async migrateToMultiPie() {
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            return await FirebaseAdapter.migrateToMultiPie();
+        }
+        return Storage.migrateToMultiPie();
+    },
+
+    /**
+     * Subscribe to meta updates (Firebase only — team pie list changes)
+     */
+    subscribeToMetaUpdates(callback) {
+        this.metaUpdateCallback = callback;
     },
 
     /**
@@ -251,35 +433,35 @@ const StorageAdapter = {
     },
 
     /**
-     * Save priorities to per-user storage
-     * In Firebase mode, writes to userPriorities/{uid} path
-     * In localStorage mode, this is a no-op (priorities saved with main blob)
+     * Save priorities to per-user storage (per-pie in multi-pie mode)
      * @param {Array} priorityList - Priority list array
+     * @param {string} pieId - Optional pie ID (defaults to active)
      * @returns {Promise}
      */
-    async savePriorities(priorityList) {
+    async savePriorities(priorityList, pieId) {
         if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
             this.isSavingPriorities = true;
+            const activePieId = pieId || DataModel.getActivePieId();
             try {
-                await FirebaseAdapter.savePriorities(priorityList);
+                await FirebaseAdapter.savePriorities(priorityList, activePieId);
             } finally {
                 setTimeout(() => {
                     this.isSavingPriorities = false;
                 }, 1000);
             }
         }
-        // localStorage: priorities are saved as part of the main blob via save()
+        // localStorage: priorities are saved as part of the pie blob via savePie()
     },
 
     /**
-     * Load priorities from per-user storage
-     * In Firebase mode, reads from userPriorities/{uid} path
-     * In localStorage mode, returns null (priorities loaded with main blob)
+     * Load priorities from per-user storage (per-pie in multi-pie mode)
+     * @param {string} pieId - Optional pie ID (defaults to active)
      * @returns {Promise<Array|null>}
      */
-    async loadPriorities() {
+    async loadPriorities(pieId) {
         if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            return await FirebaseAdapter.loadPriorities();
+            const activePieId = pieId || DataModel.getActivePieId();
+            return await FirebaseAdapter.loadPriorities(activePieId);
         }
         return null;
     },
