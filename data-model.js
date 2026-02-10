@@ -875,6 +875,17 @@ const DataModel = {
 
     // --- Priority List Methods ---
 
+    /**
+     * Save priorities to per-user storage (Firebase) in addition to main blob
+     */
+    savePrioritiesToStorage() {
+        if (typeof StorageAdapter !== 'undefined') {
+            StorageAdapter.savePriorities(this.priorityList).catch(e => {
+                console.error('StorageAdapter.savePriorities failed:', e);
+            });
+        }
+    },
+
     addPriority(ref) {
         // Check for duplicates
         const existingIdx = this.priorityList.findIndex(p =>
@@ -891,12 +902,14 @@ const DataModel = {
             this.priorityList.splice(existingIdx, 1);
             this.priorityList.unshift(ref);
             this.saveToStorage();
+            this.savePrioritiesToStorage();
             return 'moved';
         }
 
         // Add to top of list
         this.priorityList.unshift(ref);
         this.saveToStorage();
+        this.savePrioritiesToStorage();
         return 'added';
     },
 
@@ -904,6 +917,7 @@ const DataModel = {
         if (index >= 0 && index < this.priorityList.length) {
             this.priorityList.splice(index, 1);
             this.saveToStorage();
+            this.savePrioritiesToStorage();
         }
     },
 
@@ -913,6 +927,7 @@ const DataModel = {
         const [item] = this.priorityList.splice(fromIdx, 1);
         this.priorityList.splice(toIdx, 0, item);
         this.saveToStorage();
+        this.savePrioritiesToStorage();
     },
 
     resolvePriority(ref) {
