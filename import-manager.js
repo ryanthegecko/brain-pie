@@ -389,6 +389,9 @@ const ImportManager = {
             }
         }
 
+        // Update pie name from imported data if current pie is still the default
+        this._updatePieNameFromImport();
+
         // Save once at the end
         DataModel.saveToStorage();
 
@@ -396,24 +399,27 @@ const ImportManager = {
     },
 
     /**
-     * Quick replace: completely replace all data with import
+     * Update the active pie name from imported data
      */
+    _updatePieNameFromImport() {
+        const importedName = this.importData && (this.importData.pieName || this.importData.name);
+        if (!importedName) return;
+
+        const pieId = DataModel.getActivePieId();
+        if (pieId && DataModel.pieMeta && DataModel.pieMeta.pieNames) {
+            DataModel.pieMeta.pieNames[pieId] = importedName;
+            DataModel.currentPieName = importedName;
+            DataModel.saveMeta();
+        }
+    },
+
     quickReplace() {
         if (this.importData && this.importData.categories) {
             DataModel.setCategories(this.importData.categories);
             if (this.importData.categoryPercentageOverrides) {
                 DataModel.categoryPercentageOverrides = this.importData.categoryPercentageOverrides;
             }
-            // Update pie name from imported data if present
-            const importedName = this.importData.pieName || this.importData.name;
-            if (importedName) {
-                const pieId = DataModel.getActivePieId();
-                if (pieId && DataModel.pieMeta && DataModel.pieMeta.pieNames) {
-                    DataModel.pieMeta.pieNames[pieId] = importedName;
-                    DataModel.currentPieName = importedName;
-                    DataModel.saveMeta();
-                }
-            }
+            this._updatePieNameFromImport();
             DataModel.saveToStorage();
             return true;
         }
