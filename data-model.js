@@ -295,14 +295,14 @@ const DataModel = {
         }
 
         // If loading with a Firebase config URL, don't create example data —
-        // Firebase will provide the real data after sign-in
+        // Firebase will provide the real data after sign-in.
+        // Only set in-memory state; do NOT save to localStorage/Firebase
+        // (that would push an empty "My Pie" to the shared DB).
         if (new URLSearchParams(window.location.search).has('config')) {
-            const pieId = this.generatePieId();
-            this.pieMeta = { pieIds: [pieId], activePieId: pieId, pieNames: { [pieId]: 'My Pie' } };
-            this.currentPieName = 'My Pie';
+            this.pieMeta = { pieIds: [], activePieId: null, pieNames: {} };
+            this.currentPieName = '';
             this.categories = [];
             this.priorityList = [];
-            this.saveMeta();
             return;
         }
 
