@@ -404,6 +404,16 @@ const ImportManager = {
             if (this.importData.categoryPercentageOverrides) {
                 DataModel.categoryPercentageOverrides = this.importData.categoryPercentageOverrides;
             }
+            // Update pie name from imported data if present
+            const importedName = this.importData.pieName || this.importData.name;
+            if (importedName) {
+                const pieId = DataModel.getActivePieId();
+                if (pieId && DataModel.pieMeta && DataModel.pieMeta.pieNames) {
+                    DataModel.pieMeta.pieNames[pieId] = importedName;
+                    DataModel.currentPieName = importedName;
+                    DataModel.saveMeta();
+                }
+            }
             DataModel.saveToStorage();
             return true;
         }
