@@ -199,6 +199,23 @@ const App = {
             });
         }
 
+        // Initialize Firebase from URL config BEFORE loading data, so that
+        // loadFromStorageOrExample() can detect the config URL and skip example data.
+        // Also allows cached auth to resolve before data loading.
+        if (typeof FirebaseAdapter !== 'undefined') {
+            const urlConfig = FirebaseAdapter.parseConfigFromURL();
+            if (urlConfig) {
+                try {
+                    if (!FirebaseAdapter.app) {
+                        await FirebaseAdapter.init(urlConfig);
+                    }
+                    await StorageAdapter.enableCloudSync(urlConfig);
+                } catch (e) {
+                    Debug.log('Firebase init from URL config failed:', e.message);
+                }
+            }
+        }
+
         // Load data (now async to support Firebase)
         await DataModel.loadFromStorageOrExample();
 
@@ -229,21 +246,9 @@ const App = {
         }
 
         // Show sign-in banner if loaded with a Firebase config URL but not yet signed in
-        if (typeof FirebaseAdapter !== 'undefined') {
+        if (typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.auth) {
             const urlConfig = FirebaseAdapter.parseConfigFromURL();
             if (urlConfig) {
-                // Initialize Firebase with the URL config
-                try {
-                    if (!FirebaseAdapter.app) {
-                        await FirebaseAdapter.init(urlConfig);
-                    }
-                    await StorageAdapter.enableCloudSync(urlConfig);
-                } catch (e) {
-                    Debug.log('Firebase init from URL config failed:', e.message);
-                }
-                // Wait for Firebase SDK auth state to resolve, then show banner if not signed in.
-                // firebase.auth().onAuthStateChanged fires once auth state is determined
-                // (immediately if cached, or after network check).
                 const unsubAuth = FirebaseAdapter.auth.onAuthStateChanged((user) => {
                     if (!user) {
                         UI.showConfigSignInBanner();

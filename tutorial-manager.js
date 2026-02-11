@@ -20,12 +20,13 @@ const TutorialManager = {
 
     steps: [
         {
-            id: 'welcome',
+            id: 'ask-tutorial',
             type: 'modal',
             title: 'Welcome to Brain Pie! 🥧',
-            content: "Brain Pie helps you visualize and organize everything on your mind. It's flexible—use it for life management, project tracking, team coordination, or anything else. Let me show you how.",
+            content: "Brain Pie helps you visualize and organize everything on your mind. It's flexible—use it for life management, project tracking, team coordination, or anything else.",
             buttons: [
-                { text: "Let's Go!", action: 'next', class: 'primary' }
+                { text: 'Start Tutorial', action: 'next', class: 'primary' },
+                { text: "Skip, I'll explore", action: 'skipToEmpty', class: '' }
             ]
         },
         {
@@ -455,6 +456,9 @@ const TutorialManager = {
                 case 'startFresh':
                     onclick = 'TutorialManager.startFresh()';
                     break;
+                case 'skipToEmpty':
+                    onclick = 'TutorialManager.skipToEmpty()';
+                    break;
                 default:
                     onclick = 'TutorialManager.nextStep()';
             }
@@ -816,6 +820,17 @@ const TutorialManager = {
      * Complete tutorial and clear all data for a fresh start
      */
     startFresh() {
+        DataModel.setCategories([]);
+        DataModel.categoryPercentageOverrides = {};
+        DataModel.saveToStorage();
+        App.render();
+        this.complete();
+    },
+
+    /**
+     * Skip tutorial from the welcome step — leave user with empty pie
+     */
+    skipToEmpty() {
         DataModel.setCategories([]);
         DataModel.categoryPercentageOverrides = {};
         DataModel.saveToStorage();

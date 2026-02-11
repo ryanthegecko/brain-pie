@@ -294,6 +294,18 @@ const DataModel = {
             }
         }
 
+        // If loading with a Firebase config URL, don't create example data —
+        // Firebase will provide the real data after sign-in
+        if (new URLSearchParams(window.location.search).has('config')) {
+            const pieId = this.generatePieId();
+            this.pieMeta = { pieIds: [pieId], activePieId: pieId, pieNames: { [pieId]: 'My Pie' } };
+            this.currentPieName = 'My Pie';
+            this.categories = [];
+            this.priorityList = [];
+            this.saveMeta();
+            return;
+        }
+
         // First time: create default pie with example data
         const pieId = this.generatePieId();
         this.pieMeta = { pieIds: [pieId], activePieId: pieId, pieNames: { [pieId]: 'My Pie' } };
