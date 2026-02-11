@@ -3077,6 +3077,7 @@ const UI = {
      */
     async signOutFirebase() {
         await FirebaseAdapter.signOut();
+        this._hasReloadedFromFirebase = false;
         this.updateAuthUI();
         this.updateMainSyncIndicator(null, null);
     },
@@ -3107,8 +3108,11 @@ const UI = {
             // Update main UI indicator
             this.updateMainSyncIndicator('synced', FirebaseAdapter.getProjectId());
 
-            // Reload data from Firebase
-            this.reloadDataFromFirebase();
+            // Reload data from Firebase (only on first auth, not every Settings open)
+            if (!this._hasReloadedFromFirebase) {
+                this._hasReloadedFromFirebase = true;
+                this.reloadDataFromFirebase();
+            }
 
             // Sync calendar events (now that we have a fresh token)
             if (typeof App !== 'undefined' && App.syncCalendarEvents) {
