@@ -275,6 +275,8 @@ const FirebaseAdapter = {
 
         // Request Calendar API scope for 2-way calendar sync
         provider.addScope('https://www.googleapis.com/auth/calendar.events');
+        // Request Tasks API scope for Google Tasks import
+        provider.addScope('https://www.googleapis.com/auth/tasks');
 
         try {
             const result = await this.auth.signInWithPopup(provider);
@@ -327,6 +329,7 @@ const FirebaseAdapter = {
 
             const provider = new firebase.auth.GoogleAuthProvider();
             provider.addScope('https://www.googleapis.com/auth/calendar.events');
+            provider.addScope('https://www.googleapis.com/auth/tasks');
 
             // Re-authenticate to get fresh token
             const result = await this.user.reauthenticateWithPopup(provider);

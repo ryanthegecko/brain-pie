@@ -1332,5 +1332,29 @@ const DataModel = {
             }
         }
         return ids;
+    },
+
+    /**
+     * Scan all spokes for existing googleTaskIds (for dedup on Tasks import).
+     * Returns a Set of known Google Task IDs.
+     */
+    getExistingGoogleTaskIds() {
+        const ids = new Set();
+        for (const category of this.categories) {
+            for (const item of (category.items || [])) {
+                // Check slice-level metadata (unmatched tasks imported as slices)
+                if (item.metadata?.googleTaskId) {
+                    ids.add(item.metadata.googleTaskId);
+                }
+                // Check spoke-level metadata (matched tasks imported as spokes)
+                for (const spoke of (item.subItems || [])) {
+                    if (typeof spoke !== 'object') continue;
+                    if (spoke.metadata?.googleTaskId) {
+                        ids.add(spoke.metadata.googleTaskId);
+                    }
+                }
+            }
+        }
+        return ids;
     }
 };
