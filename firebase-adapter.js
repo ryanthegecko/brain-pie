@@ -457,6 +457,47 @@ const FirebaseAdapter = {
         }
     },
 
+    /**
+     * Atomically add pies to Firebase meta using a transaction.
+     * Prevents race conditions where concurrent .set() calls lose pie entries.
+     * @param {Array<{id: string, name: string}>} piesToAdd - Pies to add
+     * @returns {Promise<Object|null>} The committed meta, or null on failure
+     */
+    async addPiesToMeta(piesToAdd) {
+        if (!this.db || !this.user) return null;
+        try {
+            const path = this.getMetaPath();
+            const result = await this.db.ref(path).transaction((currentMeta) => {
+                if (!currentMeta) {
+                    currentMeta = { pieIds: [], pieNames: {} };
+                }
+                // Normalize pieIds (Firebase may convert arrays to objects)
+                let pieIds = currentMeta.pieIds || [];
+                if (!Array.isArray(pieIds)) pieIds = Object.values(pieIds);
+                const pieNames = currentMeta.pieNames || {};
+
+                for (const pie of piesToAdd) {
+                    if (!pieIds.includes(pie.id)) {
+                        pieIds.push(pie.id);
+                    }
+                    pieNames[pie.id] = pie.name;
+                }
+
+                return { pieIds, pieNames };
+            });
+
+            if (result.committed) {
+                Debug.log('Firebase: addPiesToMeta transaction committed,', piesToAdd.length, 'pies added');
+                return result.snapshot.val();
+            }
+            Debug.log('Firebase: addPiesToMeta transaction aborted');
+            return null;
+        } catch (e) {
+            Debug.log('Firebase: addPiesToMeta failed:', e.message);
+            return null;
+        }
+    },
+
     async loadMeta() {
         if (!this.db || !this.user) return null;
         try {
@@ -503,6 +544,36 @@ const FirebaseAdapter = {
             return null;
         } catch (e) {
             Debug.log('Firebase: loadPie failed:', e.message);
+            return null;
+        }
+    },
+
+    /**
+     * Atomically remove a pie from Firebase meta using a transaction.
+     * @param {string} pieId - Pie ID to remove
+     * @returns {Promise<Object|null>} The committed meta, or null on failure
+     */
+    async removePieFromMeta(pieId) {
+        if (!this.db || !this.user) return null;
+        try {
+            const path = this.getMetaPath();
+            const result = await this.db.ref(path).transaction((currentMeta) => {
+                if (!currentMeta) return currentMeta;
+                let pieIds = currentMeta.pieIds || [];
+                if (!Array.isArray(pieIds)) pieIds = Object.values(pieIds);
+                pieIds = pieIds.filter(id => id !== pieId);
+                const pieNames = currentMeta.pieNames || {};
+                delete pieNames[pieId];
+                return { pieIds, pieNames };
+            });
+
+            if (result.committed) {
+                Debug.log('Firebase: removePieFromMeta transaction committed for', pieId);
+                return result.snapshot.val();
+            }
+            return null;
+        } catch (e) {
+            Debug.log('Firebase: removePieFromMeta failed:', e.message);
             return null;
         }
     },
