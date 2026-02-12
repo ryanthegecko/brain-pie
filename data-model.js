@@ -352,6 +352,7 @@ const DataModel = {
     },
 
     saveToStorage() {
+        if (this._batchSaveDepth > 0) return;
         const pieId = this.getActivePieId();
 
         const pieData = {
@@ -455,7 +456,7 @@ const DataModel = {
         }
 
         // Otherwise calculate based on item count
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return 0;
 
         const totalItems = this.categories.reduce((sum, cat) => sum + cat.items.length, 0);
@@ -465,14 +466,14 @@ const DataModel = {
     },
 
     updateCategoryColor(categoryId, newColor) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return;
 
         category.color = newColor;
         this.saveToStorage();
     },
     updateCategoryName(categoryId, newName) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return;
 
         category.name = newName.trim();
@@ -498,7 +499,7 @@ const DataModel = {
     },
 
     addItem(categoryId, name, percentage, color, subItems) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return null;
 
         const id = Date.now().toString();
@@ -516,10 +517,7 @@ const DataModel = {
     },
 
     updateItemName(categoryId, itemId, newName) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         item.name = newName.trim();
@@ -527,10 +525,7 @@ const DataModel = {
     },
 
     renameSpoke(categoryId, itemId, spokeIndex, newName) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item || !item.subItems[spokeIndex]) return;
 
         const spoke = item.subItems[spokeIndex];
@@ -543,10 +538,7 @@ const DataModel = {
     },
 
     updateItemPercentage(categoryId, itemId, newPercentage) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         const oldPercentage = item.percentage;
@@ -569,10 +561,7 @@ const DataModel = {
     },
 
     updateItemColor(categoryId, itemId, newColor) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         item.color = newColor;
@@ -580,8 +569,8 @@ const DataModel = {
     },
 
     moveItem(fromCategoryId, itemId, toCategoryId) {
-        const fromCategory = this.categories.find(cat => cat.id === fromCategoryId);
-        const toCategory = this.categories.find(cat => cat.id === toCategoryId);
+        const fromCategory = this.getCategory(fromCategoryId);
+        const toCategory = this.getCategory(toCategoryId);
 
         if (!fromCategory || !toCategory) return;
 
@@ -599,7 +588,7 @@ const DataModel = {
     },
 
     reorderItemsInCategory(categoryId, fromIndex, toIndex) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return;
 
         const [movedItem] = category.items.splice(fromIndex, 1);
@@ -609,7 +598,7 @@ const DataModel = {
     },
 
     removeItem(categoryId, itemId) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return;
 
         category.items = category.items.filter(item => item.id !== itemId);
@@ -618,10 +607,7 @@ const DataModel = {
     },
 
     addSubItem(categoryId, itemId, subItemText, spokeType = 'static') {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         // Create spoke object with type
@@ -644,10 +630,7 @@ const DataModel = {
     },
 
     updateSpokeType(categoryId, itemId, spokeIndex, spokeType, metadata = {}) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         const spoke = item.subItems[spokeIndex];
@@ -695,13 +678,7 @@ const DataModel = {
     },
 
     getSpokeType(categoryId, itemId, spokeIndex) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return null;
-
-        const item = category.items.find(i => i.id === itemId);
-        if (!item) return null;
-
-        const spoke = item.subItems[spokeIndex];
+        const spoke = this.getSpoke(categoryId, itemId, spokeIndex);
         if (!spoke) return null;
 
         if (typeof spoke === 'string') return 'static'; // Legacy spokes
@@ -713,26 +690,15 @@ const DataModel = {
     },
 
     getSpokeMetadata(categoryId, itemId, spokeIndex) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return null;
-
-        const item = category.items.find(i => i.id === itemId);
-        if (!item) return null;
-
-        const spoke = item.subItems[spokeIndex];
+        const spoke = this.getSpoke(categoryId, itemId, spokeIndex);
         if (!spoke || typeof spoke === 'string') return null;
 
         return spoke.metadata || {};
     },
 
     moveSubItem(fromCategoryId, fromItemId, fromIndex, toCategoryId, toItemId, toIndex) {
-        const fromCategory = this.categories.find(cat => cat.id === fromCategoryId);
-        const toCategory = this.categories.find(cat => cat.id === toCategoryId);
-
-        if (!fromCategory || !toCategory) return;
-
-        const fromItem = fromCategory.items.find(i => i.id === fromItemId);
-        const toItem = toCategory.items.find(i => i.id === toItemId);
+        const fromItem = this.getItem(fromCategoryId, fromItemId);
+        const toItem = this.getItem(toCategoryId, toItemId);
 
         if (!fromItem || !toItem) return;
 
@@ -746,10 +712,7 @@ const DataModel = {
     },
 
     removeSubItem(categoryId, itemId, subItemIndex) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         item.subItems.splice(subItemIndex, 1);
@@ -757,10 +720,7 @@ const DataModel = {
     },
 
     addSpokeChild(categoryId, itemId, spokeIndex, childText) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         // Ensure spoke exists and has children array
@@ -802,10 +762,7 @@ const DataModel = {
     },
 
     removeSpokeChild(categoryId, itemId, spokeIndex, childIndex) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         if (typeof item.subItems[spokeIndex] === 'object' && item.subItems[spokeIndex].children) {
@@ -814,8 +771,44 @@ const DataModel = {
         }
     },
 
+    // --- Batch Save ---
+    _batchSaveDepth: 0,
+
+    batchSave(fn) {
+        this._batchSaveDepth++;
+        try {
+            fn();
+        } finally {
+            this._batchSaveDepth--;
+            if (this._batchSaveDepth === 0) {
+                this.saveToStorage();
+            }
+        }
+    },
+
+    // --- Accessor Helpers ---
+
+    getCategory(categoryId) {
+        return this.categories.find(c => c.id === categoryId);
+    },
+
+    getItem(categoryId, itemId) {
+        const cat = this.getCategory(categoryId);
+        return cat ? cat.items.find(i => i.id === itemId) : null;
+    },
+
+    getSpoke(categoryId, itemId, spokeIndex) {
+        const item = this.getItem(categoryId, itemId);
+        return item ? (item.subItems || [])[spokeIndex] : null;
+    },
+
+    getAction(categoryId, itemId, spokeIndex, childIndex) {
+        const spoke = this.getSpoke(categoryId, itemId, spokeIndex);
+        return spoke?.children?.[childIndex] || null;
+    },
+
     normalizeItemsInCategory(categoryId) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category || category.items.length === 0) return;
 
         const total = category.items.reduce((sum, item) => sum + item.percentage, 0);
@@ -905,7 +898,7 @@ const DataModel = {
      * Find an item (slice) by name within a category (case-insensitive)
      */
     findItemByName(categoryId, name) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return null;
 
         const normalizedName = name.toLowerCase().trim();
@@ -918,10 +911,7 @@ const DataModel = {
      * Find a spoke by text within an item (case-insensitive)
      */
     findSpokeByText(categoryId, itemId, text) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return null;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item || !item.subItems) return null;
 
         const normalizedText = text.toLowerCase().trim();
@@ -1001,13 +991,7 @@ const DataModel = {
      * Get spoke-level schedule data (for single/repeating spokes)
      */
     getSpokeSchedule(categoryId, itemId, spokeIndex) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return null;
-
-        const item = category.items.find(i => i.id === itemId);
-        if (!item) return null;
-
-        const spoke = item.subItems[spokeIndex];
+        const spoke = this.getSpoke(categoryId, itemId, spokeIndex);
         if (!spoke || typeof spoke === 'string') return null;
 
         return spoke.scheduled || null;
@@ -1017,10 +1001,7 @@ const DataModel = {
      * Set spoke-level schedule data (for single/repeating spokes)
      */
     setSpokeSchedule(categoryId, itemId, spokeIndex, scheduleData) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return;
 
         // Convert spoke to object if needed
@@ -1076,7 +1057,7 @@ const DataModel = {
      * Returns: { action: 'added'|'merged', itemId: string }
      */
     addOrMergeItem(categoryId, importedItem, skipSave = false) {
-        const category = this.categories.find(cat => cat.id === categoryId);
+        const category = this.getCategory(categoryId);
         if (!category) return null;
 
         const existing = this.findItemByName(categoryId, importedItem.name);
@@ -1123,10 +1104,7 @@ const DataModel = {
      * Returns: { action: 'added'|'merged'|'skipped' }
      */
     addOrMergeSpoke(categoryId, itemId, importedSpoke, skipSave = false) {
-        const category = this.categories.find(cat => cat.id === categoryId);
-        if (!category) return null;
-
-        const item = category.items.find(i => i.id === itemId);
+        const item = this.getItem(categoryId, itemId);
         if (!item) return null;
 
         // Ensure subItems array exists
@@ -1273,17 +1251,16 @@ const DataModel = {
     },
 
     resolvePriority(ref) {
-        const category = this.categories.find(c => c.id === ref.categoryId);
+        const category = this.getCategory(ref.categoryId);
         if (!category) return null;
 
+        const item = this.getItem(ref.categoryId, ref.itemId);
+        if (!item) return null;
+
         if (ref.type === 'slice') {
-            const item = category.items.find(i => i.id === ref.itemId);
-            if (!item) return null;
             return { displayName: item.name, context: category.name, color: item.color || category.color };
         }
 
-        const item = category.items.find(i => i.id === ref.itemId);
-        if (!item) return null;
         const subItems = item.subItems || [];
         if (ref.spokeIndex == null || ref.spokeIndex >= subItems.length) return null;
 
