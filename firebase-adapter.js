@@ -539,12 +539,33 @@ const FirebaseAdapter = {
             const path = this.getPiePath(pieId);
             const snapshot = await this.db.ref(path).get();
             if (snapshot.exists()) {
-                return snapshot.val();
+                const data = snapshot.val();
+                if (data.deleted) {
+                    Debug.log('Firebase: loadPie — pie is tombstoned:', pieId);
+                    return null;
+                }
+                return data;
             }
             return null;
         } catch (e) {
             Debug.log('Firebase: loadPie failed:', e.message);
             return null;
+        }
+    },
+
+    /**
+     * Check if a pie has been tombstoned (soft-deleted).
+     * @param {string} pieId
+     * @returns {Promise<boolean>}
+     */
+    async isPieDeleted(pieId) {
+        if (!this.db || !this.user) return false;
+        try {
+            const path = this.getPiePath(pieId) + '/deleted';
+            const snapshot = await this.db.ref(path).get();
+            return snapshot.exists() && snapshot.val() === true;
+        } catch (e) {
+            return false;
         }
     },
 
@@ -581,11 +602,15 @@ const FirebaseAdapter = {
     async deletePie(pieId) {
         if (!this.db || !this.user) return false;
         try {
-            // Remove pie data
-            await this.db.ref(this.getPiePath(pieId)).remove();
+            // Tombstone pie data instead of removing (prevents resurrection by stale clients)
+            await this.db.ref(this.getPiePath(pieId)).set({
+                deleted: true,
+                deletedAt: firebase.database.ServerValue.TIMESTAMP,
+                deletedBy: this.user.uid
+            });
             // Remove current user's priorities for this pie
             await this.db.ref(this.getUserPriorityPath(pieId)).remove();
-            Debug.log('Firebase: deleted pie', pieId);
+            Debug.log('Firebase: tombstoned pie', pieId);
             return true;
         } catch (e) {
             Debug.log('Firebase: deletePie failed:', e.message);
@@ -633,7 +658,12 @@ const FirebaseAdapter = {
             const ref = this.db.ref(path);
             this.unsubscribeListener = ref.on('value', (snapshot) => {
                 if (snapshot.exists() && callback) {
-                    callback(snapshot.val());
+                    const data = snapshot.val();
+                    if (data.deleted) {
+                        Debug.log('Firebase: pie listener received tombstoned data, ignoring');
+                        return;
+                    }
+                    callback(data);
                 }
             }, (error) => {
                 Debug.log('Firebase pie listener error:', error.message);
