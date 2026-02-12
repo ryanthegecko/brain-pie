@@ -653,6 +653,7 @@
             </div>
             <div class="settings-section button-section">
                 <button class="tertiary" id="calendar-import-btn" style="display:none;" onclick="UI.showCalendarImport()">📅 Import events from Google Calendar</button>
+                <button class="tertiary" id="tasks-import-btn" style="display:none;" onclick="UI.showTasksImport()">📋 Import from Google Tasks</button>
             </div>
             <div>
             </div>
@@ -1190,6 +1191,78 @@
         </div>
     </div>
 
+    <!-- Google Tasks Import Overlay -->
+    <div class="cal-import-overlay" id="tasks-import-overlay" onclick="UI.closeTasksImport()">
+        <div class="cal-import-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="UI.closeTasksImport()">✕</button>
+
+            <!-- Step indicators -->
+            <div class="import-steps" id="tasks-import-steps">
+                <div class="import-step active" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Select</span>
+                </div>
+                <div class="import-step" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Confirm</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Fetch & Review Parsed Tasks -->
+            <div class="cal-import-step-content active" id="tasks-import-step-1">
+                <h2>Import from Google Tasks</h2>
+
+                <div class="tasks-import-options">
+                    <label class="radio-option" style="margin-right:16px;"><input type="checkbox" id="tasks-import-completed" onchange="UI.fetchGoogleTasks()"><span>Include completed tasks</span></label>
+                </div>
+
+                <div id="tasks-import-loading" style="display:none; text-align:center; padding:20px; color:#666;">
+                    Loading tasks...
+                </div>
+
+                <!-- List selector (populated dynamically) -->
+                <div id="tasks-import-lists" style="display:none;">
+                    <!-- Dynamically populated with list checkboxes -->
+                </div>
+
+                <div id="tasks-import-controls" style="display:none;">
+                    <div class="import-selection-controls">
+                        <button class="small secondary" onclick="UI.tasksImportSelectAll()">Select All</button>
+                        <button class="small secondary" onclick="UI.tasksImportDeselectAll()">Deselect All</button>
+                        <span id="tasks-import-count" style="color:#666; font-size:13px;"></span>
+                    </div>
+                </div>
+
+                <div id="tasks-import-list" class="cal-import-event-list">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="import-actions">
+                    <button class="secondary" onclick="UI.closeTasksImport()">Cancel</button>
+                    <button onclick="UI.tasksImportNextStep()" id="tasks-import-continue-btn" disabled>Review Selected →</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Review & Confirm -->
+            <div class="cal-import-step-content" id="tasks-import-step-2">
+                <h2>Confirm Import</h2>
+
+                <div id="tasks-import-review" class="cal-import-review">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="tasks-import-post-options" style="margin-top:12px;">
+                    <label class="radio-option"><input type="checkbox" id="tasks-import-delete-after"><span>Delete imported tasks from Google Tasks</span></label>
+                </div>
+
+                <div class="import-actions">
+                    <button class="secondary" onclick="UI.tasksImportPrevStep()">← Back</button>
+                    <button onclick="UI.executeTasksImport()" id="tasks-import-execute-btn">Import Tasks</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Unified Spoke Editor Overlay -->
     <div class="spoke-editor-overlay" id="spoke-editor-overlay" onclick="UI.closeSpokeEditor()">
         <div class="spoke-editor-content" onclick="event.stopPropagation()">
@@ -1441,6 +1514,7 @@
     <script src="firebase-adapter.js"></script>
     <script src="google-auth-adapter.js"></script>
     <script src="calendar-adapter.js"></script>
+    <script src="tasks-adapter.js"></script>
     <script src="storage-adapter.js"></script>
     <script src="data-model.js"></script>
     <script src="import-manager.js"></script>

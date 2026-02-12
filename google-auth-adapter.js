@@ -8,7 +8,7 @@ const GoogleAuthAdapter = {
     CLIENT_ID: '284728183380-mjodcpg751rfkerp3n48gml8737v9lbg.apps.googleusercontent.com',
 
     // Scopes needed
-    SCOPES: 'https://www.googleapis.com/auth/calendar.events',
+    SCOPES: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/tasks',
 
     // Token storage
     accessToken: null,
