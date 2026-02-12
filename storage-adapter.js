@@ -155,7 +155,24 @@ const StorageAdapter = {
                 Storage.saveMeta(DataModel.pieMeta);
 
                 // Load the active pie data from Firebase
-                const pieData = await FirebaseAdapter.loadPie(activePieId);
+                let pieData = await FirebaseAdapter.loadPie(activePieId);
+
+                // If active pie was tombstoned/empty, try the next available pie
+                if (!pieData || !pieData.categories) {
+                    Debug.log('StorageAdapter: active pie missing or tombstoned, trying next');
+                    for (const fallbackId of pieIds) {
+                        if (fallbackId === activePieId) continue;
+                        pieData = await FirebaseAdapter.loadPie(fallbackId);
+                        if (pieData && pieData.categories) {
+                            activePieId = fallbackId;
+                            DataModel.pieMeta.activePieId = activePieId;
+                            DataModel.setActivePieId(activePieId);
+                            Storage.saveMeta(DataModel.pieMeta);
+                            break;
+                        }
+                    }
+                }
+
                 if (pieData && pieData.categories) {
                     DataModel.categories = pieData.categories;
                     DataModel.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
@@ -208,6 +225,15 @@ const StorageAdapter = {
         // Load each unsynced pie from localStorage and check it has meaningful data
         const piesToPush = [];
         for (const id of unsyncedIds) {
+            // Check if this pie was tombstoned on Firebase (deleted by another user)
+            const isTombstoned = await FirebaseAdapter.isPieDeleted(id);
+            if (isTombstoned) {
+                Debug.log('StorageAdapter: skipping tombstoned pie', id);
+                // Clean up local copy of deleted pie
+                Storage.deletePie(id);
+                continue;
+            }
+
             const pieData = Storage.loadPie(id);
             if (pieData && pieData.categories && pieData.categories.length > 0) {
                 // Only push if at least one category has items (not just empty shells)
