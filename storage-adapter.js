@@ -34,6 +34,12 @@ const StorageAdapter = {
     // Track if auth state listener is registered
     _authListenerRegistered: false,
 
+    // Suppress meta listener during sync operations
+    _isSyncingMeta: false,
+
+    // Suppress pie data listener during sync operations
+    _isSyncingData: false,
+
     /**
      * Initialize the storage adapter
      * Checks URL for Firebase config, checks localStorage for saved config
@@ -112,6 +118,9 @@ const StorageAdapter = {
             // reloadDataFromFirebase() will handle sync and set up listeners
             return;
         }
+        // Suppress listeners during sync to prevent race conditions
+        this._isSyncingMeta = true;
+        this._isSyncingData = true;
         try {
             // Check for multi-pie meta in Firebase
             let meta = await FirebaseAdapter.loadMeta();
@@ -173,6 +182,9 @@ const StorageAdapter = {
             // If Firebase is empty, keep local data as-is (will push on next save)
         } catch (e) {
             Debug.log('StorageAdapter: syncOnConnect failed:', e.message);
+        } finally {
+            this._isSyncingMeta = false;
+            this._isSyncingData = false;
         }
 
         // Set up real-time listeners
@@ -193,20 +205,22 @@ const StorageAdapter = {
 
         if (unsyncedIds.length === 0) return { pieIds: firebasePieIds, pieNames: firebasePieNames };
 
-        // Load each unsynced pie from localStorage and check it has data
+        // Load each unsynced pie from localStorage and check it has meaningful data
         const piesToPush = [];
         for (const id of unsyncedIds) {
             const pieData = Storage.loadPie(id);
             if (pieData && pieData.categories && pieData.categories.length > 0) {
-                piesToPush.push({ id, data: pieData, name: localPieNames[id] || pieData.name || 'My Pie' });
+                // Only push if at least one category has items (not just empty shells)
+                const hasContent = pieData.categories.some(c => c.items && c.items.length > 0);
+                if (hasContent) {
+                    piesToPush.push({ id, data: pieData, name: localPieNames[id] || pieData.name || 'My Pie' });
+                }
             }
         }
 
         if (piesToPush.length === 0) return { pieIds: firebasePieIds, pieNames: firebasePieNames };
 
-        const updatedPieIds = [...firebasePieIds];
-        const updatedPieNames = { ...firebasePieNames };
-
+        // Upload pie data first
         for (const pie of piesToPush) {
             await FirebaseAdapter.savePie(pie.id, {
                 id: pie.id,
@@ -214,8 +228,6 @@ const StorageAdapter = {
                 categories: pie.data.categories,
                 categoryPercentageOverrides: pie.data.categoryPercentageOverrides || {}
             });
-            updatedPieIds.push(pie.id);
-            updatedPieNames[pie.id] = pie.name;
 
             // Push priorities if any
             if (pie.data.priorityList && pie.data.priorityList.length > 0) {
@@ -223,9 +235,20 @@ const StorageAdapter = {
             }
         }
 
-        // Update Firebase meta with new pies
-        await FirebaseAdapter.saveMeta({ pieIds: updatedPieIds, pieNames: updatedPieNames });
-        Debug.log('StorageAdapter: pushed', piesToPush.length, 'local pies to Firebase');
+        // Atomically add pies to Firebase meta (transaction prevents race conditions)
+        const piesToAdd = piesToPush.map(p => ({ id: p.id, name: p.name }));
+        const committedMeta = await FirebaseAdapter.addPiesToMeta(piesToAdd);
+
+        if (committedMeta) {
+            const pieIds = Array.isArray(committedMeta.pieIds) ? committedMeta.pieIds : Object.values(committedMeta.pieIds);
+            Debug.log('StorageAdapter: pushed', piesToPush.length, 'local pies to Firebase');
+            return { pieIds: pieIds, pieNames: committedMeta.pieNames || {} };
+        }
+
+        // Fallback: return what we expected
+        const updatedPieIds = [...firebasePieIds, ...piesToPush.map(p => p.id)];
+        const updatedPieNames = { ...firebasePieNames };
+        for (const pie of piesToPush) { updatedPieNames[pie.id] = pie.name; }
         return { pieIds: updatedPieIds, pieNames: updatedPieNames };
     },
 
@@ -239,6 +262,10 @@ const StorageAdapter = {
             // Multi-pie mode: subscribe to active pie
             FirebaseAdapter.subscribeToPie(activePieId, (data) => {
                 if (this.isSaving) return;
+                if (this._isSyncingData) {
+                    Debug.log('StorageAdapter: Ignoring pie update during sync');
+                    return;
+                }
                 Debug.log('StorageAdapter: Received remote pie update');
                 if (this.updateCallback) {
                     this.updateCallback(data);
@@ -256,6 +283,10 @@ const StorageAdapter = {
 
             // Subscribe to meta changes (team members adding/deleting pies)
             FirebaseAdapter.subscribeToMeta((meta) => {
+                if (this._isSyncingMeta) {
+                    Debug.log('StorageAdapter: Ignoring meta update during sync');
+                    return;
+                }
                 Debug.log('StorageAdapter: Received remote meta update');
                 if (this.metaUpdateCallback) {
                     this.metaUpdateCallback(meta);
@@ -294,6 +325,10 @@ const StorageAdapter = {
         // Attach new listeners for the new pie
         FirebaseAdapter.subscribeToPie(pieId, (data) => {
             if (this.isSaving) return;
+            if (this._isSyncingData) {
+                Debug.log('StorageAdapter: Ignoring pie update during sync (switched)');
+                return;
+            }
             Debug.log('StorageAdapter: Received remote pie update (switched)');
             if (this.updateCallback) {
                 this.updateCallback(data);
@@ -312,7 +347,36 @@ const StorageAdapter = {
 
     async saveMeta(meta) {
         if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            await FirebaseAdapter.saveMeta(meta);
+            // Use transaction to safely merge with concurrent changes
+            const path = FirebaseAdapter.getMetaPath();
+            try {
+                await FirebaseAdapter.db.ref(path).transaction((currentMeta) => {
+                    // Use our local meta but preserve any pie IDs added concurrently
+                    if (!currentMeta) return meta;
+
+                    let remotePieIds = currentMeta.pieIds || [];
+                    if (!Array.isArray(remotePieIds)) remotePieIds = Object.values(remotePieIds);
+                    let localPieIds = meta.pieIds || [];
+                    if (!Array.isArray(localPieIds)) localPieIds = Object.values(localPieIds);
+
+                    // Union of both pie ID lists (preserve remote pies we don't know about)
+                    const mergedIds = [...localPieIds];
+                    for (const id of remotePieIds) {
+                        if (!mergedIds.includes(id)) {
+                            mergedIds.push(id);
+                        }
+                    }
+
+                    return {
+                        pieIds: mergedIds,
+                        pieNames: { ...(currentMeta.pieNames || {}), ...(meta.pieNames || {}) }
+                    };
+                });
+                Debug.log('StorageAdapter: saveMeta transaction committed');
+            } catch (e) {
+                Debug.log('StorageAdapter: saveMeta transaction failed, falling back to set:', e.message);
+                await FirebaseAdapter.saveMeta(meta);
+            }
             // Also save to localStorage for offline access
             Storage.saveMeta(meta);
         } else {
@@ -354,6 +418,8 @@ const StorageAdapter = {
 
     async deletePie(pieId) {
         if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            // Atomically remove from meta, then delete pie data
+            await FirebaseAdapter.removePieFromMeta(pieId);
             await FirebaseAdapter.deletePie(pieId);
         }
         Storage.deletePie(pieId);

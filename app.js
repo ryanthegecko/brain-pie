@@ -154,6 +154,19 @@ const App = {
                 if (data && data.categories) {
                     Debug.log('Received remote data update');
                     const { _saveId, _savedBy, priorityList: _ignoredPriorities, lastModified, lastModifiedBy, ...cleanData } = data;
+
+                    // Reject remote updates with no content (stale/empty data)
+                    const hasContent = cleanData.categories.some(c =>
+                        c.items && c.items.length > 0
+                    );
+                    const localHasContent = DataModel.categories.some(c =>
+                        c.items && c.items.length > 0
+                    );
+                    if (!hasContent && localHasContent) {
+                        Debug.log('StorageAdapter: Rejecting remote update — remote has empty categories but local has data');
+                        return;
+                    }
+
                     DataModel.categories = cleanData.categories || [];
                     DataModel.categoryPercentageOverrides = cleanData.categoryPercentageOverrides || {};
                     DataModel.normalizeAllSpokes();
@@ -183,18 +196,25 @@ const App = {
             });
 
             // Subscribe to meta updates (team members adding/renaming/deleting pies)
-            StorageAdapter.subscribeToMetaUpdates((meta) => {
+            StorageAdapter.subscribeToMetaUpdates((remoteMeta) => {
                 Debug.log('Received remote meta update');
+                // Normalize pieIds (Firebase may convert arrays to objects)
+                let remotePieIds = remoteMeta.pieIds || [];
+                if (!Array.isArray(remotePieIds)) remotePieIds = Object.values(remotePieIds);
+                const remotePieNames = remoteMeta.pieNames || {};
+
                 // Preserve local activePieId (not synced via Firebase)
                 const currentActive = DataModel.getActivePieId();
-                // Normalize pieIds (Firebase may convert arrays to objects)
-                if (meta.pieIds && !Array.isArray(meta.pieIds)) {
-                    meta.pieIds = Object.values(meta.pieIds);
-                }
-                meta.activePieId = currentActive;
-                DataModel.pieMeta = meta;
-                // Save locally with activePieId
-                Storage.saveMeta(meta);
+
+                // Use remote meta as source of truth (it came from Firebase)
+                DataModel.pieMeta = {
+                    pieIds: remotePieIds,
+                    pieNames: remotePieNames,
+                    activePieId: currentActive
+                };
+
+                // Save locally
+                Storage.saveMeta(DataModel.pieMeta);
                 UI.renderPieTabs();
             });
         }

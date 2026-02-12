@@ -3136,6 +3136,18 @@ const UI = {
      * Multi-pie aware: checks meta → pies, migrates old format, or offers first-time push
      */
     async reloadDataFromFirebase() {
+        // Suppress listeners during sync to prevent stale data overwrites
+        StorageAdapter._isSyncingMeta = true;
+        StorageAdapter._isSyncingData = true;
+        try {
+            await this._doReloadDataFromFirebase();
+        } finally {
+            StorageAdapter._isSyncingMeta = false;
+            StorageAdapter._isSyncingData = false;
+        }
+    },
+
+    async _doReloadDataFromFirebase() {
         // 1. Check for multi-pie meta
         let meta = await FirebaseAdapter.loadMeta();
 

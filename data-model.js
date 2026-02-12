@@ -145,7 +145,7 @@ const DataModel = {
         this.pieMeta.pieIds = this.pieMeta.pieIds.filter(id => id !== pieId);
         if (this.pieMeta.pieNames) delete this.pieMeta.pieNames[pieId];
 
-        // Delete pie storage
+        // Delete pie storage (StorageAdapter.deletePie handles Firebase meta removal via transaction)
         if (typeof StorageAdapter !== 'undefined') {
             await StorageAdapter.deletePie(pieId);
         } else {
@@ -169,7 +169,11 @@ const DataModel = {
             }
         }
 
-        this.saveMeta();
+        // Save local meta (Firebase meta already updated by transaction in StorageAdapter.deletePie)
+        if (this.pieMeta.activePieId) {
+            localStorage.setItem('brainPie_activePieId', this.pieMeta.activePieId);
+        }
+        Storage.saveMeta(this.pieMeta);
     },
 
     async renamePie(pieId, newName) {
