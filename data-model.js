@@ -1315,6 +1315,653 @@ const DataModel = {
         return ids;
     },
 
+    // --- Transform Methods ---
+
+    /**
+     * Get available transforms for a selected item.
+     * Returns array of { id, label, description, needsTarget, targetType }
+     */
+    getAvailableTransforms(type, categoryId, itemId, spokeIndex) {
+        const transforms = [];
+
+        if (type === 'spoke') {
+            const spoke = this.getSpoke(categoryId, itemId, spokeIndex);
+            if (!spoke || typeof spoke === 'string') return transforms;
+            const spokeType = spoke.type === 'action' ? 'list' : (spoke.type || 'static');
+            if (spokeType === 'list' && spoke.children && spoke.children.length > 0) {
+                transforms.push({
+                    id: 'spoke-to-slice',
+                    label: 'Promote to Slice',
+                    description: 'Actions become spokes on a new slice in the same category',
+                    needsTarget: false,
+                    targetType: null
+                });
+            }
+        } else if (type === 'slice') {
+            const item = this.getItem(categoryId, itemId);
+            if (!item) return transforms;
+
+            // Find other slices in other categories for demotion target
+            const otherSlicesExist = this.categories.some(cat =>
+                cat.items && cat.items.length > 0 && (cat.id !== categoryId || cat.items.some(i => i.id !== itemId))
+            );
+
+            if (item.subItems && item.subItems.length > 0 && otherSlicesExist) {
+                transforms.push({
+                    id: 'slice-to-spoke',
+                    label: 'Demote to Spoke',
+                    description: 'Spokes become actions on a new list spoke in the target slice',
+                    needsTarget: true,
+                    targetType: 'slice'
+                });
+            }
+
+            transforms.push({
+                id: 'slice-to-category',
+                label: 'Promote to Category',
+                description: 'Slice becomes a category, spokes become slices, actions become spokes',
+                needsTarget: false,
+                targetType: null
+            });
+        } else if (type === 'category') {
+            const category = this.getCategory(categoryId);
+            if (!category) return transforms;
+
+            // Need at least one other category as target
+            const otherCategories = this.categories.filter(c => c.id !== categoryId);
+            if (category.items && category.items.length > 0 && otherCategories.length > 0) {
+                transforms.push({
+                    id: 'category-to-slice',
+                    label: 'Demote to Slice',
+                    description: 'Category becomes a slice on the target category, slices become list spokes',
+                    needsTarget: true,
+                    targetType: 'category'
+                });
+            }
+        }
+
+        return transforms;
+    },
+
+    /**
+     * Build a preview of the transform result.
+     * Returns { source, result } tree objects for display.
+     */
+    buildTransformPreview(transformId, params) {
+        switch (transformId) {
+            case 'spoke-to-slice': return this._previewSpokeToSlice(params);
+            case 'slice-to-spoke': return this._previewSliceToSpoke(params);
+            case 'slice-to-category': return this._previewSliceToCategory(params);
+            case 'category-to-slice': return this._previewCategoryToSlice(params);
+            default: return null;
+        }
+    },
+
+    _previewSpokeToSlice(params) {
+        const { categoryId, itemId, spokeIndex } = params;
+        const category = this.getCategory(categoryId);
+        const item = this.getItem(categoryId, itemId);
+        const spoke = this.getSpoke(categoryId, itemId, spokeIndex);
+        if (!category || !item || !spoke) return null;
+
+        const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
+        const children = (typeof spoke === 'object' && spoke.children) ? spoke.children : [];
+
+        const source = {
+            name: category.name, type: 'category', children: [{
+                name: item.name, type: 'slice', children: [{
+                    name: spokeName, type: 'spoke',
+                    children: children.map(c => ({ name: typeof c === 'string' ? c : c.text, type: 'action' }))
+                }]
+            }]
+        };
+
+        const result = {
+            name: category.name, type: 'category', children: [{
+                name: spokeName, type: 'slice', isNew: true,
+                children: children.map(c => ({
+                    name: typeof c === 'string' ? c : c.text, type: 'spoke', isNew: true
+                }))
+            }]
+        };
+
+        return { source, result };
+    },
+
+    _previewSliceToSpoke(params) {
+        const { categoryId, itemId, targetCategoryId, targetItemId } = params;
+        const category = this.getCategory(categoryId);
+        const item = this.getItem(categoryId, itemId);
+        const targetCat = this.getCategory(targetCategoryId);
+        const targetItem = this.getItem(targetCategoryId, targetItemId);
+        if (!category || !item || !targetCat || !targetItem) return null;
+
+        const spokes = (item.subItems || []).map(s => {
+            const name = typeof s === 'string' ? s : s.text;
+            const children = (typeof s === 'object' && s.children) ? s.children : [];
+            return { name, children: children.map(c => ({ name: typeof c === 'string' ? c : c.text, type: 'action' })), type: 'spoke' };
+        });
+
+        const source = {
+            name: category.name, type: 'category', children: [{
+                name: item.name, type: 'slice', children: spokes
+            }]
+        };
+
+        // Flatten spokes into actions
+        const flatActions = [];
+        for (const s of (item.subItems || [])) {
+            const flat = this._flattenSpokeToActions(s);
+            flatActions.push(...flat.map(a => ({ name: a.text, type: 'action', isNew: true })));
+        }
+
+        const result = {
+            name: targetCat.name, type: 'category', children: [{
+                name: targetItem.name, type: 'slice', children: [{
+                    name: item.name, type: 'spoke', isNew: true,
+                    children: flatActions
+                }]
+            }]
+        };
+
+        return { source, result };
+    },
+
+    _previewSliceToCategory(params) {
+        const { categoryId, itemId } = params;
+        const category = this.getCategory(categoryId);
+        const item = this.getItem(categoryId, itemId);
+        if (!category || !item) return null;
+
+        const spokes = (item.subItems || []).map(s => {
+            const name = typeof s === 'string' ? s : s.text;
+            const children = (typeof s === 'object' && s.children) ? s.children : [];
+            return { name, children: children.map(c => ({ name: typeof c === 'string' ? c : c.text, type: 'action' })), type: 'spoke' };
+        });
+
+        const source = {
+            name: category.name, type: 'category', children: [{
+                name: item.name, type: 'slice', children: spokes
+            }]
+        };
+
+        // Spokes become slices, actions become spokes
+        const newSlices = (item.subItems || []).map(s => {
+            const name = typeof s === 'string' ? s : s.text;
+            const children = (typeof s === 'object' && s.children) ? s.children : [];
+            return {
+                name, type: 'slice', isNew: true,
+                children: children.map(c => ({ name: typeof c === 'string' ? c : c.text, type: 'spoke', isNew: true }))
+            };
+        });
+
+        const result = {
+            name: item.name, type: 'category', isNew: true,
+            children: newSlices
+        };
+
+        return { source, result };
+    },
+
+    _previewCategoryToSlice(params) {
+        const { categoryId, targetCategoryId } = params;
+        const category = this.getCategory(categoryId);
+        const targetCat = this.getCategory(targetCategoryId);
+        if (!category || !targetCat) return null;
+
+        const sliceNodes = (category.items || []).map(item => {
+            const spokeNodes = (item.subItems || []).map(s => {
+                const name = typeof s === 'string' ? s : s.text;
+                const children = (typeof s === 'object' && s.children) ? s.children : [];
+                return { name, type: 'spoke', children: children.map(c => ({ name: typeof c === 'string' ? c : c.text, type: 'action' })) };
+            });
+            return { name: item.name, type: 'slice', children: spokeNodes };
+        });
+
+        const source = {
+            name: category.name, type: 'category', children: sliceNodes
+        };
+
+        // Each slice becomes a list spoke, spokes flattened to actions
+        const newSpokes = (category.items || []).map(item => {
+            const flatActions = [];
+            for (const s of (item.subItems || [])) {
+                const flat = this._flattenSpokeToActions(s);
+                flatActions.push(...flat.map(a => ({ name: a.text, type: 'action', isNew: true })));
+            }
+            return { name: item.name, type: 'spoke', isNew: true, children: flatActions };
+        });
+
+        const result = {
+            name: targetCat.name, type: 'category', children: [{
+                name: category.name, type: 'slice', isNew: true,
+                children: newSpokes
+            }]
+        };
+
+        return { source, result };
+    },
+
+    /**
+     * Flatten a spoke + its children into a flat array of action objects.
+     * The spoke text becomes the first action, followed by child texts.
+     * Preserves scheduled/calendarEventId data.
+     */
+    _flattenSpokeToActions(spoke) {
+        const actions = [];
+        const name = typeof spoke === 'string' ? spoke : spoke.text;
+        const scheduled = (typeof spoke === 'object') ? spoke.scheduled : null;
+        const calendarEventId = (typeof spoke === 'object') ? (spoke.metadata?.calendarEventId || spoke.scheduled?.calendarEventId || null) : null;
+
+        // The spoke itself becomes an action
+        actions.push({
+            text: name,
+            children: [],
+            scheduled: scheduled || null,
+            completed: false
+        });
+
+        // Its children become sibling actions after the parent
+        if (typeof spoke === 'object' && spoke.children) {
+            for (const child of spoke.children) {
+                const childText = typeof child === 'string' ? child : child.text;
+                actions.push({
+                    text: childText,
+                    children: [],
+                    scheduled: (typeof child === 'object' && child.scheduled) ? child.scheduled : null,
+                    completed: (typeof child === 'object') ? (child.completed || false) : false
+                });
+            }
+        }
+
+        return actions;
+    },
+
+    /**
+     * Execute a transform.
+     */
+    executeTransform(transformId, params) {
+        switch (transformId) {
+            case 'spoke-to-slice': return this.transformSpokeToSlice(params);
+            case 'slice-to-spoke': return this.transformSliceToSpoke(params);
+            case 'slice-to-category': return this.transformSliceToCategory(params);
+            case 'category-to-slice': return this.transformCategoryToSlice(params);
+            default: throw new Error('Unknown transform: ' + transformId);
+        }
+    },
+
+    transformSpokeToSlice(params) {
+        const { categoryId, itemId, spokeIndex } = params;
+        this.batchSave(() => {
+            const category = this.getCategory(categoryId);
+            const item = this.getItem(categoryId, itemId);
+            const spoke = item.subItems[spokeIndex];
+            if (!category || !item || !spoke) return;
+
+            const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
+            const children = (typeof spoke === 'object' && spoke.children) ? spoke.children : [];
+
+            // Build new slice with actions as spokes
+            const newSliceId = this.generateItemId();
+            const newSlice = {
+                id: newSliceId,
+                name: spokeName,
+                percentage: 20,
+                color: item.color || category.color,
+                subItems: children.map(child => {
+                    const childText = typeof child === 'string' ? child : child.text;
+                    const childScheduled = (typeof child === 'object' && child.scheduled) ? child.scheduled : null;
+                    return {
+                        text: childText,
+                        type: childScheduled ? 'single' : 'static',
+                        children: [],
+                        scheduled: childScheduled,
+                        metadata: {
+                            condition: null,
+                            calendarEventId: (typeof child === 'object' && child.scheduled?.calendarEventId) ? child.scheduled.calendarEventId : null,
+                            nextState: null,
+                            recurrence: null
+                        }
+                    };
+                })
+            };
+
+            // Build priority remappings before modifying data
+            const remappings = [];
+
+            // Actions on old spoke → spokes on new slice
+            for (let ci = 0; ci < children.length; ci++) {
+                remappings.push({
+                    from: { type: 'action', categoryId, itemId, spokeIndex, childIndex: ci },
+                    to: { type: 'spoke', categoryId, itemId: newSliceId, spokeIndex: ci }
+                });
+            }
+
+            // Old spoke priority → new slice priority
+            remappings.push({
+                from: { type: 'spoke', categoryId, itemId, spokeIndex },
+                to: { type: 'slice', categoryId, itemId: newSliceId }
+            });
+
+            // Remove the spoke from source
+            item.subItems.splice(spokeIndex, 1);
+
+            // Remap priorities for spokes that shifted down
+            for (let si = spokeIndex; si < item.subItems.length; si++) {
+                remappings.push({
+                    from: { type: 'spoke', categoryId, itemId, spokeIndex: si + 1 },
+                    to: { type: 'spoke', categoryId, itemId, spokeIndex: si }
+                });
+                // Also shift action refs for remaining spokes
+                const s = item.subItems[si];
+                if (typeof s === 'object' && s.children) {
+                    for (let ci = 0; ci < s.children.length; ci++) {
+                        remappings.push({
+                            from: { type: 'action', categoryId, itemId, spokeIndex: si + 1, childIndex: ci },
+                            to: { type: 'action', categoryId, itemId, spokeIndex: si, childIndex: ci }
+                        });
+                    }
+                }
+            }
+
+            // Add new slice to category
+            category.items.push(newSlice);
+            this.normalizeItemsInCategory(categoryId);
+
+            // Apply priority remappings
+            this.remapPriorityRefs(remappings);
+        });
+    },
+
+    transformSliceToSpoke(params) {
+        const { categoryId, itemId, targetCategoryId, targetItemId } = params;
+        this.batchSave(() => {
+            const category = this.getCategory(categoryId);
+            const item = this.getItem(categoryId, itemId);
+            const targetItem = this.getItem(targetCategoryId, targetItemId);
+            if (!category || !item || !targetItem) return;
+
+            // Flatten all spokes into actions
+            const flatActions = [];
+            for (const s of (item.subItems || [])) {
+                const flat = this._flattenSpokeToActions(s);
+                flatActions.push(...flat);
+            }
+
+            // Build new list spoke on target slice
+            const newSpokeIndex = (targetItem.subItems || []).length;
+            const newSpoke = {
+                text: item.name,
+                type: 'list',
+                children: flatActions,
+                scheduled: null,
+                metadata: {
+                    condition: null,
+                    calendarEventId: null,
+                    nextState: null,
+                    recurrence: null
+                }
+            };
+
+            // Build priority remappings before modifying data
+            const remappings = [];
+
+            // Old slice priority → new spoke priority
+            remappings.push({
+                from: { type: 'slice', categoryId, itemId },
+                to: { type: 'spoke', categoryId: targetCategoryId, itemId: targetItemId, spokeIndex: newSpokeIndex }
+            });
+
+            // Map old spoke/action priorities to new action indices
+            let actionIdx = 0;
+            for (let si = 0; si < (item.subItems || []).length; si++) {
+                const s = item.subItems[si];
+                // Spoke itself becomes an action
+                remappings.push({
+                    from: { type: 'spoke', categoryId, itemId, spokeIndex: si },
+                    to: { type: 'action', categoryId: targetCategoryId, itemId: targetItemId, spokeIndex: newSpokeIndex, childIndex: actionIdx }
+                });
+                actionIdx++;
+
+                // Children become subsequent actions
+                if (typeof s === 'object' && s.children) {
+                    for (let ci = 0; ci < s.children.length; ci++) {
+                        remappings.push({
+                            from: { type: 'action', categoryId, itemId, spokeIndex: si, childIndex: ci },
+                            to: { type: 'action', categoryId: targetCategoryId, itemId: targetItemId, spokeIndex: newSpokeIndex, childIndex: actionIdx }
+                        });
+                        actionIdx++;
+                    }
+                }
+            }
+
+            // Remove source slice
+            const itemIndex = category.items.findIndex(i => i.id === itemId);
+            if (itemIndex >= 0) {
+                category.items.splice(itemIndex, 1);
+            }
+
+            // Add new spoke to target
+            if (!targetItem.subItems) targetItem.subItems = [];
+            targetItem.subItems.push(newSpoke);
+
+            this.normalizeItemsInCategory(categoryId);
+            this.normalizeItemsInCategory(targetCategoryId);
+
+            // Apply priority remappings
+            this.remapPriorityRefs(remappings);
+        });
+    },
+
+    transformSliceToCategory(params) {
+        const { categoryId, itemId } = params;
+        this.batchSave(() => {
+            const category = this.getCategory(categoryId);
+            const item = this.getItem(categoryId, itemId);
+            if (!category || !item) return;
+
+            // Build new category: spokes become slices, actions become spokes
+            const newCategoryId = this.generateCategoryId(item.name);
+            const newCategory = {
+                id: newCategoryId,
+                name: item.name,
+                color: item.color || category.color,
+                items: []
+            };
+
+            const remappings = [];
+
+            // Old slice → new category (no direct mapping, but handle slice priority)
+            // Slice priority doesn't map cleanly — remove it
+            remappings.push({
+                from: { type: 'slice', categoryId, itemId },
+                to: null // Will be removed
+            });
+
+            for (let si = 0; si < (item.subItems || []).length; si++) {
+                const spoke = item.subItems[si];
+                const spokeName = typeof spoke === 'string' ? spoke : spoke.text;
+                const spokeScheduled = (typeof spoke === 'object') ? spoke.scheduled : null;
+                const children = (typeof spoke === 'object' && spoke.children) ? spoke.children : [];
+
+                const newSliceId = this.generateItemId();
+                const newSlice = {
+                    id: newSliceId,
+                    name: spokeName,
+                    percentage: 100 / Math.max((item.subItems || []).length, 1),
+                    color: item.color || category.color,
+                    subItems: children.map(child => {
+                        const childText = typeof child === 'string' ? child : child.text;
+                        const childScheduled = (typeof child === 'object' && child.scheduled) ? child.scheduled : null;
+                        return {
+                            text: childText,
+                            type: childScheduled ? 'single' : 'static',
+                            children: [],
+                            scheduled: childScheduled,
+                            metadata: {
+                                condition: null,
+                                calendarEventId: (typeof child === 'object' && child.scheduled?.calendarEventId) ? child.scheduled.calendarEventId : null,
+                                nextState: null,
+                                recurrence: null
+                            }
+                        };
+                    })
+                };
+
+                newCategory.items.push(newSlice);
+
+                // Old spoke → new slice
+                remappings.push({
+                    from: { type: 'spoke', categoryId, itemId, spokeIndex: si },
+                    to: { type: 'slice', categoryId: newCategoryId, itemId: newSliceId }
+                });
+
+                // Old actions → new spokes
+                for (let ci = 0; ci < children.length; ci++) {
+                    remappings.push({
+                        from: { type: 'action', categoryId, itemId, spokeIndex: si, childIndex: ci },
+                        to: { type: 'spoke', categoryId: newCategoryId, itemId: newSliceId, spokeIndex: ci }
+                    });
+                }
+            }
+
+            // Remove source slice from category
+            const itemIndex = category.items.findIndex(i => i.id === itemId);
+            if (itemIndex >= 0) {
+                category.items.splice(itemIndex, 1);
+            }
+
+            // Add new category
+            this.categories.push(newCategory);
+            this.normalizeItemsInCategory(categoryId);
+
+            // Apply priority remappings
+            this.remapPriorityRefs(remappings);
+        });
+    },
+
+    transformCategoryToSlice(params) {
+        const { categoryId, targetCategoryId } = params;
+        this.batchSave(() => {
+            const category = this.getCategory(categoryId);
+            const targetCat = this.getCategory(targetCategoryId);
+            if (!category || !targetCat) return;
+
+            // Build new slice: each old slice becomes a list spoke with flattened actions
+            const newSliceId = this.generateItemId();
+            const newSlice = {
+                id: newSliceId,
+                name: category.name,
+                percentage: 20,
+                color: category.color,
+                subItems: []
+            };
+
+            const remappings = [];
+
+            for (let ii = 0; ii < (category.items || []).length; ii++) {
+                const item = category.items[ii];
+
+                // Flatten spokes into actions
+                const flatActions = [];
+                for (const s of (item.subItems || [])) {
+                    const flat = this._flattenSpokeToActions(s);
+                    flatActions.push(...flat);
+                }
+
+                const newSpokeIndex = newSlice.subItems.length;
+                const newSpoke = {
+                    text: item.name,
+                    type: flatActions.length > 0 ? 'list' : 'static',
+                    children: flatActions,
+                    scheduled: null,
+                    metadata: {
+                        condition: null,
+                        calendarEventId: null,
+                        nextState: null,
+                        recurrence: null
+                    }
+                };
+                newSlice.subItems.push(newSpoke);
+
+                // Old slice → new spoke
+                remappings.push({
+                    from: { type: 'slice', categoryId, itemId: item.id },
+                    to: { type: 'spoke', categoryId: targetCategoryId, itemId: newSliceId, spokeIndex: newSpokeIndex }
+                });
+
+                // Map old spoke/action priorities to new action indices
+                let actionIdx = 0;
+                for (let si = 0; si < (item.subItems || []).length; si++) {
+                    const s = item.subItems[si];
+                    remappings.push({
+                        from: { type: 'spoke', categoryId, itemId: item.id, spokeIndex: si },
+                        to: { type: 'action', categoryId: targetCategoryId, itemId: newSliceId, spokeIndex: newSpokeIndex, childIndex: actionIdx }
+                    });
+                    actionIdx++;
+
+                    if (typeof s === 'object' && s.children) {
+                        for (let ci = 0; ci < s.children.length; ci++) {
+                            remappings.push({
+                                from: { type: 'action', categoryId, itemId: item.id, spokeIndex: si, childIndex: ci },
+                                to: { type: 'action', categoryId: targetCategoryId, itemId: newSliceId, spokeIndex: newSpokeIndex, childIndex: actionIdx }
+                            });
+                            actionIdx++;
+                        }
+                    }
+                }
+            }
+
+            // Remove source category
+            this.categories = this.categories.filter(c => c.id !== categoryId);
+            delete this.categoryPercentageOverrides[categoryId];
+
+            // Add new slice to target category
+            targetCat.items.push(newSlice);
+            this.normalizeItemsInCategory(targetCategoryId);
+
+            // Apply priority remappings
+            this.remapPriorityRefs(remappings);
+        });
+    },
+
+    /**
+     * Atomically remap priority refs and deduplicate.
+     * remappings: array of { from: ref, to: ref|null }
+     * null `to` means remove that priority.
+     */
+    remapPriorityRefs(remappings) {
+        if (!remappings || remappings.length === 0) return;
+
+        for (const mapping of remappings) {
+            const idx = this.priorityList.findIndex(p =>
+                p.type === mapping.from.type &&
+                p.categoryId === mapping.from.categoryId &&
+                p.itemId === mapping.from.itemId &&
+                p.spokeIndex === mapping.from.spokeIndex &&
+                p.childIndex === mapping.from.childIndex
+            );
+            if (idx >= 0) {
+                if (mapping.to === null) {
+                    this.priorityList.splice(idx, 1);
+                } else {
+                    this.priorityList[idx] = { ...mapping.to };
+                }
+            }
+        }
+
+        // Deduplicate by composite key
+        const seen = new Set();
+        this.priorityList = this.priorityList.filter(p => {
+            const key = `${p.type}:${p.categoryId}:${p.itemId}:${p.spokeIndex ?? ''}:${p.childIndex ?? ''}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
+        this.validatePriorityList();
+    },
+
     /**
      * Scan all spokes for existing googleTaskIds (for dedup on Tasks import).
      * Returns a Set of known Google Task IDs.
