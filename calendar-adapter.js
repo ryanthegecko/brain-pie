@@ -273,7 +273,7 @@ const CalendarAdapter = {
     },
 
     /**
-     * Check if Calendar API is available
+     * Check if Calendar API is available (has a valid access token right now)
      * @returns {boolean}
      */
     isAvailable() {
@@ -285,6 +285,37 @@ const CalendarAdapter = {
         // Check GoogleAuthAdapter
         if (typeof GoogleAuthAdapter !== 'undefined' && GoogleAuthAdapter.hasCalendarAccess()) {
             return true;
+        }
+
+        return false;
+    },
+
+    /**
+     * Check if user is signed into Google (regardless of token expiry).
+     * Use this for showing UI buttons — the token can be refreshed on demand.
+     * @returns {boolean}
+     */
+    isGoogleSignedIn() {
+        if (typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.user) {
+            return true;
+        }
+        if (typeof GoogleAuthAdapter !== 'undefined' && GoogleAuthAdapter.isSignedIn()) {
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * Ensure we have a valid access token, refreshing if needed.
+     * @returns {Promise<boolean>} true if token is available
+     */
+    async ensureAccessToken() {
+        if (this.isAvailable()) return true;
+
+        // Try FirebaseAdapter refresh
+        if (typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.user) {
+            const token = await FirebaseAdapter.getAccessToken();
+            if (token) return true;
         }
 
         return false;

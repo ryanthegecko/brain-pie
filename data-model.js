@@ -538,8 +538,9 @@ const DataModel = {
     },
 
     updateItemPercentage(categoryId, itemId, newPercentage) {
+        const category = this.getCategory(categoryId);
         const item = this.getItem(categoryId, itemId);
-        if (!item) return;
+        if (!category || !item) return;
 
         const oldPercentage = item.percentage;
         item.percentage = newPercentage;

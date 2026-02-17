@@ -18,14 +18,23 @@ Object.assign(UI, {
     updateTasksImportButton() {
         const btn = document.getElementById('tasks-import-btn');
         if (btn) {
-            btn.style.display = (typeof TasksAdapter !== 'undefined' && TasksAdapter.isAvailable()) ? 'inline-block' : 'none';
+            btn.style.display = (typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isGoogleSignedIn()) ? 'inline-block' : 'none';
         }
     },
 
     async showTasksImport() {
-        if (typeof TasksAdapter === 'undefined' || !TasksAdapter.isAvailable()) {
+        if (!CalendarAdapter.isGoogleSignedIn()) {
             alert('Please sign in with Google first (Settings → Calendar Sync)');
             return;
+        }
+
+        // Ensure we have a valid access token (may trigger re-auth popup)
+        if (!CalendarAdapter.isAvailable()) {
+            const ok = await CalendarAdapter.ensureAccessToken();
+            if (!ok) {
+                alert('Could not refresh Google access. Please sign in again.');
+                return;
+            }
         }
 
         // Reset state
