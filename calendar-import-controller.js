@@ -17,9 +17,18 @@ Object.assign(UI, {
      * Show the calendar import overlay, fetch events
      */
     async showCalendarImport() {
-        if (!CalendarAdapter.isAvailable()) {
+        if (!CalendarAdapter.isGoogleSignedIn()) {
             alert('Please sign in with Google first (Settings → Calendar Sync)');
             return;
+        }
+
+        // Ensure we have a valid access token (may trigger re-auth popup)
+        if (!CalendarAdapter.isAvailable()) {
+            const ok = await CalendarAdapter.ensureAccessToken();
+            if (!ok) {
+                alert('Could not refresh Google access. Please sign in again.');
+                return;
+            }
         }
 
         // Reset state
@@ -551,7 +560,7 @@ Object.assign(UI, {
     updateCalendarImportButton() {
         const btn = document.getElementById('calendar-import-btn');
         if (btn) {
-            btn.style.display = CalendarAdapter.isAvailable() ? 'inline-block' : 'none';
+            btn.style.display = CalendarAdapter.isGoogleSignedIn() ? 'inline-block' : 'none';
         }
         this.updateTasksImportButton();
     }
