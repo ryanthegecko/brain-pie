@@ -158,25 +158,30 @@ const ChartRenderer = {
                 ? rec.byDay.map(d => dayNames.indexOf(d.toUpperCase())).filter(d => d >= 0).sort((a, b) => a - b)
                 : [start.getDay()];
             if (targetDays.length === 0) return rec.startDate;
-            const todayDay = today.getDay();
-            // Check today and upcoming days this week first
-            for (const d of targetDays) {
-                if (d >= todayDay) {
-                    const candidate = new Date(today);
-                    candidate.setDate(candidate.getDate() + (d - todayDay));
-                    if (candidate >= start) {
-                        if (checkEnd(candidate)) return fmt(candidate);
-                    }
-                }
-            }
-            // Next week
-            for (const d of targetDays) {
-                const daysAhead = (7 - todayDay + d);
+
+            // Helper: check if a candidate date falls on an interval-aligned week
+            const isAlignedWeek = (candidate) => {
+                if (interval <= 1) return true;
+                // Calculate weeks elapsed since recurrence start (using Monday-based week start)
+                const msPerWeek = 7 * 86400000;
+                // Align both dates to their week's Monday
+                const startMonday = new Date(start);
+                startMonday.setDate(startMonday.getDate() - ((startMonday.getDay() + 6) % 7));
+                const candidateMonday = new Date(candidate);
+                candidateMonday.setDate(candidateMonday.getDate() - ((candidateMonday.getDay() + 6) % 7));
+                const weeksDiff = Math.round((candidateMonday - startMonday) / msPerWeek);
+                return weeksDiff >= 0 && weeksDiff % interval === 0;
+            };
+
+            // Scan forward from today, up to interval * 7 days ahead
+            const maxDays = interval * 7;
+            for (let offset = 0; offset <= maxDays; offset++) {
                 const candidate = new Date(today);
-                candidate.setDate(candidate.getDate() + daysAhead);
-                if (candidate >= start) {
-                    if (checkEnd(candidate)) return fmt(candidate);
-                }
+                candidate.setDate(candidate.getDate() + offset);
+                if (candidate < start) continue;
+                if (!targetDays.includes(candidate.getDay())) continue;
+                if (!isAlignedWeek(candidate)) continue;
+                if (checkEnd(candidate)) return fmt(candidate);
             }
             return rec.startDate;
         }
