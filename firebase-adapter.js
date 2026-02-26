@@ -22,6 +22,10 @@ const FirebaseAdapter = {
     // Real-time listener unsubscribe function
     unsubscribeListener: null,
 
+    // The database ref that unsubscribeListener is attached to.
+    // Must match the ref used in .on() so that .off() removes the correct listener.
+    currentListenerRef: null,
+
     // Per-user priority listener unsubscribe function
     unsubscribePriorityListener: null,
 
@@ -656,6 +660,7 @@ const FirebaseAdapter = {
         try {
             const path = this.getPiePath(pieId);
             const ref = this.db.ref(path);
+            this.currentListenerRef = ref;
             this.unsubscribeListener = ref.on('value', (snapshot) => {
                 if (snapshot.exists() && callback) {
                     const data = snapshot.val();
@@ -966,7 +971,7 @@ const FirebaseAdapter = {
         try {
             const path = this.getDataPath();
             const ref = this.db.ref(path);
-
+            this.currentListenerRef = ref;
             this.unsubscribeListener = ref.on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
@@ -993,16 +998,21 @@ const FirebaseAdapter = {
      * Unsubscribe from real-time data changes
      */
     unsubscribeFromChanges() {
-        if (this.unsubscribeListener && this.db && this.user) {
+        if (this.unsubscribeListener && this.currentListenerRef) {
             try {
-                const path = this.getDataPath();
-                this.db.ref(path).off('value', this.unsubscribeListener);
+                // Must call .off() on the exact same ref used for .on().
+                // Previously this always used getDataPath() (the legacy single-pie
+                // path), which silently did nothing when subscribeToPie() had
+                // attached the listener to a different pies/{pieId} path — leaving
+                // the old listener alive across pie switches.
+                this.currentListenerRef.off('value', this.unsubscribeListener);
                 Debug.log('Unsubscribed from Firebase changes');
             } catch (e) {
                 Debug.log('Error unsubscribing:', e.message);
             }
         }
         this.unsubscribeListener = null;
+        this.currentListenerRef = null;
     },
 
     /**

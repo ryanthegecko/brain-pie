@@ -243,6 +243,20 @@ const DataModel = {
     },
 
     async loadFromStorageOrExample() {
+        // If loading with a Firebase config URL, skip local caches entirely.
+        // Firebase will provide the authoritative data after sign-in.
+        // Skipping localStorage prevents contamination from a sibling tab that
+        // loaded the base URL (no config) and wrote example data to localStorage.
+        // We do NOT save this empty state to localStorage/Firebase — it is
+        // in-memory only until syncOnConnect() fills it with real Firebase data.
+        if (new URLSearchParams(window.location.search).has('config')) {
+            this.pieMeta = { pieIds: [], activePieId: null, pieNames: {} };
+            this.currentPieName = '';
+            this.categories = [];
+            this.priorityList = [];
+            return;
+        }
+
         // --- Multi-pie path ---
         const meta = await this.loadMeta();
 
@@ -296,18 +310,6 @@ const DataModel = {
             if (data.settings.calendarProvider) {
                 localStorage.setItem('calendarProvider', data.settings.calendarProvider);
             }
-        }
-
-        // If loading with a Firebase config URL, don't create example data —
-        // Firebase will provide the real data after sign-in.
-        // Only set in-memory state; do NOT save to localStorage/Firebase
-        // (that would push an empty "My Pie" to the shared DB).
-        if (new URLSearchParams(window.location.search).has('config')) {
-            this.pieMeta = { pieIds: [], activePieId: null, pieNames: {} };
-            this.currentPieName = '';
-            this.categories = [];
-            this.priorityList = [];
-            return;
         }
 
         // First time: create default pie with example data

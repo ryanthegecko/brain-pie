@@ -135,10 +135,13 @@ const StorageAdapter = {
                 let pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
                 let pieNames = meta.pieNames || {};
 
-                // Check for local-only pies and offer to push them
-                const merged = await this.pushLocalOnlyPies(pieIds, pieNames);
-                pieIds = merged.pieIds;
-                pieNames = merged.pieNames;
+                // NOTE: pushLocalOnlyPies is intentionally NOT called here.
+                // On auto-connect (page load), Firebase is the source of truth.
+                // Silently pushing local pies can contaminate Firebase with stale
+                // or unrelated data (e.g. example data from a base-URL tab that
+                // shares localStorage). Local-only pies are pushed only via the
+                // manual sign-in flow (reloadDataFromFirebase), where the user has
+                // explicitly confirmed the connection.
 
                 // Use local activePieId if it's valid, otherwise default to first
                 let activePieId = DataModel.getActivePieId();
