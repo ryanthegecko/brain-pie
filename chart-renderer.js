@@ -545,7 +545,7 @@ const ChartRenderer = {
                 .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
         } else if (actualWidth >= 960) {
             // Pie: medium screens — render at 1720px virtual canvas, scale down via viewBox
-            const virtualWidth = 1720;
+            const virtualWidth = 1790;
             const virtualHeight = Math.round(actualHeight * (virtualWidth / actualWidth));
             this.width = virtualWidth;
             this.height = virtualHeight;
