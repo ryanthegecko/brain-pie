@@ -43,6 +43,12 @@ const DataModel = {
             if (meta.pieIds && !Array.isArray(meta.pieIds)) {
                 meta.pieIds = Object.values(meta.pieIds);
             }
+            // Normalize tombstonedPieIds
+            if (!meta.tombstonedPieIds) {
+                meta.tombstonedPieIds = [];
+            } else if (!Array.isArray(meta.tombstonedPieIds)) {
+                meta.tombstonedPieIds = Object.values(meta.tombstonedPieIds);
+            }
             this.pieMeta = meta;
             // Restore activePieId from localStorage (per-user, not synced)
             const storedActive = this.loadActivePieId();
@@ -64,7 +70,8 @@ const DataModel = {
         // For Firebase, strip activePieId (it's per-user, not shared)
         const metaForStorage = {
             pieIds: this.pieMeta.pieIds,
-            pieNames: this.pieMeta.pieNames || {}
+            pieNames: this.pieMeta.pieNames || {},
+            tombstonedPieIds: this.pieMeta.tombstonedPieIds || []
         };
         if (typeof StorageAdapter !== 'undefined') {
             StorageAdapter.saveMeta(metaForStorage).catch(e => {
@@ -106,11 +113,59 @@ const DataModel = {
         let ids = this.pieMeta.pieIds || [];
         if (!Array.isArray(ids)) ids = Object.values(ids);
         const activeId = this.getActivePieId();
+        const tombstoned = this.pieMeta.tombstonedPieIds || [];
         return ids.map(id => ({
             id,
             name: this.getPieName(id),
-            active: id === activeId
+            active: id === activeId,
+            tombstoned: tombstoned.includes(id)
         }));
+    },
+
+    isPieTombstoned(pieId) {
+        return (this.pieMeta?.tombstonedPieIds || []).includes(pieId);
+    },
+
+    restorePie(pieId) {
+        if (!this.pieMeta) return;
+        if (!this.pieMeta.tombstonedPieIds) return;
+        this.pieMeta.tombstonedPieIds = this.pieMeta.tombstonedPieIds.filter(id => id !== pieId);
+        this.saveMeta();
+    },
+
+    async _handleEmptyPie(pieId) {
+        if (!this.pieMeta) return;
+        if (!this.pieMeta.tombstonedPieIds) this.pieMeta.tombstonedPieIds = [];
+        if (this.pieMeta.tombstonedPieIds.includes(pieId)) return;
+
+        this.pieMeta.tombstonedPieIds.push(pieId);
+
+        // If no active (non-tombstoned) pies remain, create a fresh one
+        const activePies = (this.pieMeta.pieIds || []).filter(
+            id => !(this.pieMeta.tombstonedPieIds || []).includes(id)
+        );
+
+        if (activePies.length === 0) {
+            const newId = this.generatePieId();
+            this.pieMeta.pieIds = [...(this.pieMeta.pieIds || []), newId];
+            if (!this.pieMeta.pieNames) this.pieMeta.pieNames = {};
+            this.pieMeta.pieNames[newId] = 'My Pie';
+            this.setActivePieId(newId);
+            this.categories = [];
+            this.categoryPercentageOverrides = {};
+            this.priorityList = [];
+            this.currentPieName = 'My Pie';
+            if (typeof StorageAdapter !== 'undefined') {
+                await StorageAdapter.savePie(newId, {
+                    id: newId, name: 'My Pie', categories: [],
+                    categoryPercentageOverrides: {}, priorityList: []
+                });
+            }
+        }
+
+        this.saveMeta();
+        if (typeof UI !== 'undefined') UI.renderPieTabs();
+        if (typeof App !== 'undefined') App.render();
     },
 
     async createPie(name) {
@@ -144,6 +199,10 @@ const DataModel = {
         if (!this.pieMeta) return;
         this.pieMeta.pieIds = this.pieMeta.pieIds.filter(id => id !== pieId);
         if (this.pieMeta.pieNames) delete this.pieMeta.pieNames[pieId];
+        // Also remove from tombstoned list if present
+        if (this.pieMeta.tombstonedPieIds) {
+            this.pieMeta.tombstonedPieIds = this.pieMeta.tombstonedPieIds.filter(id => id !== pieId);
+        }
 
         // Delete pie storage (StorageAdapter.deletePie handles Firebase meta removal via transaction)
         if (typeof StorageAdapter !== 'undefined') {
@@ -356,6 +415,23 @@ const DataModel = {
     saveToStorage() {
         if (this._batchSaveDepth > 0) return;
         const pieId = this.getActivePieId();
+
+        // In Firebase mode: never write empty categories — tombstone the pie instead.
+        // This prevents bugs or stale data from blanking out a shared Firebase pie.
+        if (this.categories.length === 0 &&
+            typeof StorageAdapter !== 'undefined' &&
+            StorageAdapter.isFirebaseMode() &&
+            pieId &&
+            !this.isPieTombstoned(pieId)) {
+            this._handleEmptyPie(pieId); // async, fire-and-forget
+            // Still write empty state to localStorage backup (safe for local)
+            Storage.savePie(pieId, {
+                id: pieId, name: this.currentPieName || 'My Pie',
+                categories: [], categoryPercentageOverrides: {},
+                priorityList: [], lastModified: Date.now()
+            });
+            return;
+        }
 
         const pieData = {
             id: pieId,
