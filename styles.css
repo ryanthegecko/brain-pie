@@ -1472,17 +1472,18 @@ select:focus {
     width: 26px;
     height: 26px;
     padding: 0;
-    background: transparent;
-    border: 1px solid #ddd;
+    background: #f05252;
+    border: 1px solid #f05252;
     border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
-    opacity: 0.6;
+}
+.spoke-editor-trash-btn img {
+    filter: brightness(0) invert(1);
 }
 .spoke-editor-trash-btn:hover {
-    background: #fff0f0;
-    border-color: #e53935;
-    opacity: 1;
+    background: #f04040;
+    border-color: #f04040;
 }
 .spoke-editor-name {
     font-size: 18px;
