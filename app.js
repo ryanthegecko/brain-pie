@@ -525,6 +525,12 @@ const App = {
         UI.renderPieTabs();
     },
 
+    async restorePie(pieId) {
+        DataModel.restorePie(pieId);
+        await this.switchPie(pieId);
+        UI.renderPieTabs();
+    },
+
     render() {
         const focusMode = localStorage.getItem(Controls.FOCUS_PRIORITISED_KEY) === 'true';
         const categories = focusMode ? DataModel.getFilteredCategories() : DataModel.getCategories();

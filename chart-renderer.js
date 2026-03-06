@@ -307,21 +307,23 @@ const ChartRenderer = {
     },
 
     // Format recurrence data into short pill text.
-    // Weekly with specific days: keep day names (e.g. "Mon, Wed, Fri 9AM")
+    // Weekly every week with specific days: show day names (e.g. "Mon, Wed, Fri 9AM")
+    // Weekly with interval>1 (biweekly etc): show next occurrence as "next Thu" or "Thu 19th"
     // Monthly/Yearly/Daily: show next occurrence date (e.g. "Feb 15", "1st Mar")
     formatRecurrencePillText(recurrence) {
         if (!recurrence) return '🔁';
 
         const freq = recurrence.frequency;
+        const interval = recurrence.interval || 1;
         const timeStr = recurrence.time ? ' ' + this.formatCompactTime(recurrence.time) : '';
 
-        // Weekly with specific days — keep day names
-        if (freq === 'WEEKLY' && recurrence.byDay && recurrence.byDay.length > 0) {
+        // Weekly every week with specific days — show day names (e.g. "Mon, Wed 9AM")
+        if (freq === 'WEEKLY' && interval === 1 && recurrence.byDay && recurrence.byDay.length > 0) {
             const dayNames = { MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun' };
             return recurrence.byDay.map(d => dayNames[d] || d).join(', ') + timeStr;
         }
 
-        // For other frequencies, show the next occurrence date
+        // For all other cases, show the next occurrence date
         const nextDate = this.getNextOccurrence(recurrence);
         if (!nextDate) {
             return recurrence.time ? this.formatCompactTime(recurrence.time) : '🔁';
@@ -329,10 +331,24 @@ const ChartRenderer = {
 
         const d = new Date(nextDate + 'T00:00:00');
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
         if (freq === 'MONTHLY') {
             const day = d.getDate();
             return `${day}${UI.getOrdinalSuffix(day)} ${months[d.getMonth()]}${timeStr}`;
+        }
+
+        // Biweekly / multi-week interval: "next Thu" if ≤6 days away, "Thu 19th" if further
+        if (freq === 'WEEKLY') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffDays = Math.round((d - today) / 86400000);
+            const dayName = shortDays[d.getDay()];
+            if (diffDays <= 6) {
+                return `Next ${dayName}${timeStr}`;
+            }
+            const dateNum = d.getDate();
+            return `${dayName} ${dateNum}${UI.getOrdinalSuffix(dateNum)}${timeStr}`;
         }
 
         // Yearly, Daily, or weekly without specific days

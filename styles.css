@@ -90,6 +90,17 @@ h2 {
     background: #f0f0f0;
     color: #666;
 }
+.pie-tab.tombstoned {
+    color: #aaa;
+    border-color: #ddd;
+    background: transparent;
+    font-style: italic;
+    cursor: pointer;
+}
+.pie-tab.tombstoned:hover {
+    background: #f5f5f5;
+    color: #888;
+}
 .pie-tab.dragging {
     opacity: 0.4;
 }

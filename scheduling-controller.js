@@ -1226,9 +1226,37 @@ Object.assign(UI, {
         const type = this._getSelectedSpokeEditorType();
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
 
-        // If on Tab 2 with Single/Repeating, "Done" = save type only, skip scheduling
+        // If on Tab 2 with Single/Repeating, "Done" saves type + any entered field data
+        // (without touching the calendar — user can still "Add to Calendar" later)
         if (this.spokeEditorTab === 2 && (type === 'single' || type === 'repeating')) {
             DataModel.updateSpokeType(categoryId, itemId, spokeIndex, type);
+
+            const category = DataModel.categories.find(c => c.id === categoryId);
+            const item = category?.items.find(i => i.id === itemId);
+            const spoke = item?.subItems[spokeIndex];
+
+            if (typeof spoke === 'object') {
+                if (type === 'single') {
+                    const data = this._readSingleFieldsData();
+                    if (data.date) {
+                        // Preserve existing calendarEventId if present
+                        const existingEventId = spoke.scheduled?.calendarEventId ?? null;
+                        spoke.scheduled = { ...data, calendarEventId: existingEventId };
+                        DataModel.saveToStorage();
+                    }
+                } else if (type === 'repeating') {
+                    const recurrence = this._readRepeatingFieldsData();
+                    if (recurrence.startDate) {
+                        if (!spoke.metadata) spoke.metadata = {};
+                        // Preserve existing calendarEventId if present
+                        const existingEventId = spoke.metadata.calendarEventId ?? null;
+                        spoke.metadata.recurrence = recurrence;
+                        spoke.metadata.calendarEventId = existingEventId;
+                        DataModel.saveToStorage();
+                    }
+                }
+            }
+
             this.closeSpokeEditor();
             return;
         }

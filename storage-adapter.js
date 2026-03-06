@@ -396,9 +396,15 @@ const StorageAdapter = {
                         }
                     }
 
+                    // Merge tombstonedPieIds: union (a pie tombstoned on any device stays tombstoned)
+                    const remoteTombstoned = currentMeta.tombstonedPieIds || [];
+                    const localTombstoned = meta.tombstonedPieIds || [];
+                    const mergedTombstoned = [...new Set([...remoteTombstoned, ...localTombstoned])];
+
                     return {
                         pieIds: mergedIds,
-                        pieNames: { ...(currentMeta.pieNames || {}), ...(meta.pieNames || {}) }
+                        pieNames: { ...(currentMeta.pieNames || {}), ...(meta.pieNames || {}) },
+                        tombstonedPieIds: mergedTombstoned
                     };
                 });
                 Debug.log('StorageAdapter: saveMeta transaction committed');

@@ -1620,13 +1620,17 @@ const UI = {
 
         pies.forEach(pie => {
             const btn = document.createElement('button');
-            btn.className = 'pie-tab' + (pie.active ? ' active' : '');
+            btn.className = 'pie-tab' + (pie.active ? ' active' : '') + (pie.tombstoned ? ' tombstoned' : '');
             btn.textContent = pie.name;
+            btn.title = pie.tombstoned ? 'Empty — data preserved in cloud' : '';
             btn.dataset.pieId = pie.id;
-            btn.draggable = true;
+            btn.draggable = !pie.tombstoned;
 
             btn.addEventListener('click', (e) => {
-                if (pie.active) {
+                if (pie.tombstoned) {
+                    // Show restore/delete menu; keep current pie in view
+                    this.showTombstonedPieContextMenu(pie.id, e, btn);
+                } else if (pie.active) {
                     this.showPieContextMenu(pie.id, e, btn);
                 } else {
                     App.switchPie(pie.id);
@@ -1635,7 +1639,11 @@ const UI = {
 
             btn.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                this.showPieContextMenu(pie.id, e);
+                if (pie.tombstoned) {
+                    this.showTombstonedPieContextMenu(pie.id, e);
+                } else {
+                    this.showPieContextMenu(pie.id, e);
+                }
             });
 
             // Drag-and-drop reorder
@@ -1742,6 +1750,49 @@ const UI = {
         document.body.appendChild(menu);
 
         // Close on click outside
+        const closeHandler = (e) => {
+            if (!menu.contains(e.target)) {
+                this.closePieContextMenu();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 0);
+    },
+
+    showTombstonedPieContextMenu(pieId, event, anchorEl) {
+        this.closePieContextMenu();
+
+        const menu = document.createElement('div');
+        menu.className = 'pie-context-menu';
+
+        if (anchorEl) {
+            const rect = anchorEl.getBoundingClientRect();
+            menu.style.left = rect.left + 'px';
+            menu.style.top = (rect.bottom + 4) + 'px';
+        } else {
+            menu.style.left = (event.clientX || event.pageX) + 'px';
+            menu.style.top = (event.clientY || event.pageY) + 'px';
+        }
+
+        const restoreBtn = document.createElement('button');
+        restoreBtn.textContent = 'Restore';
+        restoreBtn.addEventListener('click', () => {
+            this.closePieContextMenu();
+            App.restorePie(pieId);
+        });
+        menu.appendChild(restoreBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.className = 'danger';
+        deleteBtn.addEventListener('click', () => {
+            this.closePieContextMenu();
+            this.confirmDeletePie(pieId);
+        });
+        menu.appendChild(deleteBtn);
+
+        document.body.appendChild(menu);
+
         const closeHandler = (e) => {
             if (!menu.contains(e.target)) {
                 this.closePieContextMenu();
