@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
-**Last Updated:** February 2026
-**Current Version:** v0.18
+**Last Updated:** March 2026
+**Current Version:** v0.19
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -351,6 +351,40 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.19 (March 2026)
+Firebase data-safety improvements, tombstone-on-empty pies, spoke schedule persistence, and recurrence pill improvements:
+
+**Tombstone-On-Empty Pie (Firebase mode):**
+- Empty `categories: []` is never written to Firebase — prevents bugs or stale data from blanking a shared pie
+- When a pie is emptied, it is tombstoned in meta (`tombstonedPieIds`) and its Firebase data is preserved untouched
+- If the last active pie is tombstoned, a fresh "My Pie" is automatically created and set as active
+- Tombstoned tabs appear greyed and italic in the tab bar with tooltip "Empty — data preserved in cloud"
+- Clicking a tombstoned tab shows a Restore / Delete context menu; the current active pie stays in view
+- **Restore**: removes tombstone flag, switches to pie, reloads preserved data from Firebase
+- **Delete**: the only path that explicitly clears `pies/{pieId}` from Firebase — confirmation required
+- `tombstonedPieIds` syncs to Firebase via meta transaction (union-merge, so tombstones propagate across devices)
+- Local mode unaffected: empty categories write freely to localStorage
+
+**Firebase Sync Bug Fixes:**
+- `?config=` URL guard moved to top of `loadFromStorageOrExample()` — previously reachable only after localStorage checks, allowing sibling-tab example data to contaminate Firebase sessions
+- `pushLocalOnlyPies` removed from `syncOnConnect()` — on auto-connect Firebase is the source of truth; pushing local pies on page load could silently overwrite Firebase with stale data
+- `unsubscribeFromChanges()` now uses `currentListenerRef` (the exact ref object stored at subscribe time) — previously always called `.off()` on the legacy `data/` path, silently doing nothing, causing listeners to stack on every pie switch
+
+**Spoke Schedule Persistence (Done without Add to Calendar):**
+- Clicking "Done" on spoke editor Tab 2 (Schedule) now saves the entered date/time/recurrence to the spoke, even if "Add to Calendar" was not clicked
+- Previously the schedule data was discarded on Done; user had to add to calendar to persist it
+- `calendarEventId` is preserved if a calendar event was previously linked
+- "Add to Calendar" flow unchanged — still creates the calendar event and attaches the ID
+- Schedule pill appears on chart after Done; spoke editor re-opens to Schedule tab pre-filled
+
+**Biweekly Recurrence Pills:**
+- Weekly events with interval > 1 (biweekly, etc.) now show the next occurrence date instead of just the day name
+- Next occurrence within 6 days: "Next Thu 9AM"
+- Next occurrence further away: "Thu 19th 9AM"
+- Weekly every-week events with specific days unchanged: "Mon, Wed 9AM"
+
+---
 
 ### v0.18 (February 2026)
 Import from Google Calendar, smarter recurrence pills, clickable URLs in action popups, and bug fixes:
@@ -1418,6 +1452,21 @@ Debug.log('message', data)
 - [ ] **Action popup**: Completion checkbox toggles link style correctly
 - [ ] **Firebase auth**: Config URL doesn't flash sign-in banner when already logged in
 - [ ] **Schedule pills**: Clicking all-day event pill opens picker without error
+- [ ] **Tombstone (empty pie)**: Deleting last category in Firebase mode tombstones pie, does not write empty data to Firebase
+- [ ] **Tombstone (last pie)**: Tombstoning last active pie auto-creates a fresh "My Pie"
+- [ ] **Tombstone (tab)**: Tombstoned tab appears greyed/italic with tooltip
+- [ ] **Tombstone (tab click)**: Clicking tombstoned tab shows Restore/Delete menu, active pie stays in view
+- [ ] **Tombstone (restore)**: Restore removes tombstone, switches to pie, loads preserved Firebase data
+- [ ] **Tombstone (delete)**: Delete confirms, clears `pies/{id}` from Firebase, removes tab
+- [ ] **Tombstone (multi-device)**: Tombstone in meta syncs to other devices via real-time listener
+- [ ] **Tombstone (local mode)**: Emptying a pie in local mode works normally (no tombstone)
+- [ ] **Spoke editor Done**: Entering date/time and clicking Done (no Add to Calendar) saves schedule to spoke
+- [ ] **Spoke editor Done**: Schedule pill appears on chart after Done without calendar entry
+- [ ] **Spoke editor Done**: Re-opening editor pre-fills Schedule tab with saved data
+- [ ] **Spoke editor Done**: Existing calendarEventId preserved when saving via Done
+- [ ] **Recurrence pills**: Biweekly event within 6 days shows "Next Thu 9AM"
+- [ ] **Recurrence pills**: Biweekly event further away shows "Thu 19th 9AM"
+- [ ] **Recurrence pills**: Weekly every-week events unchanged ("Mon, Wed 9AM")
 
 ## Browser Compatibility
 - **Chrome/Edge**: Full support
