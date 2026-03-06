@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** March 2026
-**Current Version:** v0.19
+**Current Version:** v0.20
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -351,6 +351,32 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.20 (March 2026)
+Tombstone system bug fixes, active pie persistence across refresh, and priority listener robustness:
+
+**Tombstone Bug Fixes:**
+- Trashing a pie now always creates a fresh "New Pie" and switches to it, regardless of whether other pies exist (previously only created a fresh pie when no siblings remained; with siblings it incorrectly stayed on the tombstoned pie)
+- Tombstoned pies now appear greyed in the tab bar after trash — previously the tab bar showed no active (green) tab
+- Restored pies now correctly propagate to Firebase — the `saveMeta` transaction previously union-merged `tombstonedPieIds`, making restores impossible; now uses local `tombstonedPieIds` as source of truth
+- Opening Settings no longer resets the active pie to `pieIds[0]` — `syncOnConnect` now sets `UI._hasReloadedFromFirebase = true` so `updateAuthUI` skips its redundant `reloadDataFromFirebase` call
+- `reloadDataFromFirebase` now preserves the locally selected active pie instead of always defaulting to `pieIds[0]`
+- "Fresh pie" confirm text updated to "This will trash this pie, and start a fresh one"
+- Tombstoned-pie name changed from "My Pie" to "New Pie" to match confirm text
+
+**Active Pie Persistence Across Refresh:**
+- `setActivePieId()` now also saves to Firebase at `userState/{uid}/activePieId` (fire-and-forget)
+- `syncOnConnect()` reads Firebase `activePieId` first on page load, falls back to localStorage — same pie shown after browser refresh, across devices
+- `syncOnConnect()` tombstone check now uses explicit `tombstonedPieIds` list instead of the old empty-categories heuristic (which incorrectly skipped newly created empty pies)
+- Removed the fallback loop in `syncOnConnect` that overrode a valid empty active pie with a different pie
+
+**Firebase Path Added:**
+- `brainpie/{projectId}/userState/{uid}/activePieId` — per-user active pie tracking
+
+**Priority Listener Fix:**
+- All three priority listener callbacks now check `_isSyncingData` (in addition to `isSavingPriorities`), preventing remote priority updates from overwriting freshly-loaded priorities mid-sync — mirrors the existing guard on the pie data listener
+
+---
 
 ### v0.19 (March 2026)
 Firebase data-safety improvements, tombstone-on-empty pies, spoke schedule persistence, and recurrence pill improvements:
