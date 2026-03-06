@@ -1465,6 +1465,25 @@ select:focus {
     align-items: center;
     gap: 8px;
 }
+.spoke-editor-trash-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+.spoke-editor-trash-btn:hover {
+    background: #fff0f0;
+    border-color: #e53935;
+    opacity: 1;
+}
 .spoke-editor-name {
     font-size: 18px;
     font-weight: bold;
