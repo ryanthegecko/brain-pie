@@ -473,7 +473,7 @@ const App = {
     },
 
     removeAllData() {
-        if (!confirm('This will permanently delete all your data and start fresh. Are you sure?')) return;
+        if (!confirm('This will trash this pie, and start a fresh one. Are you sure?')) return;
 
         // Clear all categories
         DataModel.categories = [];
