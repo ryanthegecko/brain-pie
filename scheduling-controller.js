@@ -920,6 +920,22 @@ Object.assign(UI, {
         }
     },
 
+    deleteSpokeFromEditor() {
+        const p = this.pendingSpokeEditor;
+        if (!p) return;
+        if (!confirm(`Remove "${p.spokeName}" and all its actions?`)) return;
+
+        const { categoryId, itemId, spokeIndex } = p;
+
+        // Close editor before modifying data
+        document.getElementById('spoke-editor-overlay').classList.remove('active');
+        this.pendingSpokeEditor = null;
+        this.pendingScheduleData = { single: null, repeating: null };
+
+        DataModel.removeSubItem(categoryId, itemId, spokeIndex);
+        App.render();
+    },
+
     switchSpokeEditorTab(tab) {
         this.spokeEditorTab = tab;
         document.querySelectorAll('.spoke-editor-tab').forEach(btn => {
