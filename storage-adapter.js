@@ -122,8 +122,11 @@ const StorageAdapter = {
         this._isSyncingMeta = true;
         this._isSyncingData = true;
         try {
-            // Check for multi-pie meta in Firebase
-            let meta = await FirebaseAdapter.loadMeta();
+            // Fetch meta and per-user activePieId in parallel (independent reads)
+            let [meta, firebaseActivePieId] = await Promise.all([
+                FirebaseAdapter.loadMeta(),
+                FirebaseAdapter.loadActivePieId()
+            ]);
 
             if (!meta) {
                 // Try migrating old single-blob format
@@ -144,8 +147,7 @@ const StorageAdapter = {
                 // explicitly confirmed the connection.
 
                 // Prefer Firebase per-user activePieId, fall back to localStorage
-                let activePieId = await FirebaseAdapter.loadActivePieId();
-                if (!activePieId) activePieId = DataModel.getActivePieId();
+                let activePieId = firebaseActivePieId || DataModel.getActivePieId();
                 // If invalid or tombstoned, default to first non-tombstoned pie
                 let tombstonedPieIds = meta.tombstonedPieIds || [];
                 if (!Array.isArray(tombstonedPieIds)) tombstonedPieIds = Object.values(tombstonedPieIds);
@@ -162,8 +164,11 @@ const StorageAdapter = {
                 DataModel.setActivePieId(activePieId);
                 Storage.saveMeta(DataModel.pieMeta);
 
-                // Load the active pie data from Firebase
-                const pieData = await FirebaseAdapter.loadPie(activePieId);
+                // Load active pie data and per-user priorities in parallel (independent reads)
+                const [pieData, priorities] = await Promise.all([
+                    FirebaseAdapter.loadPie(activePieId),
+                    FirebaseAdapter.loadPriorities(activePieId)
+                ]);
 
                 if (pieData && pieData.categories) {
                     DataModel.categories = pieData.categories;
@@ -180,8 +185,6 @@ const StorageAdapter = {
                     });
                 }
 
-                // Load per-user priorities
-                const priorities = await FirebaseAdapter.loadPriorities(activePieId);
                 DataModel.priorityList = priorities || [];
                 DataModel.validatePriorityList();
 

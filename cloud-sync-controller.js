@@ -209,8 +209,12 @@ Object.assign(UI, {
             DataModel.setActivePieId(activePieId);
             Storage.saveMeta(DataModel.pieMeta);
 
-            // Load the active pie data
-            const pieData = await FirebaseAdapter.loadPie(activePieId);
+            // Load active pie data and per-user priorities in parallel (independent reads)
+            const [pieData, priorities] = await Promise.all([
+                FirebaseAdapter.loadPie(activePieId),
+                FirebaseAdapter.loadPriorities(activePieId)
+            ]);
+
             if (pieData && pieData.categories) {
                 DataModel.categories = pieData.categories;
                 DataModel.categoryPercentageOverrides = pieData.categoryPercentageOverrides || {};
@@ -227,8 +231,6 @@ Object.assign(UI, {
                 });
             }
 
-            // Load per-user priorities for this pie
-            const priorities = await FirebaseAdapter.loadPriorities(activePieId);
             DataModel.priorityList = priorities || [];
             DataModel.validatePriorityList();
 
