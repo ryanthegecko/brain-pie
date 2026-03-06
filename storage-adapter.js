@@ -143,14 +143,15 @@ const StorageAdapter = {
                 // manual sign-in flow (reloadDataFromFirebase), where the user has
                 // explicitly confirmed the connection.
 
-                // Use local activePieId if it's valid, otherwise default to first
-                let activePieId = DataModel.getActivePieId();
-                if (!activePieId || !pieIds.includes(activePieId)) {
-                    activePieId = pieIds[0];
-                }
-
+                // Prefer Firebase per-user activePieId, fall back to localStorage
+                let activePieId = await FirebaseAdapter.loadActivePieId();
+                if (!activePieId) activePieId = DataModel.getActivePieId();
+                // If invalid or tombstoned, default to first non-tombstoned pie
                 let tombstonedPieIds = meta.tombstonedPieIds || [];
                 if (!Array.isArray(tombstonedPieIds)) tombstonedPieIds = Object.values(tombstonedPieIds);
+                if (!activePieId || !pieIds.includes(activePieId) || tombstonedPieIds.includes(activePieId)) {
+                    activePieId = pieIds.find(id => !tombstonedPieIds.includes(id)) || pieIds[0];
+                }
 
                 DataModel.pieMeta = {
                     pieIds: pieIds,
@@ -162,23 +163,7 @@ const StorageAdapter = {
                 Storage.saveMeta(DataModel.pieMeta);
 
                 // Load the active pie data from Firebase
-                let pieData = await FirebaseAdapter.loadPie(activePieId);
-
-                // If active pie was tombstoned/empty, try the next available pie
-                if (!pieData || !pieData.categories) {
-                    Debug.log('StorageAdapter: active pie missing or tombstoned, trying next');
-                    for (const fallbackId of pieIds) {
-                        if (fallbackId === activePieId) continue;
-                        pieData = await FirebaseAdapter.loadPie(fallbackId);
-                        if (pieData && pieData.categories) {
-                            activePieId = fallbackId;
-                            DataModel.pieMeta.activePieId = activePieId;
-                            DataModel.setActivePieId(activePieId);
-                            Storage.saveMeta(DataModel.pieMeta);
-                            break;
-                        }
-                    }
-                }
+                const pieData = await FirebaseAdapter.loadPie(activePieId);
 
                 if (pieData && pieData.categories) {
                     DataModel.categories = pieData.categories;
@@ -201,6 +186,8 @@ const StorageAdapter = {
                 DataModel.validatePriorityList();
 
                 if (typeof App !== 'undefined') App.render();
+                // Mark as loaded so updateAuthUI() won't trigger reloadDataFromFirebase()
+                if (typeof UI !== 'undefined') UI._hasReloadedFromFirebase = true;
                 Debug.log('StorageAdapter: synced from Firebase on connect');
             }
             // If Firebase is empty, keep local data as-is (will push on next save)
@@ -400,10 +387,8 @@ const StorageAdapter = {
                         }
                     }
 
-                    // Merge tombstonedPieIds: union (a pie tombstoned on any device stays tombstoned)
-                    const remoteTombstoned = currentMeta.tombstonedPieIds || [];
-                    const localTombstoned = meta.tombstonedPieIds || [];
-                    const mergedTombstoned = [...new Set([...remoteTombstoned, ...localTombstoned])];
+                    // Use local tombstonedPieIds as source of truth — supports explicit restores
+                    const mergedTombstoned = meta.tombstonedPieIds || [];
 
                     return {
                         pieIds: mergedIds,

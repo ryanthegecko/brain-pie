@@ -446,6 +446,24 @@ const FirebaseAdapter = {
         return pieId ? `${base}/${pieId}` : base;
     },
 
+    getUserStatePath() {
+        if (!this.user) return null;
+        return `brainpie/${this.config.projectId}/userState/${this.user.uid}`;
+    },
+
+    async saveActivePieId(pieId) {
+        const path = this.getUserStatePath();
+        if (!path || !this.db) return;
+        await this.db.ref(`${path}/activePieId`).set(pieId);
+    },
+
+    async loadActivePieId() {
+        const path = this.getUserStatePath();
+        if (!path || !this.db) return null;
+        const snap = await this.db.ref(`${path}/activePieId`).get();
+        return snap.exists() ? snap.val() : null;
+    },
+
     // --- Multi-pie meta and pie CRUD ---
 
     async saveMeta(meta) {

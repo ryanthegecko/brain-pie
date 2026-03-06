@@ -92,8 +92,11 @@ const DataModel = {
     setActivePieId(pieId) {
         if (!this.pieMeta) return;
         this.pieMeta.activePieId = pieId;
-        // Only persist activePieId to localStorage (not Firebase)
         localStorage.setItem('brainPie_activePieId', pieId);
+        // Also persist to Firebase per-user so refresh restores the same pie
+        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            FirebaseAdapter.saveActivePieId(pieId).catch(() => {});
+        }
     },
 
     loadActivePieId() {
@@ -145,22 +148,21 @@ const DataModel = {
             id => !(this.pieMeta.tombstonedPieIds || []).includes(id)
         );
 
-        if (activePies.length === 0) {
-            const newId = this.generatePieId();
-            this.pieMeta.pieIds = [...(this.pieMeta.pieIds || []), newId];
-            if (!this.pieMeta.pieNames) this.pieMeta.pieNames = {};
-            this.pieMeta.pieNames[newId] = 'My Pie';
-            this.setActivePieId(newId);
-            this.categories = [];
-            this.categoryPercentageOverrides = {};
-            this.priorityList = [];
-            this.currentPieName = 'My Pie';
-            if (typeof StorageAdapter !== 'undefined') {
-                await StorageAdapter.savePie(newId, {
-                    id: newId, name: 'My Pie', categories: [],
-                    categoryPercentageOverrides: {}, priorityList: []
-                });
-            }
+        // Always create a fresh new pie after tombstoning
+        const newId = this.generatePieId();
+        this.pieMeta.pieIds = [...(this.pieMeta.pieIds || []), newId];
+        if (!this.pieMeta.pieNames) this.pieMeta.pieNames = {};
+        this.pieMeta.pieNames[newId] = 'New Pie';
+        this.setActivePieId(newId);
+        this.categories = [];
+        this.categoryPercentageOverrides = {};
+        this.priorityList = [];
+        this.currentPieName = 'New Pie';
+        if (typeof StorageAdapter !== 'undefined') {
+            await StorageAdapter.savePie(newId, {
+                id: newId, name: 'New Pie', categories: [],
+                categoryPercentageOverrides: {}, priorityList: []
+            });
         }
 
         this.saveMeta();

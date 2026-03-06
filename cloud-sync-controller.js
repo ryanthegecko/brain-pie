@@ -193,7 +193,11 @@ Object.assign(UI, {
             pieIds = merged.pieIds;
             pieNames = merged.pieNames;
 
-            const activePieId = pieIds[0]; // Default to first pie
+            // Preserve local active pie if valid, otherwise default to first
+            let activePieId = DataModel.getActivePieId();
+            if (!activePieId || !pieIds.includes(activePieId)) {
+                activePieId = pieIds[0];
+            }
 
             // Update local meta to match Firebase
             DataModel.pieMeta = {
