@@ -185,6 +185,8 @@ Object.assign(UI, {
             // Firebase has multi-pie data — load it
             let pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
             let pieNames = meta.pieNames || {};
+            let tombstonedPieIds = meta.tombstonedPieIds || [];
+            if (!Array.isArray(tombstonedPieIds)) tombstonedPieIds = Object.values(tombstonedPieIds);
 
             // Push any local-only pies to Firebase silently
             const merged = await StorageAdapter.pushLocalOnlyPies(pieIds, pieNames);
@@ -197,7 +199,8 @@ Object.assign(UI, {
             DataModel.pieMeta = {
                 pieIds: pieIds,
                 pieNames: pieNames,
-                activePieId: activePieId
+                activePieId: activePieId,
+                tombstonedPieIds: tombstonedPieIds
             };
             DataModel.setActivePieId(activePieId);
             Storage.saveMeta(DataModel.pieMeta);

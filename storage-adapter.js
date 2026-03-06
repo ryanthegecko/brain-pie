@@ -149,10 +149,14 @@ const StorageAdapter = {
                     activePieId = pieIds[0];
                 }
 
+                let tombstonedPieIds = meta.tombstonedPieIds || [];
+                if (!Array.isArray(tombstonedPieIds)) tombstonedPieIds = Object.values(tombstonedPieIds);
+
                 DataModel.pieMeta = {
                     pieIds: pieIds,
                     pieNames: pieNames,
-                    activePieId: activePieId
+                    activePieId: activePieId,
+                    tombstonedPieIds: tombstonedPieIds
                 };
                 DataModel.setActivePieId(activePieId);
                 Storage.saveMeta(DataModel.pieMeta);
