@@ -202,6 +202,8 @@ const App = {
                 let remotePieIds = remoteMeta.pieIds || [];
                 if (!Array.isArray(remotePieIds)) remotePieIds = Object.values(remotePieIds);
                 const remotePieNames = remoteMeta.pieNames || {};
+                let remoteTombstoned = remoteMeta.tombstonedPieIds || [];
+                if (!Array.isArray(remoteTombstoned)) remoteTombstoned = Object.values(remoteTombstoned);
 
                 // Preserve local activePieId (not synced via Firebase)
                 const currentActive = DataModel.getActivePieId();
@@ -210,7 +212,8 @@ const App = {
                 DataModel.pieMeta = {
                     pieIds: remotePieIds,
                     pieNames: remotePieNames,
-                    activePieId: currentActive
+                    activePieId: currentActive,
+                    tombstonedPieIds: remoteTombstoned
                 };
 
                 // Save locally
