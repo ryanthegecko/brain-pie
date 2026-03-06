@@ -120,21 +120,18 @@ _Firebase has confirmed the user is signed in (auto-auth on page load). This is 
 **E4.** Meta loaded. Extract `pieIds` list and `pieNames` map.
 
 **E5.** Determine which pie to show as active.
-- Read `DataModel.getActivePieId()`: checks in-memory `pieMeta.activePieId`, then `brainPie_activePieId` in localStorage.
-- If that ID is valid (exists in Firebase's `pieIds`) → use it
-- If not valid or null (e.g. because **[D]** set pieMeta to empty) → default to `pieIds[0]`
+- Read `FirebaseAdapter.loadActivePieId()` from `userState/{uid}/activePieId` in Firebase first.
+- If not found in Firebase, fall back to `DataModel.getActivePieId()`: checks in-memory `pieMeta.activePieId`, then `brainPie_activePieId` in localStorage.
+- If the resolved ID is valid (exists in Firebase's `pieIds`) AND is not tombstoned → use it.
+- Otherwise (not valid, null, or tombstoned) → default to the first non-tombstoned pie in `pieIds`.
 
 > _Note: `pushLocalOnlyPies` is intentionally NOT called here. On auto-connect, Firebase is the source of truth. Silently pushing local pies on page load risks contaminating Firebase with stale or unrelated data (e.g. example data written by a base-URL sibling tab sharing localStorage). Local-only pies are only pushed in the manual sign-in flow — see **[I] Manual Sign-In**._
 
 **E6.** Write `DataModel.pieMeta` with Firebase's pie list and the resolved active ID. Save meta to localStorage (backup).
 
 **E7.** Load active pie data from `brainpie/{projectId}/pies/{activePieId}`.
-- If pie data has categories → go to **E8**
-- If empty or tombstoned (soft-deleted) → loop through remaining pies in `pieIds` as fallbacks.
-  - First pie with valid categories becomes the new active pie (update `activePieId` in memory + localStorage).
-  - If ALL pies are empty or tombstoned → go to **E9**
 
-**E8.** Populate `DataModel`: categories, percentage overrides, pie name. Normalize spokes. Validate priority list. Write a backup copy to localStorage. Load per-user priorities from `userPriorities/{uid}/{pieId}`. Call `App.render()` — user sees their data.
+**E8.** Populate `DataModel`: categories, percentage overrides, pie name. Normalize spokes. Validate priority list. Write a backup copy to localStorage. Load per-user priorities from `userPriorities/{uid}/{pieId}`. Call `App.render()` — user sees their data. Set `UI._hasReloadedFromFirebase = true` so that opening Settings later does not trigger a redundant `reloadDataFromFirebase()`.
 
 **E9.** Firebase is empty or all pies are unpopulated. Blank state remains. Nothing is pushed to Firebase. (The next user edit will trigger a save that populates Firebase.)
 
@@ -234,7 +231,7 @@ _User goes through Settings → Cloud Sync to connect Firebase for the first tim
 **I7.** Meta loaded. Run `pushLocalOnlyPies`:
 - Compare localStorage pie IDs against Firebase pie IDs.
 - For each local pie ID not found in Firebase: load its data from localStorage. If it has real content (at least one category with items), push it to Firebase silently. This handles pies created while offline.
-- Default active pie to `pieIds[0]` (first Firebase pie). Load its data from Firebase. Populate `DataModel`. Save localStorage backup. Set up real-time listeners. Render.
+- Preserve the local active pie if it is valid (exists in Firebase's `pieIds`); otherwise default to `pieIds[0]`. Load active pie data from Firebase. Populate `DataModel`. Save localStorage backup. Set up real-time listeners. Render.
 
 **I8.** Firebase is completely empty. User has local data.
 - Confirm dialog: "Firebase is empty but you have local data. Upload to cloud or start fresh?"
@@ -253,7 +250,7 @@ _User clicks a pie tab._
   - Exception: if `categories` is empty and the pie is not already tombstoned → go to **[M] Tombstone Empty Pie** instead of writing. The empty state is written to localStorage only.
 - Local mode: write to localStorage only (empty categories written freely — no risk to shared data).
 
-**J3.** Update `activePieId` in memory and localStorage.
+**J3.** Update `activePieId` in memory, localStorage, and Firebase (`userState/{uid}/activePieId`) so refreshing the browser restores the same pie.
 
 **J4.** Load target pie data via `StorageAdapter.loadPie(targetId)`.
 - Firebase mode: read from Firebase first; if missing, fall back to localStorage backup.
@@ -277,21 +274,16 @@ _User has deleted all categories from a pie while in Firebase mode. Rather than 
 
 **M2.** `_handleEmptyPie()` adds the pie ID to `pieMeta.tombstonedPieIds`.
 
-**M3.** Check: are there any remaining active (non-tombstoned) pies?
-- If yes → go to **M5**
-- If no (this was the last active pie) → go to **M4**
-
-**M4.** Create a fresh replacement pie:
-- Generate a new pie ID. Add to `pieIds` and `pieNames` ("My Pie"). Set as active.
+**M3.** Always create a fresh replacement pie (regardless of whether other pies exist):
+- Generate a new pie ID. Add to `pieIds` and `pieNames` ("New Pie"). Set as active.
 - Clear in-memory state (`categories = []`, etc.).
 - Save the empty new pie to Firebase directly (bypasses the empty-guard since it's an explicit new-pie creation).
-- Continue to **M5**.
 
-**M5.** Save updated meta (with `tombstonedPieIds`) to Firebase via transaction. The transaction union-merges `tombstonedPieIds` with any concurrent remote changes.
+**M4.** Save updated meta (with `tombstonedPieIds`) to Firebase via transaction. The transaction uses the **local** `tombstonedPieIds` as the source of truth (no union merge), so explicit restores can propagate. `pieIds` and `pieNames` are still union-merged to preserve pies added concurrently by other team members.
 
-**M6.** Re-render tab bar. The tombstoned pie's tab appears greyed and italic with a tooltip: "Empty — data preserved in cloud". The current active pie stays in view.
+**M5.** Re-render tab bar. The tombstoned pie's tab appears greyed and italic with a tooltip: "Empty — data preserved in cloud". The newly created "New Pie" becomes the active tab.
 
-**M7.** The original pie's data at `pies/{pieId}` in Firebase is **not touched**. It retains whatever categories existed before the user deleted them.
+**M6.** The original pie's data at `pies/{pieId}` in Firebase is **not touched**. It retains whatever categories existed before the user deleted them.
 
 ---
 
@@ -378,9 +370,12 @@ brainpie/{projectId}/
 ├── meta                              ← shared: { pieIds, pieNames, tombstonedPieIds }
 ├── pies/
 │   └── {pieId}                       ← shared: { id, name, categories, categoryPercentageOverrides }
-└── userPriorities/
+├── userPriorities/
+│   └── {uid}/
+│       └── {pieId}                   ← per-user per-pie: [ priorityRef, ... ]
+└── userState/
     └── {uid}/
-        └── {pieId}                   ← per-user per-pie: [ priorityRef, ... ]
+        └── activePieId               ← per-user: which pie tab was last active (for restore on refresh)
 ```
 
 _Legacy path (pre-v0.16): `brainpie/{projectId}/data/` — migrated to multi-pie format on first load._
