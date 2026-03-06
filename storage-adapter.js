@@ -294,7 +294,7 @@ const StorageAdapter = {
 
             // Subscribe to per-user priorities for active pie
             FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
-                if (this.isSavingPriorities) return;
+                if (this.isSavingPriorities || this._isSyncingData) return;
                 Debug.log('StorageAdapter: Received remote priority update');
                 if (this.priorityUpdateCallback) {
                     this.priorityUpdateCallback(priorityList);
@@ -324,7 +324,7 @@ const StorageAdapter = {
             });
 
             FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
-                if (this.isSavingPriorities) return;
+                if (this.isSavingPriorities || this._isSyncingData) return;
                 if (this.priorityUpdateCallback) {
                     this.priorityUpdateCallback(priorityList);
                 }
