@@ -204,9 +204,9 @@ _Set up after `syncOnConnect` completes. Keeps the app live with Firebase change
 - Guard: if remote data has no content but local has content → reject (prevents accidental blank overwrites)
 - Otherwise → update `DataModel.categories`, save backup to localStorage, re-render
 
-**H6.** When a meta update arrives (team member added or deleted a pie):
-- Update `DataModel.pieMeta` with the new pie list
-- Re-render the pie tab bar
+**H6.** When a meta update arrives (team member added or deleted a pie, or a pie was tombstoned):
+- Update `DataModel.pieMeta` with the new pie list and `tombstonedPieIds`
+- Re-render the pie tab bar (tombstoned pies appear greyed/italic)
 
 ---
 
@@ -250,7 +250,8 @@ _User clicks a pie tab._
 
 **J2.** Save current pie to storage (`saveToStorage()`).
 - Firebase mode: write to Firebase AND localStorage backup.
-- Local mode: write to localStorage only.
+  - Exception: if `categories` is empty and the pie is not already tombstoned → go to **[M] Tombstone Empty Pie** instead of writing. The empty state is written to localStorage only.
+- Local mode: write to localStorage only (empty categories written freely — no risk to shared data).
 
 **J3.** Update `activePieId` in memory and localStorage.
 
@@ -266,6 +267,58 @@ _User clicks a pie tab._
 - Load per-user priorities for new pie.
 
 **J7.** `App.render()` → new pie renders.
+
+---
+
+## [M] Tombstone Empty Pie
+_User has deleted all categories from a pie while in Firebase mode. Rather than writing `categories: []` to Firebase, the pie is tombstoned._
+
+**M1.** `saveToStorage()` detects `categories.length === 0` + Firebase mode + pie not already tombstoned. Calls `_handleEmptyPie(pieId)` (async, fire-and-forget) and returns without touching Firebase.
+
+**M2.** `_handleEmptyPie()` adds the pie ID to `pieMeta.tombstonedPieIds`.
+
+**M3.** Check: are there any remaining active (non-tombstoned) pies?
+- If yes → go to **M5**
+- If no (this was the last active pie) → go to **M4**
+
+**M4.** Create a fresh replacement pie:
+- Generate a new pie ID. Add to `pieIds` and `pieNames` ("My Pie"). Set as active.
+- Clear in-memory state (`categories = []`, etc.).
+- Save the empty new pie to Firebase directly (bypasses the empty-guard since it's an explicit new-pie creation).
+- Continue to **M5**.
+
+**M5.** Save updated meta (with `tombstonedPieIds`) to Firebase via transaction. The transaction union-merges `tombstonedPieIds` with any concurrent remote changes.
+
+**M6.** Re-render tab bar. The tombstoned pie's tab appears greyed and italic with a tooltip: "Empty — data preserved in cloud". The current active pie stays in view.
+
+**M7.** The original pie's data at `pies/{pieId}` in Firebase is **not touched**. It retains whatever categories existed before the user deleted them.
+
+---
+
+## [M-R] Restoring a Tombstoned Pie
+_User clicks a greyed pie tab and chooses Restore._
+
+**MR1.** Clicking a tombstoned tab shows a context menu (Restore / Delete). The current active pie remains in view — no switch happens.
+
+**MR2.** User clicks "Restore". `App.restorePie(pieId)` runs.
+
+**MR3.** `DataModel.restorePie(pieId)` removes the pie from `tombstonedPieIds` and saves meta to Firebase. The Firebase data at `pies/{pieId}` was never cleared, so it still holds the original categories.
+
+**MR4.** `App.switchPie(pieId)` → loads pie data from Firebase → original categories restored → re-renders chart and tab bar. Tab is no longer greyed.
+
+---
+
+## [M-D] Explicitly Deleting a Tombstoned Pie
+_User clicks a greyed pie tab and chooses Delete._
+
+**MD1.** User clicks "Delete". Confirmation dialog: "Delete [name] and all its data? This cannot be undone."
+
+**MD2.** If confirmed: `App.deletePie(pieId)` → `DataModel.deletePie(pieId)`.
+- Removes pie from `pieIds`, `pieNames`, and `tombstonedPieIds` in meta.
+- `StorageAdapter.deletePie()` → removes from Firebase meta (transaction) → deletes `pies/{pieId}` node from Firebase. This is the **only path** that removes pie data from Firebase.
+- Deletes localStorage backup for this pie.
+
+**MD3.** Meta saved. Tab bar re-renders. Tombstoned tab is gone.
 
 ---
 
@@ -307,7 +360,7 @@ _Normal collaboration scenario._
 |-----|---------------|
 | `cloudSyncEnabled` | `'true'` if Firebase was ever configured in this browser |
 | `brainPieFirebaseConfig` | Saved Firebase config JSON |
-| `brainPie_meta` | `{ pieIds, pieNames }` — the list of pies and their names |
+| `brainPie_meta` | `{ pieIds, pieNames, tombstonedPieIds }` — the list of pies, their names, and which are tombstoned |
 | `brainPie_activePieId` | Which pie tab the user last had open (per-device, not synced) |
 | `brainPie_pie_{id}` | Full pie data backup (categories, overrides, priorities) |
 | `brainPieTutorialCompleted` | `'true'` when tutorial is done |
@@ -322,7 +375,7 @@ _Normal collaboration scenario._
 
 ```
 brainpie/{projectId}/
-├── meta                              ← shared: { pieIds, pieNames }
+├── meta                              ← shared: { pieIds, pieNames, tombstonedPieIds }
 ├── pies/
 │   └── {pieId}                       ← shared: { id, name, categories, categoryPercentageOverrides }
 └── userPriorities/
