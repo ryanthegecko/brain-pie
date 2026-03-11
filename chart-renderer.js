@@ -546,57 +546,36 @@ const ChartRenderer = {
                 .append('g');
         } else if (actualWidth >= 1920) {
             // Pie: large screens — render at actual size, no scaling needed
-            this.width = actualWidth;
+            this.width  = actualWidth;
             this.height = actualHeight;
+        } else if (actualWidth >= 960) {
+            // Pie: medium screens — render at 1790px virtual canvas, scale down via viewBox
+            this.width  = 1790;
+            this.height = Math.round(actualHeight * (this.width / actualWidth));
+        } else {
+            // Pie: small/mobile screens — render at 1280px virtual canvas, scale down via viewBox
+            this.width  = 1280;
+            this.height = Math.round(actualHeight * (this.width / actualWidth));
+        }
+
+        if (this.viewMode !== 'tree') {
+            // Shared pie setup: radius and SVG (runs after width/height are decided above)
             const minDimension = Math.min(this.width, this.height);
             this.outerRadius = Math.min(550, minDimension * 0.33);
             this.baseOuterRadius = this.outerRadius;
             this.innerRadius = this.outerRadius - 40;
             this.baseCategoryRingWidth = this.outerRadius - this.innerRadius;
 
-            this.svg = container.append('svg')
-                .attr('width', this.width)
-                .attr('height', this.height)
-                .append('g')
+            const svgEl = container.append('svg')
+                .attr('width',  actualWidth)
+                .attr('height', actualHeight);
+
+            if (actualWidth < 1920) {
+                svgEl.attr('viewBox', `0 0 ${this.width} ${this.height}`);
+            }
+
+            this.svg = svgEl.append('g')
                 .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
-        } else if (actualWidth >= 960) {
-            // Pie: medium screens — render at 1720px virtual canvas, scale down via viewBox
-            const virtualWidth = 1790;
-            const virtualHeight = Math.round(actualHeight * (virtualWidth / actualWidth));
-            this.width = virtualWidth;
-            this.height = virtualHeight;
-
-            const minDimension = Math.min(virtualWidth, virtualHeight);
-            this.outerRadius = Math.min(550, minDimension * 0.33);
-            this.baseOuterRadius = this.outerRadius;
-            this.innerRadius = this.outerRadius - 40;
-            this.baseCategoryRingWidth = this.outerRadius - this.innerRadius;
-
-            this.svg = container.append('svg')
-                .attr('width', actualWidth)
-                .attr('height', actualHeight)
-                .attr('viewBox', `0 0 ${virtualWidth} ${virtualHeight}`)
-                .append('g')
-                .attr('transform', `translate(${virtualWidth / 2}, ${virtualHeight / 2})`);
-        } else {
-            // Pie: small/mobile screens — render at 1280px virtual canvas, scale down via viewBox
-            const virtualWidth = 1280;
-            const virtualHeight = Math.round(actualHeight * (virtualWidth / actualWidth));
-            this.width = virtualWidth;
-            this.height = virtualHeight;
-
-            const minDimension = Math.min(virtualWidth, virtualHeight);
-            this.outerRadius = Math.min(550, minDimension * 0.33);
-            this.baseOuterRadius = this.outerRadius;
-            this.innerRadius = this.outerRadius - 40;
-            this.baseCategoryRingWidth = this.outerRadius - this.innerRadius;
-
-            this.svg = container.append('svg')
-                .attr('width', actualWidth)
-                .attr('height', actualHeight)
-                .attr('viewBox', `0 0 ${virtualWidth} ${virtualHeight}`)
-                .append('g')
-                .attr('transform', `translate(${virtualWidth / 2}, ${virtualHeight / 2})`);
         }
 
         // Create a group for highlighted/expanded slices (drawn on top)

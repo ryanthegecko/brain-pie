@@ -259,7 +259,7 @@ h2 {
     align-items: center;
     height: 93vh;
     min-height: 700px;
-    margin: 6vh 0 -1vw 0;
+    margin: 1vh 0 -1vw 0;
     width: 100%;
     max-width: 80vw;
     overflow: hidden;
@@ -273,6 +273,7 @@ h2 {
     }
     @media (min-height: 1024) and (min-width: 1440px) {
         height: 96vh;
+        margin: 6vh 0 -1vw 0;
     }
 
     @media (max-width: 1024px) {
