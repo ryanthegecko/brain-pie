@@ -533,7 +533,10 @@ const ChartRenderer = {
         // Get actual container dimensions
         const containerNode = document.getElementById(containerId);
         const actualWidth = containerNode.clientWidth;
-        const actualHeight = Math.max(containerNode.clientHeight, 660);
+        const aspectRatio = actualWidth / window.innerHeight;
+        const actualHeight = aspectRatio > 1.69
+            ? Math.round(actualWidth / 1.69)   // letterbox: grow container taller so full pie is visible
+            : Math.max(containerNode.clientHeight, 660);
 
         if (this.viewMode === 'tree') {
             // Treemap: use actual dimensions, no scaling
@@ -552,7 +555,11 @@ const ChartRenderer = {
             // Pie: medium screens — render at 1790px virtual canvas, scale down via viewBox
             this.width  = 1790;
             this.height = Math.round(actualHeight * (this.width / actualWidth));
-        } else {
+        }  else if (actualWidth >= 768) {
+            // Pie: tablet/small desktop screens — render at 1440px virtual canvas, scale down via viewBox
+            this.width  = 1440;
+            this.height = Math.round(actualHeight * (this.width / actualWidth));
+        }  else {
             // Pie: small/mobile screens — render at 1280px virtual canvas, scale down via viewBox
             this.width  = 1280;
             this.height = Math.round(actualHeight * (this.width / actualWidth));

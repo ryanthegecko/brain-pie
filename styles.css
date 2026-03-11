@@ -234,7 +234,10 @@ h2 {
         @media (max-width: 960px) {
             height: auto;
         }
-
+        @media (min-aspect-ratio: 169/100) {
+            height: auto;
+            min-height: 100vh;
+        }
     }
     &#cards-outer {
     scroll-snap-align: start;
@@ -251,6 +254,9 @@ h2 {
     justify-content: center;
     overflow: hidden;
     scroll-snap-align: end;
+    @media (min-aspect-ratio: 169/100) {
+        overflow: visible;
+    }
 }
 
 #chart-container {
@@ -281,6 +287,14 @@ h2 {
         min-height: 120vw;
         height: auto;
         max-width: 140vw;
+    }
+    @media (min-aspect-ratio: 169/100) {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+        &.pie-view {
+            transform: none;
+        }
     }
 }
 
