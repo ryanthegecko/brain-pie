@@ -242,6 +242,8 @@ h2 {
     &#cards-outer {
     scroll-snap-align: start;
     padding: 20px;
+    max-width: 100%;
+    overflow: hidden;
     @media (max-width: 960px) {
         padding: 5px 15px;
     }
@@ -437,6 +439,7 @@ h2 {
 
     .categories-grid {
         grid-template-columns: 1fr !important;
+        overflow: hidden;
     }
 
     .controls {
@@ -867,6 +870,7 @@ textarea {
     padding: 20px;
     border-radius: 8px;
     border-left: 5px solid #4CAF50;
+    max-width: 100%;
     @media (max-width: 768px) {
         padding: 5px 15px;
     }

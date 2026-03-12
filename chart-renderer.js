@@ -94,9 +94,18 @@ const ChartRenderer = {
 
         if (type === 'single') {
             if (spoke.scheduled && spoke.scheduled.date) {
-                const schedDate = new Date(`${spoke.scheduled.date}T${spoke.scheduled.time || '00:00'}`);
-                const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const d = new Date(`${spoke.scheduled.date}T00:00:00`);
+                const diffDays = Math.round((d - today) / 86400000);
                 const timeStr = spoke.scheduled.time ? this.formatCompactTime(spoke.scheduled.time) : '';
+                const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const dayName = shortDays[d.getDay()];
+                let dateStr;
+                if (diffDays === 0) dateStr = 'Today';
+                else if (diffDays === 1) dateStr = 'Tomorrow';
+                else if (diffDays <= 7) dateStr = `This ${dayName}`;
+                else if (diffDays <= 13) dateStr = `Next ${dayName}`;
+                else dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 return timeStr ? `${dateStr} ${timeStr}` : dateStr;
             }
             return null;  // Unscheduled single - icon only, no pill
@@ -308,8 +317,7 @@ const ChartRenderer = {
 
     // Format recurrence data into short pill text.
     // Weekly every week with specific days: show day names (e.g. "Mon, Wed, Fri 9AM")
-    // Weekly with interval>1 (biweekly etc): show next occurrence as "next Thu" or "Thu 19th"
-    // Monthly/Yearly/Daily: show next occurrence date (e.g. "Feb 15", "1st Mar")
+    // All other frequencies: within 2 weeks → Today/Tomorrow/This Thu/Next Thu; beyond → date
     formatRecurrencePillText(recurrence) {
         if (!recurrence) return '🔁';
 
@@ -317,8 +325,16 @@ const ChartRenderer = {
         const interval = recurrence.interval || 1;
         const timeStr = recurrence.time ? ' ' + this.formatCompactTime(recurrence.time) : '';
 
-        // Weekly every week with specific days — show day names (e.g. "Mon, Wed 9AM")
+        // Weekly every week with specific days — proximity labels within 2 weeks, then day names
         if (freq === 'WEEKLY' && interval === 1 && recurrence.byDay && recurrence.byDay.length > 0) {
+            const nextDate = this.getNextOccurrence(recurrence);
+            if (nextDate) {
+                const d = new Date(nextDate + 'T00:00:00');
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const diffDays = Math.round((d - today) / 86400000);
+                if (diffDays === 0) return `Today${timeStr}`;
+                if (diffDays === 1) return `Tomorrow${timeStr}`;
+            }
             const dayNames = { MO: 'Mon', TU: 'Tue', WE: 'Wed', TH: 'Thu', FR: 'Fri', SA: 'Sat', SU: 'Sun' };
             return recurrence.byDay.map(d => dayNames[d] || d).join(', ') + timeStr;
         }
@@ -332,21 +348,23 @@ const ChartRenderer = {
         const d = new Date(nextDate + 'T00:00:00');
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((d - today) / 86400000);
+        const dayName = shortDays[d.getDay()];
 
+        // Within 2-week window: proximity labels apply to all frequencies
+        if (diffDays === 0) return `Today${timeStr}`;
+        if (diffDays === 1) return `Tomorrow${timeStr}`;
+        if (diffDays <= 7) return `This ${dayName}${timeStr}`;
+        if (diffDays <= 13) return `Next ${dayName}${timeStr}`;
+
+        // Beyond 2 weeks: frequency-specific format
         if (freq === 'MONTHLY') {
             const day = d.getDate();
             return `${day}${UI.getOrdinalSuffix(day)} ${months[d.getMonth()]}${timeStr}`;
         }
 
-        // Biweekly / multi-week interval: "next Thu" if ≤6 days away, "Thu 19th" if further
         if (freq === 'WEEKLY') {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const diffDays = Math.round((d - today) / 86400000);
-            const dayName = shortDays[d.getDay()];
-            if (diffDays <= 6) {
-                return `Next ${dayName}${timeStr}`;
-            }
             const dateNum = d.getDate();
             return `${dayName} ${dateNum}${UI.getOrdinalSuffix(dateNum)}${timeStr}`;
         }
