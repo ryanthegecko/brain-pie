@@ -1427,7 +1427,7 @@ const DataModel = {
                 cat.items && cat.items.length > 0 && (cat.id !== categoryId || cat.items.some(i => i.id !== itemId))
             );
 
-            if (item.subItems && item.subItems.length > 0 && otherSlicesExist) {
+            if (otherSlicesExist) {
                 transforms.push({
                     id: 'slice-to-spoke',
                     label: 'Demote to Spoke',
@@ -1773,7 +1773,7 @@ const DataModel = {
             const newSpokeIndex = (targetItem.subItems || []).length;
             const newSpoke = {
                 text: item.name,
-                type: 'list',
+                type: flatActions.length > 0 ? 'list' : 'static',
                 children: flatActions,
                 scheduled: null,
                 metadata: {
