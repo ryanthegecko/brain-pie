@@ -242,9 +242,11 @@ Object.assign(UI, {
             return;
         }
 
-        // 3. Firebase is completely empty — offer to push local data
+        // 3. Firebase is completely empty — offer to push local data.
+        // In personal mode, local data may belong to a different user (same device),
+        // so skip the prompt and start fresh for this user.
         const hasLocalData = DataModel.categories && DataModel.categories.length > 0;
-        if (hasLocalData) {
+        if (hasLocalData && !FirebaseAdapter.isPersonalMode()) {
             const shouldPush = confirm(
                 'Firebase is empty but you have local data.\n\n' +
                 'Would you like to upload your existing data to the cloud?\n\n' +
@@ -288,6 +290,49 @@ Object.assign(UI, {
                 App.render();
                 Storage.showStatus('Starting fresh', 'success');
             }
+        } else if (FirebaseAdapter.isPersonalMode() && hasLocalData) {
+            // Personal mode + empty Firebase: bootstrap this user's personal space
+            // with local data (example data for a new user, or their own data on a
+            // returning device). Skip the confirm — local data in personal mode
+            // always belongs to this user's session.
+            const localMeta = Storage.loadMeta();
+            if (localMeta && localMeta.pieIds) {
+                const pieIds = Array.isArray(localMeta.pieIds) ? localMeta.pieIds : Object.values(localMeta.pieIds);
+                const pieNames = localMeta.pieNames || {};
+                const tombstonedPieIds = Array.isArray(localMeta.tombstonedPieIds) ? localMeta.tombstonedPieIds : Object.values(localMeta.tombstonedPieIds || []);
+
+                await FirebaseAdapter.saveMeta({ pieIds, pieNames, tombstonedPieIds });
+
+                for (const pid of pieIds) {
+                    if (tombstonedPieIds.includes(pid)) continue;
+                    const pieData = Storage.loadPie(pid);
+                    if (pieData && pieData.categories && pieData.categories.length > 0) {
+                        await FirebaseAdapter.savePie(pid, pieData);
+                    }
+                }
+
+                const activePieId = localMeta.activePieId || pieIds[0];
+                if (DataModel.priorityList && DataModel.priorityList.length > 0) {
+                    await FirebaseAdapter.savePriorities(DataModel.priorityList, activePieId);
+                }
+            }
+            StorageAdapter.setupFirebaseListener();
+            App.render();
+            Storage.showStatus('Data saved to your personal cloud', 'success');
+        } else if (FirebaseAdapter.isPersonalMode()) {
+            // Personal mode, no local data, no Firebase data — brand new user.
+            // Initialise a default pie in memory and write meta to Firebase so
+            // subsequent saves have a valid pie ID to write to.
+            const pieId = DataModel.generatePieId ? DataModel.generatePieId() : ('pie-' + Date.now());
+            const pieName = 'My Pie';
+            const newMeta = { pieIds: [pieId], pieNames: { [pieId]: pieName } };
+            DataModel.pieMeta = { ...newMeta, activePieId: pieId };
+            DataModel.setActivePieId(pieId);
+            DataModel.currentPieName = pieName;
+            Storage.saveMeta(DataModel.pieMeta);
+            await FirebaseAdapter.saveMeta(newMeta);
+            StorageAdapter.setupFirebaseListener();
+            App.render();
         } else {
             // No local data, no Firebase data — just set up listeners
             StorageAdapter.setupFirebaseListener();
