@@ -218,7 +218,9 @@ Object.assign(UI, {
         description += `Action: ${actionText}\nSpoke: ${spokeText}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
         const eventTitle = `${actionText} (${spokeText}/${sliceName}/${categoryName})`;
 
-        // For Google, try API first, fall back to URL redirect
+        // For Google, try API first, fall back to URL redirect.
+        // Attempt token refresh before checking availability (handles expired tokens silently).
+        if (provider === 'google' && typeof CalendarAdapter !== 'undefined') await CalendarAdapter.ensureAccessToken();
         if (provider === 'google' && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
             const eventData = {
                 title: eventTitle,
@@ -1175,6 +1177,7 @@ Object.assign(UI, {
             let description = data.notes ? data.notes + '\n\n---\n\n' : '';
             description += `Spoke: ${spokeName}\nSlice: ${sliceName}\nCategory: ${categoryName}\nCreated from Brain Pie`;
 
+            if (provider === 'google' && typeof CalendarAdapter !== 'undefined') await CalendarAdapter.ensureAccessToken();
             if (provider === 'google' && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
                 const eventData = { title: eventTitle, date: data.date, time: data.time, duration: data.duration, allDay: data.allDay, location: data.location, description, attendees: data.invitees };
                 let event;
@@ -1213,6 +1216,7 @@ Object.assign(UI, {
 
             // Delete old calendar event
             const oldEventId = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.calendarEventId : null;
+            if (typeof CalendarAdapter !== 'undefined') await CalendarAdapter.ensureAccessToken();
             if (oldEventId && typeof CalendarAdapter !== 'undefined' && CalendarAdapter.isAvailable()) {
                 await CalendarAdapter.deleteEvent(oldEventId);
             }
