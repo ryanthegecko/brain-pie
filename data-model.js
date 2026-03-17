@@ -450,10 +450,10 @@ const DataModel = {
                     console.error('StorageAdapter.savePie failed:', e);
                 });
             } else {
-                // Fallback: no multi-pie yet, use old save path
-                StorageAdapter.save(pieData).catch(e => {
-                    console.error('StorageAdapter.save failed:', e);
-                });
+                // No active pie ID yet — save to localStorage only.
+                // Never write to the legacy Firebase data/ path; pieMeta
+                // will be set shortly and the next save will use savePie().
+                Storage.save(pieData);
             }
         } else {
             if (pieId) {
