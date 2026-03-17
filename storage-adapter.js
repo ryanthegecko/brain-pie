@@ -122,6 +122,12 @@ const StorageAdapter = {
         this._isSyncingMeta = true;
         this._isSyncingData = true;
         try {
+            // Personal mode: one-time migration from shared paths → UID-scoped paths.
+            // No-op if already migrated or no shared data exists.
+            if (FirebaseAdapter.isPersonalMode()) {
+                await FirebaseAdapter.migrateSharedToPersonal();
+            }
+
             // Fetch meta and per-user activePieId in parallel (independent reads)
             let [meta, firebaseActivePieId] = await Promise.all([
                 FirebaseAdapter.loadMeta(),

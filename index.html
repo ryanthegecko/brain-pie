@@ -624,9 +624,12 @@
                             <input type="text" id="cloud-share-url" readonly
                                    style="font-size: 11px; background: #f5f5f5; font-family: monospace;" />
                         </div>
-                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
                             <button class="small secondary" onclick="UI.copyShareURL()">
                                 📋 Copy URL
+                            </button>
+                            <button class="small secondary" onclick="FirebaseAdapter.copyPersonalConfigURL()" title="Generate a URL where each person's data is stored separately under their own Google account">
+                                🔒 Copy Personal URL
                             </button>
                             <button class="small secondary" onclick="UI.exportFirebaseConfig()">
                                 📥 Export Config
