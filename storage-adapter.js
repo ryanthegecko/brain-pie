@@ -198,8 +198,36 @@ const StorageAdapter = {
                 // Mark as loaded so updateAuthUI() won't trigger reloadDataFromFirebase()
                 if (typeof UI !== 'undefined') UI._hasReloadedFromFirebase = true;
                 Debug.log('StorageAdapter: synced from Firebase on connect');
+            } else if (FirebaseAdapter.isConnected()) {
+                // Firebase is empty — bootstrap it with local meta + pies so future
+                // loads can sync correctly. Without this, savePie() writes pie data
+                // but never writes meta, so every page load finds Firebase "empty"
+                // and falls back to localStorage indefinitely.
+                const localMeta = Storage.loadMeta();
+                if (localMeta && localMeta.pieIds) {
+                    const pieIds = Array.isArray(localMeta.pieIds) ? localMeta.pieIds : Object.values(localMeta.pieIds);
+                    const pieNames = localMeta.pieNames || {};
+                    const tombstonedPieIds = Array.isArray(localMeta.tombstonedPieIds) ? localMeta.tombstonedPieIds : Object.values(localMeta.tombstonedPieIds || []);
+
+                    await FirebaseAdapter.saveMeta({ pieIds, pieNames, tombstonedPieIds });
+
+                    for (const pid of pieIds) {
+                        if (tombstonedPieIds.includes(pid)) continue;
+                        const pieData = Storage.loadPie(pid);
+                        if (pieData && pieData.categories && pieData.categories.length > 0) {
+                            await FirebaseAdapter.savePie(pid, pieData);
+                        }
+                    }
+
+                    const activePieId = localMeta.activePieId || pieIds[0];
+                    if (DataModel.priorityList && DataModel.priorityList.length > 0) {
+                        await FirebaseAdapter.savePriorities(DataModel.priorityList, activePieId);
+                    }
+
+                    if (typeof UI !== 'undefined') UI._hasReloadedFromFirebase = true;
+                    Debug.log('StorageAdapter: bootstrapped empty Firebase with local data');
+                }
             }
-            // If Firebase is empty, keep local data as-is (will push on next save)
         } catch (e) {
             Debug.log('StorageAdapter: syncOnConnect failed:', e.message);
         } finally {
