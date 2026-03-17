@@ -400,6 +400,15 @@ const FirebaseAdapter = {
     unsubscribeMetaListener: null,
 
     /**
+     * Returns true when this config URL has mode: "personal" — each user's data
+     * is stored under their own UID, fully isolated from other users on the same
+     * Firebase project.
+     */
+    isPersonalMode() {
+        return this.config && this.config.mode === 'personal';
+    },
+
+    /**
      * Get the database path for shared data (legacy single-pie)
      * @returns {string} Database path
      */
@@ -411,18 +420,23 @@ const FirebaseAdapter = {
     },
 
     /**
-     * Get the database path for multi-pie meta
+     * Get the database path for multi-pie meta.
+     * Personal mode: UID-scoped path so each user's meta is isolated.
      * @returns {string} Database path
      */
     getMetaPath() {
         if (!this.user) {
             throw new Error('Not authenticated');
         }
+        if (this.isPersonalMode()) {
+            return `brainpie/${this.config.projectId}/users/${this.user.uid}/meta`;
+        }
         return `brainpie/${this.config.projectId}/meta`;
     },
 
     /**
-     * Get the database path for a specific pie
+     * Get the database path for a specific pie.
+     * Personal mode: UID-scoped so each user's pies are isolated.
      * @param {string} pieId - Pie identifier
      * @returns {string} Database path
      */
@@ -430,11 +444,15 @@ const FirebaseAdapter = {
         if (!this.user) {
             throw new Error('Not authenticated');
         }
+        if (this.isPersonalMode()) {
+            return `brainpie/${this.config.projectId}/users/${this.user.uid}/pies/${pieId}`;
+        }
         return `brainpie/${this.config.projectId}/pies/${pieId}`;
     },
 
     /**
-     * Get the database path for the current user's priorities (per-pie)
+     * Get the database path for the current user's priorities (per-pie).
+     * Personal mode: stored under the UID subtree for consistency.
      * @param {string} pieId - Optional pie ID; if omitted, returns the user root
      * @returns {string} Database path
      */
@@ -442,12 +460,19 @@ const FirebaseAdapter = {
         if (!this.user) {
             throw new Error('Not authenticated');
         }
+        if (this.isPersonalMode()) {
+            const base = `brainpie/${this.config.projectId}/users/${this.user.uid}/priorities`;
+            return pieId ? `${base}/${pieId}` : base;
+        }
         const base = `brainpie/${this.config.projectId}/userPriorities/${this.user.uid}`;
         return pieId ? `${base}/${pieId}` : base;
     },
 
     getUserStatePath() {
         if (!this.user) return null;
+        if (this.isPersonalMode()) {
+            return `brainpie/${this.config.projectId}/users/${this.user.uid}/userState`;
+        }
         return `brainpie/${this.config.projectId}/userState/${this.user.uid}`;
     },
 
@@ -1059,6 +1084,104 @@ const FirebaseAdapter = {
         const base64Config = btoa(JSON.stringify(this.config));
         const baseURL = window.location.origin + window.location.pathname;
         return `${baseURL}?config=${base64Config}`;
+    },
+
+    /**
+     * One-time migration: copy existing shared-path data to personal UID-scoped paths.
+     * Only runs when isPersonalMode() is true and personal meta doesn't exist yet.
+     * Non-destructive — shared paths are left untouched.
+     */
+    async migrateSharedToPersonal() {
+        if (!this.db || !this.user || !this.isPersonalMode()) return;
+
+        try {
+            // No-op if personal meta already exists (migration already ran)
+            const personalMetaSnap = await this.db.ref(this.getMetaPath()).get();
+            if (personalMetaSnap.exists()) {
+                Debug.log('Firebase personal mode: personal data already exists, skipping migration');
+                return;
+            }
+
+            // Check for shared multi-pie meta
+            const sharedMetaPath = `brainpie/${this.config.projectId}/meta`;
+            const sharedMetaSnap = await this.db.ref(sharedMetaPath).get();
+            if (!sharedMetaSnap.exists()) {
+                Debug.log('Firebase personal mode: no shared data to migrate');
+                return;
+            }
+
+            const sharedMeta = sharedMetaSnap.val();
+            let pieIds = sharedMeta.pieIds || [];
+            if (!Array.isArray(pieIds)) pieIds = Object.values(pieIds);
+
+            Debug.log('Firebase: migrating', pieIds.length, 'pies from shared → personal paths');
+
+            // Copy meta (with sentinel flag)
+            await this.db.ref(this.getMetaPath()).set({ ...sharedMeta, migratedFromShared: true });
+
+            // Copy each pie's data
+            for (const pieId of pieIds) {
+                const sharedPiePath = `brainpie/${this.config.projectId}/pies/${pieId}`;
+                const pieSnap = await this.db.ref(sharedPiePath).get();
+                if (pieSnap.exists()) {
+                    await this.db.ref(this.getPiePath(pieId)).set(pieSnap.val());
+                }
+            }
+
+            // Copy per-user priorities (new format: { pieId: [...] })
+            const sharedPriorityRoot = `brainpie/${this.config.projectId}/userPriorities/${this.user.uid}`;
+            const prioritySnap = await this.db.ref(sharedPriorityRoot).get();
+            if (prioritySnap.exists()) {
+                const priorities = prioritySnap.val();
+                if (priorities && typeof priorities === 'object' && !Array.isArray(priorities)) {
+                    for (const [pid, list] of Object.entries(priorities)) {
+                        if (list) await this.db.ref(this.getUserPriorityPath(pid)).set(list);
+                    }
+                }
+            }
+
+            // Copy userState (e.g. activePieId)
+            const sharedUserStatePath = `brainpie/${this.config.projectId}/userState/${this.user.uid}`;
+            const userStateSnap = await this.db.ref(sharedUserStatePath).get();
+            if (userStateSnap.exists()) {
+                await this.db.ref(this.getUserStatePath()).set(userStateSnap.val());
+            }
+
+            Debug.log('Firebase: shared → personal migration complete for uid', this.user.uid);
+        } catch (e) {
+            Debug.log('Firebase: migrateSharedToPersonal failed:', e.message);
+        }
+    },
+
+    /**
+     * Copy a personal-mode config URL to the clipboard.
+     * Adds mode: "personal" to the current config so the recipient's data
+     * is stored under their own UID, fully isolated from other users.
+     */
+    copyPersonalConfigURL() {
+        if (!this.config) return;
+        const config = { ...this.config, mode: 'personal' };
+        const encoded = btoa(JSON.stringify(config));
+        const url = `${location.origin}${location.pathname}?config=${encoded}`;
+
+        const fallback = () => {
+            const el = document.createElement('textarea');
+            el.value = url;
+            el.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            Storage.showStatus('Personal URL copied to clipboard', 'success');
+        };
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+                Storage.showStatus('Personal URL copied to clipboard', 'success');
+            }).catch(fallback);
+        } else {
+            fallback();
+        }
     }
 };
 
