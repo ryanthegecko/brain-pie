@@ -193,10 +193,10 @@ Object.assign(UI, {
             pieIds = merged.pieIds;
             pieNames = merged.pieNames;
 
-            // Preserve local active pie if valid, otherwise default to first
+            // Preserve local active pie if valid and not tombstoned, otherwise default to first non-tombstoned
             let activePieId = DataModel.getActivePieId();
-            if (!activePieId || !pieIds.includes(activePieId)) {
-                activePieId = pieIds[0];
+            if (!activePieId || !pieIds.includes(activePieId) || tombstonedPieIds.includes(activePieId)) {
+                activePieId = pieIds.find(id => !tombstonedPieIds.includes(id)) || pieIds[0];
             }
 
             // Update local meta to match Firebase
