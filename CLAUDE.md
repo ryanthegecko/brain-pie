@@ -1235,6 +1235,17 @@ Firebase Realtime Database's `ref.set()` **throws an error** if any property in 
 
 **Also:** Avoid blind `{ ...obj }` spreads on objects that may contain `undefined` values (e.g. data loaded from localStorage or imported files). Explicitly construct objects with known fields instead.
 
+### Google Cloud APIs — Must Be Enabled Per Firebase Project
+Each Firebase project has its own Google Cloud project, and Google APIs must be explicitly enabled per project. Calendar and Tasks integration will silently fail (403 Forbidden) if the APIs aren't enabled — the error only appears in debug mode.
+
+**Required APIs for full functionality:**
+- **Google Calendar API** (`calendar-json.googleapis.com`) — needed for creating/updating/deleting calendar events and importing from Google Calendar
+- **Google Tasks API** (`tasks.googleapis.com`) — needed for Google Tasks import
+
+**To enable:** Go to [Google Cloud Console](https://console.cloud.google.com) → select the Firebase project → APIs & Services → Library → search for and enable each API.
+
+**Symptom of missing API:** `CalendarAdapter: Create event failed: Google Calendar API has not been used in project {id} before or it is disabled.` (only visible with `Debug.toggle()`)
+
 ### Code Style
 - ES6+ JavaScript
 - No build process (runs directly in browser)
