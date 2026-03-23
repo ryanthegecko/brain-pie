@@ -764,9 +764,10 @@ const DataModel = {
 
         if (typeof spoke === 'string') return 'static'; // Legacy spokes
 
-        // Backwards compat: 'action' → 'list'
+        // Backwards compat: 'action' → 'list', and untyped spokes with children → 'list'
         let type = spoke.type || 'static';
         if (type === 'action') type = 'list';
+        if (type === 'static' && spoke.children && spoke.children.length > 0) type = 'list';
         return type;
     },
 

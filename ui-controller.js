@@ -576,10 +576,10 @@ const UI = {
                     spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">🔁 Set recurrence</button>`;
                 }
             } else if (spokeType === 'list') {
-                spokeTypeButton = `<button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Manage actions">☑️ Actions</button>`;
+                spokeTypeButton = `<button style="background:#4CAF50;" onclick="UI.showAddActionInput('${categoryId}', '${itemId}', ${idx})" title="Add action">+</button><button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Manage actions"><img width="17" height="17" src="./assets/gear.svg"></button>`;
             } else {
                 // static - show type picker button
-                spokeTypeButton = `<button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Change spoke type">Spoke type</button>`;
+                spokeTypeButton = `<button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Change spoke type"><img width="17" height="17" src="./assets/gear.svg"></button>`;
             }
 
             div.innerHTML = `
@@ -977,10 +977,10 @@ const UI = {
                                             spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set recurrence">🔁</button>`;
                                         }
                                     } else if (spokeType === 'list') {
-                                        spokeTypeBtn = `<button class="" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Edit spoke">+</button>`;
+                                        spokeTypeBtn = `<button style="background:#4CAF50;" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${spokeIndex})" title="Add action">+</button><button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Manage actions"><img width="17" height="17" src="./assets/gear.svg"></button>`;
                                     } else {
                                         // static - show type picker
-                                        spokeTypeBtn = `<button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set spoke type">+</button>`;
+                                        spokeTypeBtn = `<button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Change spoke type"><img width="17" height="17" src="./assets/gear.svg"></button>`;
                                     }
 
                                     return `

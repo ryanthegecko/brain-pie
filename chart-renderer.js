@@ -103,8 +103,8 @@ const ChartRenderer = {
                 let dateStr;
                 if (diffDays === 0) dateStr = 'Today';
                 else if (diffDays === 1) dateStr = 'Tomorrow';
-                else if (diffDays <= 7) dateStr = `This ${dayName}`;
-                else if (diffDays <= 13) dateStr = `Next ${dayName}`;
+                else if (diffDays <= 6) dateStr = `This ${dayName}`;
+                else if (diffDays <= 7) dateStr = `Next ${dayName}`;
                 else dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 return timeStr ? `${dateStr} ${timeStr}` : dateStr;
             }
@@ -355,8 +355,8 @@ const ChartRenderer = {
         // Within 2-week window: proximity labels apply to all frequencies
         if (diffDays === 0) return `Today${timeStr}`;
         if (diffDays === 1) return `Tomorrow${timeStr}`;
-        if (diffDays <= 7) return `This ${dayName}${timeStr}`;
-        if (diffDays <= 13) return `Next ${dayName}${timeStr}`;
+        if (diffDays <= 6) return `This ${dayName}${timeStr}`;
+        if (diffDays <= 7) return `Next ${dayName}${timeStr}`;
 
         // Beyond 2 weeks: frequency-specific format
         if (freq === 'MONTHLY') {
