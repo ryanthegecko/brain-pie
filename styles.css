@@ -832,7 +832,7 @@ textarea {
 }
 
 .sub-item-label {
-    font-size: 12px;
+    font-size: 17px;
     letter-spacing: -0.4px;
 
     @media (max-width: 1024px) {
