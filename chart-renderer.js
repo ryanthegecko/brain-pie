@@ -439,7 +439,7 @@ const ChartRenderer = {
     },
 
     // Add schedule icon and pill after spoke name text element
-    addSchedulePill(group, nameTextElement, spoke, isRightSide, fontSize = 12) {
+    addSchedulePill(group, nameTextElement, spoke, isRightSide, fontSize = 13) {
         const icon = this.getScheduleIcon(spoke);
         const pillText = this.getSchedulePillText(spoke);
         if (!icon && !pillText) return;
@@ -489,7 +489,7 @@ const ChartRenderer = {
                 if (pillText) {
                     const pillTextEl = pillGroup.append('text')
                         .attr('font-size', fontSize + 'px')
-                        .attr('fill', '#ffffff')
+                        .attr('fill', pillColor === '#FF9800' ? '#000000' : '#ffffff')
                         .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .attr('x', cursorX)
                         .attr('y', textY)
@@ -635,7 +635,7 @@ const ChartRenderer = {
         const g = parseInt(hexColor.substr(3, 2), 16);
         const b = parseInt(hexColor.substr(5, 2), 16);
         const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-        return brightness < 170;
+        return brightness < 138;
     },
 
     render(categories) {
@@ -1089,7 +1089,7 @@ const ChartRenderer = {
                     }
 
                     // Add green pill for scheduled spokes (just the date/time portion)
-                    ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, isExpanded ? 16 : 12);
+                    ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, isExpanded ? 16 : 13);
 
                 });
             });
