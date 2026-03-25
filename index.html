@@ -439,7 +439,32 @@
                 <h3>How Cloud Sync Works</h3>
                 <p>Brain Pie can optionally sync your data across devices using Firebase Realtime Database. You provide your own Firebase project — Brain Pie never stores your data on its servers.</p>
 
-                <h3>Setting Up</h3>
+                <h3>Creating a Firebase Project</h3>
+                <ol>
+                    <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer">console.firebase.google.com</a> and click <strong>Add project</strong>.</li>
+                    <li>Give it a name, disable Google Analytics (not needed), and click <strong>Create project</strong>.</li>
+                    <li>In the left sidebar, go to <strong>Build → Realtime Database</strong> and click <strong>Create Database</strong>. Choose a region and start in <strong>locked mode</strong>.</li>
+                    <li>Go to <strong>Project Settings</strong> (gear icon) → <strong>General</strong> → scroll to "Your apps" → click the web icon (<strong>&lt;/&gt;</strong>) → register an app → copy the config object shown.</li>
+                </ol>
+
+                <h3>Enabling Google Authentication</h3>
+                <ol>
+                    <li>In the Firebase Console, go to <strong>Build → Authentication</strong> and click <strong>Get started</strong>.</li>
+                    <li>Under <strong>Sign-in providers</strong>, click <strong>Google</strong>, enable it, set a support email, and click <strong>Save</strong>.</li>
+                    <li>Go to <strong>Authentication → Settings → Authorised Domains</strong> and add the domain where Brain Pie is hosted.</li>
+                </ol>
+
+                <h3>Database Rules</h3>
+                <p>By default the database is locked. Replace the rules with the following to allow authenticated users to read and write:</p>
+                <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;">{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null"
+  }
+}</pre>
+                <p>Set these under <strong>Realtime Database → Rules</strong> and click <strong>Publish</strong>.</p>
+
+                <h3>Connecting to Brain Pie</h3>
                 <ul>
                     <li>Go to <strong>Settings → Cloud Sync → Enable Cloud Sync</strong>.</li>
                     <li>Paste your Firebase project config JSON and click "Connect to Firebase".</li>
