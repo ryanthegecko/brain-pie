@@ -1694,7 +1694,7 @@ const UI = {
         const addBtn = document.createElement('button');
         addBtn.className = 'pie-tab pie-tab-add';
         addBtn.textContent = '+';
-        const isPro = License.isActive() || pieIds.length < 1;
+        const isPro = License.isActive() || pies.length < 1;
         if (isPro) {
             addBtn.title = 'New pie';
         } else {
