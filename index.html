@@ -470,6 +470,21 @@
                     <li><strong>Firebase Console → Authentication → Settings → Authorised Domains</strong> — add the domain where Brain Pie is hosted.</li>
                 </ol>
                 <p style="color: #888; font-size: 13px;">The OAuth consent screen can stay in Testing mode for personal or small-team use. Google verification is only required if you need more than 100 users.</p>
+
+                <h3>Removing the "Unverified App" Warning</h3>
+                <p>When signing in with Google, users may see a warning that the app is unverified. This is per Firebase project — you can remove it for your own project by submitting your OAuth consent screen for Google verification.</p>
+                <p><strong>What you'll need before applying:</strong></p>
+                <ul>
+                    <li>A publicly accessible homepage for your app</li>
+                    <li>A privacy policy page at a verified domain</li>
+                    <li>That domain verified in <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Google Search Console</a></li>
+                </ul>
+                <p><strong>Scope complexity affects how long this takes:</strong></p>
+                <ul>
+                    <li><strong>Basic sign-in only</strong> — straightforward review, usually a few days</li>
+                    <li><strong>Calendar or Tasks scopes</strong> — classified as sensitive; requires a full security assessment by Google which can take several weeks</li>
+                </ul>
+                <p style="color: #888; font-size: 13px;">Note: verification applies only to your Firebase project. Other users who set up their own Firebase projects will see the warning for their projects until they complete verification separately.</p>
             </div>
 
             <!-- Page 7: Import / Export -->
