@@ -1690,15 +1690,20 @@ const UI = {
             container.appendChild(btn);
         });
 
-        // Add "+ New" button (hidden on free tier when a pie already exists)
-        if (License.isActive() || pieIds.length < 1) {
-            const addBtn = document.createElement('button');
-            addBtn.className = 'pie-tab pie-tab-add';
-            addBtn.textContent = '+';
+        // Add "+ New" button — greyed out on free tier with upgrade tooltip
+        const addBtn = document.createElement('button');
+        addBtn.className = 'pie-tab pie-tab-add';
+        addBtn.textContent = '+';
+        const isPro = License.isActive() || pieIds.length < 1;
+        if (isPro) {
             addBtn.title = 'New pie';
-            addBtn.addEventListener('click', () => this.promptNewPie());
-            container.appendChild(addBtn);
+        } else {
+            addBtn.title = 'Upgrade to Pro for multiple pies';
+            addBtn.style.opacity = '0.4';
+            addBtn.style.cursor = 'pointer';
         }
+        addBtn.addEventListener('click', () => this.promptNewPie());
+        container.appendChild(addBtn);
     },
 
     reorderPie(draggedId, targetId) {
