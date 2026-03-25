@@ -133,6 +133,10 @@ const Controls = {
       if (checkboxMobile) checkboxMobile.checked = shouldHide;
       container.classList.toggle('hide-subitem-labels', shouldHide);
       localStorage.setItem(this.HIDE_LABELS_KEY, String(shouldHide));
+      // Re-render so schedule pill positions are computed with correct visibility.
+      // getBBox() returns zeros on hidden elements, placing pills at the pie edge.
+      ChartRenderer.init('chart-container');
+      App.render();
     };
 
     // Add change listeners to both checkboxes
