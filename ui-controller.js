@@ -18,8 +18,8 @@ const UI = {
     getScheduleBorderStyle(dateStr, timeStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
-        if (ChartRenderer.isPast(date)) return 'background: #FF9800; border: 2px solid #e65100;';
-        if (ChartRenderer.isToday(date)) return 'border: 2px solid #FF9800;';
+        if (ChartRenderer.isPast(date)) return 'background: #F57C00; border: 2px solid #e65100;';
+        if (ChartRenderer.isToday(date)) return 'border: 2px solid #F57C00;';
         if (ChartRenderer.isTomorrow(date)) return 'border: 2px solid #000000;';
         return 'border: 1.5px solid #fff;';
     },
