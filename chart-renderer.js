@@ -489,7 +489,7 @@ const ChartRenderer = {
                 if (pillText) {
                     const pillTextEl = pillGroup.append('text')
                         .attr('font-size', fontSize + 'px')
-                        .attr('fill', pillColor === '#FF9800' ? '#000000' : '#ffffff')
+                        .attr('fill', '#ffffff')
                         .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .attr('x', cursorX)
                         .attr('y', textY)
