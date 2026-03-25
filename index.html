@@ -496,20 +496,10 @@
                 </ol>
                 <p style="color: #888; font-size: 13px;">The OAuth consent screen can stay in Testing mode for personal or small-team use. Google verification is only required if you need more than 100 users.</p>
 
-                <h3>Removing the "Unverified App" Warning</h3>
-                <p>When signing in with Google, users may see a warning that the app is unverified. This is per Firebase project — you can remove it for your own project by submitting your OAuth consent screen for Google verification.</p>
-                <p><strong>What you'll need before applying:</strong></p>
-                <ul>
-                    <li>A publicly accessible homepage for your app</li>
-                    <li>A privacy policy page at a verified domain</li>
-                    <li>That domain verified in <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer">Google Search Console</a></li>
-                </ul>
-                <p><strong>Scope complexity affects how long this takes:</strong></p>
-                <ul>
-                    <li><strong>Basic sign-in only</strong> — straightforward review, usually a few days</li>
-                    <li><strong>Calendar or Tasks scopes</strong> — classified as sensitive; requires a full security assessment by Google which can take several weeks</li>
-                </ul>
-                <p style="color: #888; font-size: 13px;">Note: verification applies only to your Firebase project. Other users who set up their own Firebase projects will see the warning for their projects until they complete verification separately.</p>
+                <h3>The "Unverified App" Warning</h3>
+                <p>When signing in with Google for the first time, you may see a warning that the app is unverified. This is normal for a new Firebase project — it's Google flagging that your project's OAuth consent screen hasn't been formally reviewed.</p>
+                <p><strong>It is safe to proceed.</strong> Since this is your own Firebase project, click <strong>Advanced → Go to [project name] (unsafe)</strong> to continue. You'll only see this once per browser.</p>
+                <p style="color: #888; font-size: 13px;">If you want to remove the warning permanently, you can submit your OAuth consent screen for Google verification — though this is a lengthy process and not required for personal or small-team use.</p>
             </div>
 
             <!-- Page 7: Import / Export -->
