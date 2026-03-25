@@ -278,7 +278,7 @@ const ChartRenderer = {
         if (type === 'single') {
             if (!hasSchedule) return '#2196F3';
             const date = this.getScheduledDate(spoke);
-            if (date && this.isPast(date)) return '#FF9800';
+            if (date && this.isPast(date)) return '#F57C00';
             return '#4CAF50';
         }
         if (type === 'repeating') {
@@ -511,7 +511,7 @@ const ChartRenderer = {
                         rect.attr('stroke', '#e65100')
                             .attr('stroke-width', 2);
                     } else if (isTodayEvent) {
-                        rect.attr('stroke', '#FF9800')
+                        rect.attr('stroke', '#F57C00')
                             .attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
                         rect.attr('stroke', '#000000')
@@ -1499,7 +1499,7 @@ const ChartRenderer = {
                                 if (isPastEvent) {
                                     rect.attr('stroke', '#e65100').attr('stroke-width', 1.5);
                                 } else if (isTodayEvent) {
-                                    rect.attr('stroke', '#FF9800').attr('stroke-width', 1.5);
+                                    rect.attr('stroke', '#F57C00').attr('stroke-width', 1.5);
                                 } else if (isTomorrowEvent) {
                                     rect.attr('stroke', '#000000').attr('stroke-width', 1.5);
                                 } else {
@@ -1912,11 +1912,11 @@ const ChartRenderer = {
                         .attr('width', pillW)
                         .attr('height', 40)
                         .attr('rx', 20)
-                        .attr('fill', isPastAction ? '#FF9800' : '#4CAF50');
+                        .attr('fill', isPastAction ? '#F57C00' : '#4CAF50');
                     if (isPastAction) {
                         pillRect.attr('stroke', '#e65100').attr('stroke-width', 2);
                     } else if (isTodayAction) {
-                        pillRect.attr('stroke', '#FF9800').attr('stroke-width', 2);
+                        pillRect.attr('stroke', '#F57C00').attr('stroke-width', 2);
                     } else if (isTomorrowAction) {
                         pillRect.attr('stroke', '#000000').attr('stroke-width', 2);
                     } else {
