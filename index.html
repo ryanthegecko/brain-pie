@@ -501,6 +501,22 @@
         </div>
     </div>
 
+    <!-- License / Upgrade Overlay -->
+    <div class="license-overlay" id="license-overlay" onclick="UI.closeLicenseModal(event)">
+        <div class="license-content" onclick="event.stopPropagation()">
+            <button class="menu-close" onclick="document.getElementById('license-overlay').classList.remove('active')">✕</button>
+            <h2>Upgrade to Pro</h2>
+            <p>Multiple pies is a <strong>Pro</strong> feature. Get unlimited pies to organise different areas of your life.</p>
+            <a class="license-buy-btn" href="https://YOUR_GUMROAD_LINK" target="_blank" rel="noopener noreferrer">Get Pro →</a>
+            <div class="license-divider">
+                <span>Already have a license key?</span>
+            </div>
+            <input type="text" id="license-key-input" placeholder="Paste your license key here" autocomplete="off" spellcheck="false">
+            <button id="license-activate-btn" onclick="UI.activateLicense()">Activate</button>
+            <p id="license-status"></p>
+        </div>
+    </div>
+
     <!-- Disclaimer Overlay -->
     <div class="disclaimer-overlay" id="disclaimer-overlay" onclick="UI.closeDisclaimer()">
         <div class="disclaimer-content" onclick="event.stopPropagation()">
