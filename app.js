@@ -40,6 +40,76 @@ const Debug = {
 // Expose Debug globally for console access
 window.Debug = Debug;
 
+const License = {
+    _active: false,
+    WORKER_URL: 'https://brain-pie-license.YOUR_SUBDOMAIN.workers.dev/validate',
+
+    // Called on app init — validates stored key against the Worker
+    async init() {
+        // Developer bypass: brainPie_pro flag skips network validation
+        if (localStorage.getItem('brainPie_pro') === 'true') {
+            this._active = true;
+            return;
+        }
+        const storedKey = localStorage.getItem('brainPie_licenseKey');
+        if (storedKey) {
+            this._active = await this._validateRemote(storedKey);
+            if (!this._active) {
+                localStorage.removeItem('brainPie_licenseKey');
+                Debug.log('License: stored key is invalid or revoked — cleared');
+            }
+        }
+    },
+
+    isActive() {
+        return this._active;
+    },
+
+    async _validateRemote(key) {
+        try {
+            const resp = await fetch(this.WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key })
+            });
+            const { valid } = await resp.json();
+            return valid === true;
+        } catch {
+            // Network error: fail open (trust stored key to avoid locking out users)
+            Debug.log('License: network error during validation — failing open');
+            return true;
+        }
+    },
+
+    // Called from UI activate button
+    async activate(key) {
+        const valid = await this._validateRemote(key);
+        if (valid) {
+            localStorage.setItem('brainPie_licenseKey', key.trim());
+            this._active = true;
+        }
+        return valid;
+    },
+
+    // Developer bypass — run License.activateDev() once in the browser console
+    activateDev() {
+        localStorage.setItem('brainPie_pro', 'true');
+        this._active = true;
+        console.log('Dev pro unlocked. Reloading…');
+        location.reload();
+    },
+
+    deactivate() {
+        localStorage.removeItem('brainPie_licenseKey');
+        localStorage.removeItem('brainPie_pro');
+        this._active = false;
+        console.log('Pro removed. Reloading…');
+        location.reload();
+    }
+};
+
+window.License = License;
+
 const Controls = {
   HIDE_LABELS_KEY: 'hideSubitemLabels',
 
@@ -255,6 +325,7 @@ const App = {
             }
         }
 
+        await License.init();
         Controls.init();
         ChartRenderer.init('chart-container');
         UI.clearInputs();

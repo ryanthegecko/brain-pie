@@ -1690,13 +1690,15 @@ const UI = {
             container.appendChild(btn);
         });
 
-        // Add "+ New" button
-        const addBtn = document.createElement('button');
-        addBtn.className = 'pie-tab pie-tab-add';
-        addBtn.textContent = '+';
-        addBtn.title = 'New pie';
-        addBtn.addEventListener('click', () => this.promptNewPie());
-        container.appendChild(addBtn);
+        // Add "+ New" button (hidden on free tier when a pie already exists)
+        if (License.isActive() || pieIds.length < 1) {
+            const addBtn = document.createElement('button');
+            addBtn.className = 'pie-tab pie-tab-add';
+            addBtn.textContent = '+';
+            addBtn.title = 'New pie';
+            addBtn.addEventListener('click', () => this.promptNewPie());
+            container.appendChild(addBtn);
+        }
     },
 
     reorderPie(draggedId, targetId) {
@@ -1808,9 +1810,51 @@ const UI = {
     },
 
     promptNewPie() {
+        const pieCount = (DataModel.pieMeta?.pieIds || []).length;
+        if (pieCount >= 1 && !License.isActive()) {
+            this.showLicenseModal();
+            return;
+        }
         const name = prompt('New pie name:');
         if (name && name.trim()) {
             App.createPie(name.trim());
+        }
+    },
+
+    showLicenseModal() {
+        const overlay = document.getElementById('license-overlay');
+        if (overlay) {
+            overlay.classList.add('active');
+            const input = document.getElementById('license-key-input');
+            if (input) input.value = '';
+            const status = document.getElementById('license-status');
+            if (status) { status.textContent = ''; status.className = ''; }
+        }
+    },
+
+    closeLicenseModal(event) {
+        if (event && event.target !== event.currentTarget) return;
+        document.getElementById('license-overlay')?.classList.remove('active');
+    },
+
+    async activateLicense() {
+        const input = document.getElementById('license-key-input');
+        const status = document.getElementById('license-status');
+        const btn = document.getElementById('license-activate-btn');
+        const key = input?.value?.trim();
+        if (!key) return;
+
+        if (btn) btn.disabled = true;
+        if (status) { status.textContent = 'Validating…'; status.className = ''; }
+
+        const valid = await License.activate(key);
+
+        if (valid) {
+            if (status) { status.textContent = '✓ License activated! Reloading…'; status.className = 'license-status-ok'; }
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            if (status) { status.textContent = '✗ Invalid or revoked license key.'; status.className = 'license-status-err'; }
+            if (btn) btn.disabled = false;
         }
     },
 
