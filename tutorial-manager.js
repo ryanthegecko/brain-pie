@@ -148,7 +148,7 @@ const TutorialManager = {
             id: 'close-menu',
             type: 'spotlight',
             title: 'Close the Menu',
-            content: 'All done! Your event should soon appear in your calendar app. Click "Done" to close the menu and see your pie. You can also make Spokes repeating (e.g. weekly yoga), or turn them into a list of individually scheduled actions.',
+            content: 'All done! Your event should soon appear in your calendar app. Click "Done" to close the menu and see your pie.\n\nScheduled spokes show a green pill on the chart. As the event draws closer the pill changes — black border means tomorrow, orange border means today, and an orange pill means it\'s passed.\n\nYou can also make Spokes repeating (e.g. weekly yoga), or turn them into a list of individually scheduled actions.',
             highlight: '.menu-nav-buttons button:last-child',
             noSpotlight: true,
             nextEvent: 'menu-closed'
