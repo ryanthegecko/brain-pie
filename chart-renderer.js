@@ -103,8 +103,7 @@ const ChartRenderer = {
                 let dateStr;
                 if (diffDays === 0) dateStr = 'Today';
                 else if (diffDays === 1) dateStr = 'Tomorrow';
-                else if (diffDays <= 6) dateStr = `This ${dayName}`;
-                else if (diffDays <= 7) dateStr = `Next ${dayName}`;
+                else if (diffDays <= 7) dateStr = `${this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}`;
                 else dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 return timeStr ? `${dateStr} ${timeStr}` : dateStr;
             }
@@ -305,6 +304,19 @@ const ChartRenderer = {
         return null;
     },
 
+    // Returns true if any Saturday or Sunday falls strictly between today and target (exclusive).
+    // Used to distinguish "This Mon" (same week) from "Next Mon" (crosses a weekend).
+    crossesWeekend(today, target) {
+        const cursor = new Date(today);
+        cursor.setDate(cursor.getDate() + 1);
+        while (cursor < target) {
+            const day = cursor.getDay();
+            if (day === 0 || day === 6) return true;
+            cursor.setDate(cursor.getDate() + 1);
+        }
+        return false;
+    },
+
     // Format time compactly: "09:00" → "9AM", "09:45" → "9:45AM", "13:00" → "1PM", "13:30" → "1:30PM"
     formatCompactTime(timeStr) {
         if (!timeStr) return '';
@@ -355,8 +367,7 @@ const ChartRenderer = {
         // Within 2-week window: proximity labels apply to all frequencies
         if (diffDays === 0) return `Today${timeStr}`;
         if (diffDays === 1) return `Tomorrow${timeStr}`;
-        if (diffDays <= 6) return `This ${dayName}${timeStr}`;
-        if (diffDays <= 7) return `Next ${dayName}${timeStr}`;
+        if (diffDays <= 7) return `${this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}${timeStr}`;
 
         // Beyond 2 weeks: frequency-specific format
         if (freq === 'MONTHLY') {
