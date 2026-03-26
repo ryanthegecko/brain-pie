@@ -831,13 +831,6 @@ const TutorialManager = {
      * Skip tutorial from the welcome step — leave user with empty pie
      */
     skipToEmpty() {
-        // In Firebase mode, saving [] triggers tombstoning — Firebase users already
-        // have an empty or synced pie, so just close the tutorial without wiping data.
-        if (StorageAdapter.currentMode !== 'firebase') {
-            DataModel.setCategories([]);
-            DataModel.categoryPercentageOverrides = {};
-            DataModel.saveToStorage();
-        }
         App.render();
         this.complete();
     }
