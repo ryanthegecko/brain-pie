@@ -4,9 +4,7 @@
  * Flow:
  * 1. Welcome
  * 2. Show "Life Pie" (ExampleData) - explain whole-life organization
- * 3. Show "Team Pie" (ExampleData2) - explain team/project usage
- * 4. Offer calendar login for 2-way sync
- * 5. Load "Health Pie" (ExampleData3) - simple pie for hands-on learning
+ * 3. Load "Health Pie" (ExampleData3) - simple pie for hands-on learning
  * 6. Guide: Add new Sleep slice
  * 7. Guide: Add "Yoga class" spoke to Exercise
  * 8. Guide: Change spoke type to Single
@@ -26,39 +24,18 @@ const TutorialManager = {
             content: "Brain Pie helps you visualize and organize everything on your mind. It's flexible—use it for life management, project tracking, team coordination, or anything else.",
             buttons: [
                 { text: 'Start Tutorial', action: 'next', class: 'primary' },
-                { text: "Skip, I'll explore", action: 'skipToEmpty', class: '' }
+                { text: "I'll explore first", action: 'exploreLifePie', class: '' }
             ]
         },
         {
             id: 'life-pie',
             type: 'modal',
             title: 'The Life Pie',
-            content: 'This is a "whole life" pie. Categories like Home, Health, Learning, and Social help organize everything on your mind. Slices represent individual items in each category, and each Slice can be given Spokes, often representing steps needed, or more granular tasks.',
+            content: 'This is a "whole life" pie. Categories like Home, Health, Learning, and Social help organize everything on your mind. Slices represent individual items in each category, and each Slice can be given Spokes, often representing scheduled tasks, or more granular steps.\n\nSpokes with scheduled events show a coloured pill: green for upcoming, orange border for tomorrow, orange with a red border for today, and full red for past.',
             onEnter: 'loadLifePie',
             buttons: [
                 { text: 'Explore', action: 'explore', class: '' },
                 { text: 'Next', action: 'next', class: 'primary' }
-            ]
-        },
-        {
-            id: 'team-pie',
-            type: 'modal',
-            title: 'The Team Pie',
-            content: "This is a project pie for a team. Each category is a team member (PM, Designer, Developer). It's clear who's doing what, what's done, and what's in progress. Everyone can add and update.",
-            onEnter: 'loadTeamPie',
-            buttons: [
-                { text: 'Explore', action: 'explore', class: '' },
-                { text: 'Next', action: 'next', class: 'primary' }
-            ]
-        },
-        {
-            id: 'calendar-login',
-            type: 'modal',
-            title: 'Calendar Sync',
-            content: "Sign in with Google to enable 2-way sync. When you move an event in Google Calendar, Brain Pie updates automatically. Without sign-in, events still go to your calendar, just one-way. You'll need to accept calendar permissions when prompted.\n\nDon't worry — the example data won't be added to your calendar. Only events you schedule yourself will appear there.",
-            buttons: [
-                { text: 'Maybe Later', action: 'next', class: '' },
-                { text: 'Sign In', action: 'signIn', class: 'primary' }
             ]
         },
         {
@@ -84,7 +61,7 @@ const TutorialManager = {
             id: 'create-sleep-slice',
             type: 'spotlight',
             title: 'Add a Sleep Slice',
-            content: 'Select the existing "Health" category, type "Sleep" as the Slice name, pick black for the color (for night time!), then click "Add Slice".',
+            content: 'Select the existing "Health" category, type "Sleep" as the Slice name, ignore Weight (%) for now, pick black for the color (for night time!), then click "Add Slice".',
             highlight: '#menu-tab-1',
             nextEvent: 'slice-added'
         },
@@ -100,10 +77,10 @@ const TutorialManager = {
         {
             id: 'slice-added-pause',
             type: 'modal',
-            delay: 2500,
-            autoProgress: 3000,
+            // delay: 2500,
+            // autoProgress: 3000,
             title: 'Nice Work! 🌙',
-            content: "You just added your first Slice! Ready to add a Spoke?",
+            content: "You just added your first Slice! Now let's add a spoke.",
             buttons: [
                 { text: 'Continue', action: 'next', class: 'primary' }
             ]
@@ -112,7 +89,7 @@ const TutorialManager = {
             id: 'add-spoke',
             type: 'spotlight',
             title: 'Add a Yoga Class',
-            content: 'We\'ve opened the Exercise Slice for you. Type "Yoga class" in the new Spoke input at the bottom and press Enter.',
+            content: 'We\'ve opened the Exercise Slice for you. Type "Yoga class" in the new Spoke input at the bottom and press Add Spoke (Enter key also works).',
             onEnter: 'openMenuForExercise',
             highlight: '#tab2-new-spoke',
             noSpotlight: true,
@@ -122,7 +99,7 @@ const TutorialManager = {
             id: 'change-spoke-type',
             type: 'spotlight',
             title: 'Make It Schedulable',
-            content: 'Click the "Spoke type" button next to your new Spoke to make it a schedulable task.',
+            content: 'Click the blue gear icon next to your new Spoke to make it a schedulable task.',
             highlightDynamic: true,
             noSpotlight: true,
             nextEvent: 'spoke-editor-opened'
@@ -148,7 +125,7 @@ const TutorialManager = {
             id: 'close-menu',
             type: 'spotlight',
             title: 'Close the Menu',
-            content: 'All done! Your event should soon appear in your calendar app. Click "Done" to close the menu and see your pie.\n\nScheduled spokes show a green pill on the chart. As the event draws closer the pill changes — black border means tomorrow, orange border means today, and an orange pill means it\'s passed.\n\nYou can also make Spokes repeating (e.g. weekly yoga), or turn them into a list of individually scheduled actions.',
+            content: 'All done! Click "Done" to close the menu and see your pie.\n\nScheduled spokes show a green pill on the chart. As the event draws closer the pill changes — black border means the event is a week or less away, orange border means tomorrow, orange fill with a red border means today, and a full red pill means it\'s passed.\n\nYou can also make Spokes repeating (e.g. weekly yoga), or turn them into a list of individually scheduled actions.\n\nIf you sign in with (Google in Settings), scheduled events go directly into your calendar without needing to open event in a new tab, and also sync 2-way, so that removing or moving them in your Google calendar will reflect here on you Brain Pie.',
             highlight: '.menu-nav-buttons button:last-child',
             noSpotlight: true,
             nextEvent: 'menu-closed'
@@ -156,8 +133,8 @@ const TutorialManager = {
         {
             id: 'summary-cards',
             type: 'modal',
-            delay: 2500,
-            autoProgress: 5000,
+            // delay: 2500,
+            // autoProgress: 5000,
             noBackdrop: true,
             onEnter: 'scrollToSummaryCards',
             title: 'Edit From Here Too',
@@ -172,18 +149,17 @@ const TutorialManager = {
             title: "You're All Set! 🎉",
             content: "You've learned the basics! Your data is saved to your browser's local storage only—completely private. For cloud sync across devices, you can connect your own Firebase project in Settings.",
             getButtons: () => {
-                const buttons = [
-                    { text: 'Continue With This Pie', action: 'continuePie', class: 'primary' }
-                ];
                 if (TutorialManager.hasStashedData()) {
-                    buttons.push({ text: 'Back to Your Pie', action: 'restorePie', class: 'secondary' });
+                    return [
+                        { text: 'Back to Your Pie', action: 'restorePie', class: 'primary' },
+                        { text: 'Load Life Pie', action: 'loadLifePie', class: '' },
+                        { text: 'Start Fresh', action: 'startFresh', class: '' }
+                    ];
                 }
-                buttons.push(
-                    { text: 'Load Life Pie', action: 'loadLifePie', class: 'secondary' },
-                    { text: 'Load Team Pie', action: 'loadTeamPie', class: 'secondary' },
-                    { text: 'Start Fresh', action: 'startFresh', class: 'secondary' }
-                );
-                return buttons;
+                return [
+                    { text: 'Load Life Pie', action: 'loadLifePie', class: 'primary' },
+                    { text: 'Start Fresh', action: 'startFresh', class: '' }
+                ];
             }
         }
     ],
@@ -311,18 +287,20 @@ const TutorialManager = {
      * Let user explore current data (hide modal, show resume button)
      */
     explore() {
+        Debug.log('[Tutorial] explore() called — showing resume button');
         this.hideModal();
         this.isExploring = true;
         this.showResumeButton();
+        Debug.log('[Tutorial] explore() done — btn:', document.getElementById('tutorial-resume-btn'));
     },
 
     /**
-     * Resume from exploration
+     * Resume from exploration — advance to the next step
      */
     resumeFromExplore() {
         this.hideResumeButton();
         this.isExploring = false;
-        this.renderCurrentStep();
+        this.nextStep();
     },
 
     /**
@@ -334,7 +312,7 @@ const TutorialManager = {
             btn = document.createElement('button');
             btn.id = 'tutorial-resume-btn';
             btn.className = 'tutorial-resume-btn';
-            btn.innerHTML = '📖 Continue Tutorial';
+            btn.textContent = '📖 Continue Tutorial';
             btn.onclick = () => TutorialManager.resumeFromExplore();
             document.body.appendChild(btn);
         }
@@ -413,7 +391,7 @@ const TutorialManager = {
         const buttons = document.getElementById('tutorial-modal-buttons');
 
         title.textContent = step.title;
-        text.textContent = step.content;
+        text.innerHTML = step.content.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
 
         // Build buttons from step config
         let buttonsHtml = '';
@@ -435,14 +413,8 @@ const TutorialManager = {
                 case 'explore':
                     onclick = 'TutorialManager.explore()';
                     break;
-                case 'signIn':
-                    onclick = 'TutorialManager.signInForCalendar()';
-                    break;
                 case 'loadLifePie':
                     onclick = 'TutorialManager.finishWithLifePie()';
-                    break;
-                case 'loadTeamPie':
-                    onclick = 'TutorialManager.finishWithTeamPie()';
                     break;
                 case 'loadHealthPie':
                     onclick = 'TutorialManager.finishWithHealthPie()';
@@ -458,6 +430,9 @@ const TutorialManager = {
                     break;
                 case 'skipToEmpty':
                     onclick = 'TutorialManager.skipToEmpty()';
+                    break;
+                case 'exploreLifePie':
+                    onclick = 'TutorialManager.exploreLifePie()';
                     break;
                 default:
                     onclick = 'TutorialManager.nextStep()';
@@ -527,7 +502,7 @@ const TutorialManager = {
         spotlight.style.height = (rect.height + padding * 2) + 'px';
 
         title.textContent = step.title;
-        content.textContent = step.content;
+        content.innerHTML = step.content.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
         buttons.innerHTML = '';
 
         this.positionTooltip(tooltip, rect);
@@ -568,7 +543,7 @@ const TutorialManager = {
         spotlight.style.display = 'none';
 
         title.textContent = step.title;
-        content.textContent = step.content;
+        content.innerHTML = step.content.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
         buttons.innerHTML = '';
 
         tooltip.style.left = '50%';
@@ -644,6 +619,8 @@ const TutorialManager = {
         if (localStorage.getItem(this.STASH_KEY)) return; // already stashed
         if (!DataModel.categories || DataModel.categories.length === 0) return; // nothing to stash
         const stash = {
+            pieId: DataModel.getActivePieId(),
+            pieName: DataModel.currentPieName,
             categories: DataModel.categories,
             categoryPercentageOverrides: DataModel.categoryPercentageOverrides || {},
             priorityList: DataModel.priorityList || []
@@ -662,11 +639,18 @@ const TutorialManager = {
         const raw = localStorage.getItem(this.STASH_KEY);
         if (!raw) return;
         const stash = JSON.parse(raw);
+
+        // Restore the original pie name if the stash recorded it
+        if (stash.pieName) {
+            this._nameActivePie(stash.pieName);
+        }
+
         DataModel.setCategories(stash.categories);
         DataModel.categoryPercentageOverrides = stash.categoryPercentageOverrides || {};
         DataModel.priorityList = stash.priorityList || [];
         DataModel.saveToStorage();
         localStorage.removeItem(this.STASH_KEY);
+        UI.renderPieTabs();
         App.render();
     },
 
@@ -686,21 +670,6 @@ const TutorialManager = {
         if (typeof ExampleData !== 'undefined') {
             this._nameActivePie('Life Pie');
             const data = ExampleData.get();
-            DataModel.setCategories(data.categories);
-            DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
-            DataModel.saveToStorage();
-            App.render();
-        }
-    },
-
-    /**
-     * Load the "Team Pie" example data
-     */
-    loadTeamPie() {
-        this.stashUserData();
-        if (typeof ExampleData2 !== 'undefined') {
-            this._nameActivePie('Team Pie');
-            const data = ExampleData2.get();
             DataModel.setCategories(data.categories);
             DataModel.categoryPercentageOverrides = data.categoryPercentageOverrides || {};
             DataModel.saveToStorage();
@@ -774,30 +743,10 @@ const TutorialManager = {
     },
 
     /**
-     * Sign in for calendar (wrapper for UI method)
-     */
-    signInForCalendar() {
-        this.hideModal();
-        if (typeof UI !== 'undefined' && UI.signInForCalendar) {
-            UI.signInForCalendar();
-        }
-        // Move to next step after a delay
-        setTimeout(() => this.nextStep(), 500);
-    },
-
-    /**
      * Complete tutorial and load the Life Pie
      */
     finishWithLifePie() {
         this.loadLifePie();
-        this.complete();
-    },
-
-    /**
-     * Complete tutorial and load the Team Pie
-     */
-    finishWithTeamPie() {
-        this.loadTeamPie();
         this.complete();
     },
 
@@ -833,5 +782,17 @@ const TutorialManager = {
     skipToEmpty() {
         App.render();
         this.complete();
+    },
+
+    /**
+     * From the welcome step: load the Life Pie and enter explore mode.
+     * "Continue Tutorial" will advance from the life-pie step onward.
+     */
+    exploreLifePie() {
+        this.loadLifePie();
+        // Position at the life-pie step so Continue advances from there
+        this.currentStepIndex = this.steps.findIndex(s => s.id === 'life-pie');
+        localStorage.setItem(this.STEP_KEY, this.currentStepIndex.toString());
+        this.explore();
     }
 };
