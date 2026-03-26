@@ -101,7 +101,8 @@ const ChartRenderer = {
                 const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 const dayName = shortDays[d.getDay()];
                 let dateStr;
-                if (diffDays === 0) dateStr = 'Today';
+                if (diffDays < 0) dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                else if (diffDays === 0) dateStr = 'Today';
                 else if (diffDays === 1) dateStr = 'Tomorrow';
                 else if (diffDays <= 7) dateStr = `${this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}`;
                 else dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -365,6 +366,7 @@ const ChartRenderer = {
         const dayName = shortDays[d.getDay()];
 
         // Within 2-week window: proximity labels apply to all frequencies
+        if (diffDays < 0) return `${months[d.getMonth()]} ${d.getDate()}${timeStr}`;
         if (diffDays === 0) return `Today${timeStr}`;
         if (diffDays === 1) return `Tomorrow${timeStr}`;
         if (diffDays <= 7) return `${this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}${timeStr}`;
