@@ -266,6 +266,13 @@ const ChartRenderer = {
                date.getDate() === tomorrow.getDate();
     },
 
+    // Check if a date is 2–7 days away (this week, but not today/tomorrow)
+    isThisWeek(date) {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((date - today) / 86400000);
+        return diffDays >= 2 && diffDays <= 7;
+    },
+
     // Get pill background color based on spoke state
     getSchedulePillColor(spoke) {
         if (typeof spoke === 'string') return null;
@@ -279,7 +286,8 @@ const ChartRenderer = {
         if (type === 'single') {
             if (!hasSchedule) return '#2196F3';
             const date = this.getScheduledDate(spoke);
-            if (date && this.isPast(date)) return '#F57C00';
+            if (date && this.isPast(date)) return '#D32F2F';
+            if (date && this.isToday(date)) return '#F57C00';
             return '#4CAF50';
         }
         if (type === 'repeating') {
@@ -507,15 +515,16 @@ const ChartRenderer = {
                         .attr('ry', 10)
                         .attr('fill', pillColor);
 
-                    // Borders: past=dark orange, today=orange, tomorrow=black, else white
+                    // Borders: past/today=red, tomorrow=orange, this week=black, future=white
                     const isPastEvent = scheduledDate && this.isPast(scheduledDate);
-                    if (isPastEvent) {
-                        rect.attr('stroke', '#e65100')
-                            .attr('stroke-width', 2);
-                    } else if (isTodayEvent) {
-                        rect.attr('stroke', '#F57C00')
+                    const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
+                    if (isPastEvent || isTodayEvent) {
+                        rect.attr('stroke', '#D32F2F')
                             .attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
+                        rect.attr('stroke', '#F57C00')
+                            .attr('stroke-width', 2);
+                    } else if (isThisWeekEvent) {
                         rect.attr('stroke', '#000000')
                             .attr('stroke-width', 2);
                     } else {
@@ -1498,11 +1507,12 @@ const ChartRenderer = {
                                     .attr('fill', pillColor);
 
                                 const isPastEvent = scheduledDate && that.isPast(scheduledDate);
-                                if (isPastEvent) {
-                                    rect.attr('stroke', '#e65100').attr('stroke-width', 1.5);
-                                } else if (isTodayEvent) {
-                                    rect.attr('stroke', '#F57C00').attr('stroke-width', 1.5);
+                                const isThisWeekEvent = scheduledDate && that.isThisWeek(scheduledDate);
+                                if (isPastEvent || isTodayEvent) {
+                                    rect.attr('stroke', '#D32F2F').attr('stroke-width', 1.5);
                                 } else if (isTomorrowEvent) {
+                                    rect.attr('stroke', '#F57C00').attr('stroke-width', 1.5);
+                                } else if (isThisWeekEvent) {
                                     rect.attr('stroke', '#000000').attr('stroke-width', 1.5);
                                 } else {
                                     rect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
@@ -1914,12 +1924,13 @@ const ChartRenderer = {
                         .attr('width', pillW)
                         .attr('height', 40)
                         .attr('rx', 20)
-                        .attr('fill', isPastAction ? '#F57C00' : '#4CAF50');
-                    if (isPastAction) {
-                        pillRect.attr('stroke', '#e65100').attr('stroke-width', 2);
-                    } else if (isTodayAction) {
-                        pillRect.attr('stroke', '#F57C00').attr('stroke-width', 2);
+                        .attr('fill', isPastAction ? '#D32F2F' : isTodayAction ? '#F57C00' : '#4CAF50');
+                    const isThisWeekAction = that.isThisWeek(schedDate);
+                    if (isPastAction || isTodayAction) {
+                        pillRect.attr('stroke', '#D32F2F').attr('stroke-width', 2);
                     } else if (isTomorrowAction) {
+                        pillRect.attr('stroke', '#F57C00').attr('stroke-width', 2);
+                    } else if (isThisWeekAction) {
                         pillRect.attr('stroke', '#000000').attr('stroke-width', 2);
                     } else {
                         pillRect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
