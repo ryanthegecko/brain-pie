@@ -10,7 +10,7 @@
  * Then paste the deployed workers.dev URL into License.WORKER_URL in app.js.
  */
 
-const ALLOWED_ORIGIN = 'https://ryanthegecko.github.io';
+const ALLOWED_ORIGIN = 'https://brainpie.app';
 
 export default {
     async fetch(request, env) {
