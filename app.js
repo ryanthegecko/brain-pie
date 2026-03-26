@@ -42,7 +42,7 @@ window.Debug = Debug;
 
 const License = {
     _active: false,
-    WORKER_URL: 'https://brain-pie-license.YOUR_SUBDOMAIN.workers.dev/validate',
+    WORKER_URL: 'https://brain-pie-license.brainpie.workers.dev/validate',
 
     // Called on app init — validates stored key against the Worker
     async init() {

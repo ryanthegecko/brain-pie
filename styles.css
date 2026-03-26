@@ -819,7 +819,7 @@ textarea {
     pointer-events: none;
 
     @media (max-width: 960px) {
-        font-size: 10px;
+        font-size: 14px;
     }
     @media (min-width: 1440px) {
         font-size: 15.5px;

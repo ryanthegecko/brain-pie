@@ -49,6 +49,7 @@ wrangler deploy
 ```
 
 Note the deployed URL, e.g. `https://brain-pie-license.YOUR_SUBDOMAIN.workers.dev`
+https://brain-pie-license.brainpie.workers.dev
 
 ---
 
