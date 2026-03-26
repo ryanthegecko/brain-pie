@@ -291,7 +291,10 @@ const ChartRenderer = {
             return '#4CAF50';
         }
         if (type === 'repeating') {
-            return hasRecurrence ? '#4CAF50' : '#2196F3';
+            if (!hasRecurrence) return '#2196F3';
+            const date = this.getScheduledDate(spoke);
+            if (date && this.isToday(date)) return '#F57C00';
+            return '#4CAF50';
         }
         if (type === 'list') {
             return '#2196F3';
