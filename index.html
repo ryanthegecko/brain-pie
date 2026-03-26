@@ -130,7 +130,7 @@
                     <div id="new-category-form" class="controls" style="margin-top: 15px; display: none;">
                         <div class="input-group">
                             <label for="new-category-name">Category Name</label>
-                            <input type="text" id="new-category-name" placeholder="e.g., Health">
+                            <input type="text" id="new-category-name" placeholder="Enter Category name...">
                         </div>
                         <div class="input-group">
                             <label for="new-category-color">Color</label>
@@ -160,7 +160,7 @@
                     <div class="controls" style="margin-top: 15px;">
                         <div class="input-group" style="flex: 2;">
                             <label for="item-name">Slice Name</label>
-                            <input type="text" id="item-name" placeholder="e.g., Yoga">
+                            <input type="text" id="item-name" placeholder="Enter Slice name...">
                         </div>
                         <div class="input-group">
                             <label for="item-percentage">Weight (%)</label>
@@ -346,10 +346,12 @@
                 <h3>Schedule Indicators</h3>
                 <p>Scheduled spokes show a pill on the chart with the date/time. The pill changes colour as the event draws closer:</p>
                 <ul>
-                    <li><strong>Green pill</strong> — upcoming event (default)</li>
-                    <li><strong>Green pill, black border</strong> — event is tomorrow</li>
-                    <li><strong>Green pill, orange border</strong> — event is today</li>
-                    <li><strong>Orange pill, red border</strong> — event has passed</li>
+                    <li><strong>Blue pill</strong> — unscheduled (single or repeating spoke with no date set yet)</li>
+                    <li><strong>Green pill</strong> — upcoming event (more than a week away)</li>
+                    <li><strong>Green pill, black border</strong> — event is this week (2–7 days away)</li>
+                    <li><strong>Green pill, orange border</strong> — event is tomorrow</li>
+                    <li><strong>Orange pill</strong> — event is today</li>
+                    <li><strong>Red pill</strong> — event has passed</li>
                 </ul>
                 <ul>
                     <li>Unscheduled schedulable spokes show a blue button in the summary cards.</li>
@@ -722,10 +724,14 @@
                     Fresh Pie<img width="22" height="24" style="padding:0 0 4px 4px;vertical-align: middle;" src="./assets/trash.svg">
                 </button>
             </div>
+            <h3>Pro</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                    Advanced imports and transformations for power users
+                </p>
             <div class="settings-section button-section">
-                <button class="tertiary" id="calendar-import-btn" style="display:none;" onclick="UI.showCalendarImport()">📅 Import events from Google Calendar</button>
-                <button class="tertiary" id="tasks-import-btn" style="display:none;" onclick="UI.showTasksImport()">📋 Import from Google Tasks</button>
-                <button class="tertiary" onclick="UI.showTransform()">🔄 Transform</button>
+                <button class="tertiary pro-gate" id="calendar-import-btn" style="display:none;" onclick="UI.requirePro('showCalendarImport')">📅 Import from Google Calendar</button>
+                <button class="tertiary pro-gate" id="tasks-import-btn" style="display:none;" onclick="UI.requirePro('showTasksImport')">📋 Import from Google Tasks</button>
+                <button class="tertiary pro-gate" onclick="UI.requirePro('showTransform')">🔄 Transform</button>
             </div>
             <div>
             </div>
@@ -1634,7 +1640,10 @@
             <p id="tutorial-content"></p>
             <div class="tutorial-buttons" id="tutorial-buttons"></div>
         </div>
-        <button class="tutorial-btn secondary tutorial-skip-fixed" onclick="TutorialManager.skip()">Skip Tutorial</button>
+        <div class="tutorial-fixed-bar">
+            <button class="tutorial-btn secondary" onclick="TutorialManager.restart()">Restart</button>
+            <button class="tutorial-btn secondary" onclick="TutorialManager.skip()">Skip Tutorial</button>
+        </div>
     </div>
 
     <!-- Tutorial Modal -->
@@ -1644,27 +1653,34 @@
             <p id="tutorial-modal-text"></p>
             <div class="tutorial-modal-buttons" id="tutorial-modal-buttons"></div>
         </div>
-        <button class="tutorial-btn secondary tutorial-skip-fixed" onclick="TutorialManager.skip()">Skip Tutorial</button>
+        <div class="tutorial-fixed-bar">
+            <button class="tutorial-btn secondary" onclick="TutorialManager.restart()">Restart</button>
+            <button class="tutorial-btn secondary" onclick="TutorialManager.skip()">Skip Tutorial</button>
+        </div>
     </div>
 
+    <!-- Tutorial Resume Button (shown during explore mode) -->
+    <button id="tutorial-resume-btn" class="tutorial-resume-btn" onclick="TutorialManager.resumeFromExplore()" style="display:none;">📖 Continue Tutorial</button>
+
     <script src="storage.js"></script>
-    <script src="firebase-adapter.js"></script>
-    <script src="google-auth-adapter.js"></script>
-    <script src="calendar-adapter.js"></script>
-    <script src="tasks-adapter.js"></script>
-    <script src="storage-adapter.js"></script>
+    <script src="adapters/firebase-adapter.js"></script>
+    <script src="adapters/google-auth-adapter.js"></script>
+    <script src="adapters/calendar-adapter.js"></script>
+    <script src="adapters/tasks-adapter.js"></script>
+    <script src="adapters/storage-adapter.js"></script>
     <script src="data-model.js"></script>
-    <script src="import-manager.js"></script>
-    <script src="chart-renderer.js"></script>
-    <script src="ui-controller.js"></script>
-    <script src="scheduling-controller.js"></script>
-    <script src="cloud-sync-controller.js"></script>
-    <script src="import-export-controller.js"></script>
-    <script src="prioritiser-controller.js"></script>
-    <script src="calendar-import-controller.js"></script>
-    <script src="tasks-import-controller.js"></script>
-    <script src="transform-controller.js"></script>
-    <script src="tutorial-manager.js"></script>
+    <script src="managers/import-manager.js"></script>
+    <script src="controllers/chart-renderer.js"></script>
+    <script src="controllers/ui-controller.js"></script>
+    <script src="controllers/scheduling-controller.js"></script>
+    <script src="controllers/cloud-sync-controller.js"></script>
+    <script src="controllers/import-export-controller.js"></script>
+    <script src="controllers/prioritiser-controller.js"></script>
+    <script src="controllers/calendar-import-controller.js"></script>
+    <script src="controllers/tasks-import-controller.js"></script>
+    <script src="controllers/transform-controller.js"></script>
+    <script src="managers/tutorial-manager.js"></script>
+    <script src="example-data.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

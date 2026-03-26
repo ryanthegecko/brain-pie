@@ -1827,6 +1827,14 @@ const UI = {
         }
     },
 
+    requirePro(method) {
+        if (License.isActive()) {
+            this[method]();
+        } else {
+            this.showLicenseModal();
+        }
+    },
+
     showLicenseModal() {
         const overlay = document.getElementById('license-overlay');
         if (overlay) {

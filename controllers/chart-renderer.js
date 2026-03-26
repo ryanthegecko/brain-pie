@@ -819,51 +819,59 @@ const ChartRenderer = {
             const midAngle = (d.startAngle + d.endAngle) / 2;
             const shouldFlip = midAngle > Math.PI / 2 && midAngle < (3 * Math.PI / 2);
 
-            // Create FULL arc path using the complete slice angles
+            const arcLength = labelRadius * (d.endAngle - d.startAngle);
+
+            // Font size first — linear reduction for narrow arcs, max 2px (15–17px)
+            // Linear: 15px at arcLength ≤ 100, 17px at arcLength ≥ 200
+            const fontSize = Math.max(15, Math.min(17, Math.round(15 + (arcLength - 100) / 50)));
+
+            // Offset arc radius to vertically centre text within the band.
+            // SVG text baseline sits on the path; the body extends outward (normal arc) or
+            // inward (flipped arc). Shifting by ~35% of font size compensates for cap-height.
+            const textRadius = shouldFlip
+                ? labelRadius + fontSize * 0.35
+                : labelRadius - fontSize * 0.35;
+
+            // Text arc path at centred radius
             group.append('path')
                 .attr('id', `category-text-arc-${i}`)
                 .attr('d', () => {
                     return d3.arc()
-                        .innerRadius(labelRadius)
-                        .outerRadius(labelRadius)
+                        .innerRadius(textRadius)
+                        .outerRadius(textRadius)
                         .startAngle(shouldFlip ? d.endAngle : d.startAngle)
                         .endAngle(shouldFlip ? d.startAngle : d.endAngle)();
                 })
                 .style('fill', 'none');
+
+            // Character width scales with font size (~8.5px per char at 17px bold, mixed case)
+            const charWidth = 8.5 * (fontSize / 17);
+
+            // Only pull text earlier if it would be truncated at the standard 20% offset
+            const charsAtStandard = Math.floor((arcLength * 0.75) / charWidth);
+            const needsMoreRoom = d.data.name.length > charsAtStandard;
+            const startFrac = needsMoreRoom
+                ? Math.min(0.20, Math.max(0.05, 3 / arcLength))
+                : 0.20;
+            const startOffsetStr = (startFrac * 100).toFixed(1) + '%';
+
+            // Max chars from text start to 5% before the arc end
+            const maxChars = Math.floor((arcLength * (1 - startFrac - 0.05)) / charWidth);
+            const label = d.data.name.length > maxChars
+                ? d.data.name.slice(0, Math.max(1, maxChars - 1)) + '…'
+                : d.data.name;
 
             // Category name
             group.append('text')
                 .attr('class', 'category-label')
                 .style('fill', textColor)
+                .style('font-size', fontSize + 'px')
                 .append('textPath')
                 .attr('xlink:href', `#category-text-arc-${i}`)
-                .attr('startOffset', this.width > 1024 ? '20%' : '15%')
+                .attr('startOffset', startOffsetStr)
                 .attr('text-anchor', 'start')
-                .text(d.data.name);
+                .text(label);
 
-            // Percentage path (offset)
-            const percentRadius = labelRadius + (shouldFlip ? 22 : -22);
-
-            group.append('path')
-                .attr('id', `category-percent-arc-${i}`)
-                .attr('d', () => {
-                    return d3.arc()
-                        .innerRadius(percentRadius)
-                        .outerRadius(percentRadius)
-                        .startAngle(shouldFlip ? d.endAngle : d.startAngle)
-                        .endAngle(shouldFlip ? d.startAngle : d.endAngle)();
-                })
-                .style('fill', 'none');
-
-            // Percentage
-            group.append('text')
-                .attr('class', 'category-percentage')
-                .style('fill', textColor)
-                .append('textPath')
-                .attr('xlink:href', `#category-percent-arc-${i}`)
-                .attr('startOffset', '20%')
-                .attr('text-anchor', 'middle')
-                .text(`${d.data.percentage.toFixed(1)}%`);
         });
 
         // Inner ring (items within categories) - WITH HOVER EXPANSION

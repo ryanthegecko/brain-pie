@@ -143,31 +143,31 @@ const DataModel = {
 
         this.pieMeta.tombstonedPieIds.push(pieId);
 
-        // If no active (non-tombstoned) pies remain, create a fresh one
+        // Only create a fresh pie if no active (non-tombstoned) pies remain
         const activePies = (this.pieMeta.pieIds || []).filter(
             id => !(this.pieMeta.tombstonedPieIds || []).includes(id)
         );
 
-        // Always create a fresh new pie after tombstoning
-        const newId = this.generatePieId();
-        this.pieMeta.pieIds = [...(this.pieMeta.pieIds || []), newId];
-        if (!this.pieMeta.pieNames) this.pieMeta.pieNames = {};
-        this.pieMeta.pieNames[newId] = 'New Pie';
-        this.setActivePieId(newId);
-        this.categories = [];
-        this.categoryPercentageOverrides = {};
-        this.priorityList = [];
-        this.currentPieName = 'New Pie';
-        if (typeof StorageAdapter !== 'undefined') {
-            await StorageAdapter.savePie(newId, {
-                id: newId, name: 'New Pie', categories: [],
-                categoryPercentageOverrides: {}, priorityList: []
-            });
+        if (activePies.length === 0) {
+            const newId = this.generatePieId();
+            this.pieMeta.pieIds = [...(this.pieMeta.pieIds || []), newId];
+            if (!this.pieMeta.pieNames) this.pieMeta.pieNames = {};
+            this.pieMeta.pieNames[newId] = 'New Pie';
+            this.setActivePieId(newId);
+            this.categories = [];
+            this.categoryPercentageOverrides = {};
+            this.priorityList = [];
+            this.currentPieName = 'New Pie';
+            if (typeof StorageAdapter !== 'undefined') {
+                await StorageAdapter.savePie(newId, {
+                    id: newId, name: 'New Pie', categories: [],
+                    categoryPercentageOverrides: {}, priorityList: []
+                });
+            }
         }
 
         this.saveMeta();
-        if (typeof UI !== 'undefined') UI.renderPieTabs();
-        if (typeof App !== 'undefined') App.render();
+        // Callers (removeAllData, saveToStorage) handle rendering.
     },
 
     async createPie(name) {
@@ -261,8 +261,11 @@ const DataModel = {
         if (!this.pieMeta) return;
         if (this.pieMeta.activePieId === pieId) return;
 
-        // Save current pie first
+        // Save current pie data (but skip the empty-pie tombstone path —
+        // navigating away from an empty pie shouldn't tombstone it).
+        this._isSwitchingPie = true;
         this.saveToStorage();
+        this._isSwitchingPie = false;
 
         // Update active
         this.setActivePieId(pieId);
@@ -420,11 +423,13 @@ const DataModel = {
 
         // In Firebase mode: never write empty categories — tombstone the pie instead.
         // This prevents bugs or stale data from blanking out a shared Firebase pie.
+        // Skip during switchPie — navigating away from an empty pie shouldn't tombstone it.
         if (this.categories.length === 0 &&
             typeof StorageAdapter !== 'undefined' &&
             StorageAdapter.isFirebaseMode() &&
             pieId &&
-            !this.isPieTombstoned(pieId)) {
+            !this.isPieTombstoned(pieId) &&
+            !this._isSwitchingPie) {
             this._handleEmptyPie(pieId); // async, fire-and-forget
             // Still write empty state to localStorage backup (safe for local)
             Storage.savePie(pieId, {
