@@ -994,12 +994,12 @@ const UI = {
                                         ondragover="UI.handleSubItemDragOver(event)"
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;width: 100%; min-width: 50%;">
+                                        <div style="display: flex; align-items: flex-start; gap: 4px; margin-bottom: 4px; width: 100%; overflow: hidden;">
                                             <button class="priority-star-btn ${UI.isPrioritised({type:'spoke', categoryId:category.id, itemId:item.id, spokeIndex}) ? 'active' : ''}"
                                                 onclick="event.stopPropagation(); UI.addToPriorities({type:'spoke', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${spokeIndex}})"
                                                 title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
                                             <span class="sub-item-text" contenteditable="true"
-                                                style="flex: 1;padding-right:1em;outline:none;border-radius:3px;"
+                                                style="flex: 1; min-width: 0; word-break: break-word; white-space: normal; padding-right: 4px; outline: none; border-radius: 3px;"
                                                 onfocus="this.style.background='#f0f0f0'"
                                                 onblur="this.style.background='transparent'; if(!UI.draggedData) App.renameSpoke('${category.id}', '${item.id}', ${spokeIndex}, this.textContent)"
                                                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"

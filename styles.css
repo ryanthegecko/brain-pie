@@ -177,34 +177,32 @@ h2 {
 
 .top-bar-right-mobile {
     display: none;
-    position: fixed;
-    @media (max-width: 1024px) {
-        padding: 5px;
-        top: 15px;   
-    }
-    >div{
-        gap: 15px;
-    }
-    
+}
+
+.pie-tabs-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-action-buttons {
+    display: none;
+    flex-shrink: 0;
+    gap: 8px;
+
     button {
-        min-height: 43px;
-        @media (max-width: 1024px) {
-            min-height: 23px;
-            padding: 6px 20px;
-        }
-        @media (min-width: 1920px) {
-            min-height: 48px;
-        }
+        min-height: 23px;
+        padding: 6px 14px;
+    }
+
+    @media (max-width: 1024px) {
+        display: flex;
     }
 }
 
 @media (max-width: 1024px) {
     .top-bar-right {
         font-size: 22px;
-    }
-
-    .top-bar-right-mobile {
-        display: flex;
     }
 }
 
@@ -433,8 +431,21 @@ h2 {
 @media (max-width: 768px) {
 
     #chart-container {
-        min-height: 400px;
-        height: 60vh;
+        height: 550px;
+        min-height: 550px;
+        width: 100%;
+        max-width: 100%;
+        overflow: visible;
+        justify-content: flex-start;
+        align-items: flex-start;
+        &.pie-view {
+            transform: none;
+        }
+    }
+    .chart-scroll-inner {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .categories-grid {
@@ -812,7 +823,10 @@ textarea {
     /* fill: #333; */
     pointer-events: none;
 
-    @media (max-width: 960px) {
+    @media (max-width: 768px) {
+        font-size: 8px;
+    }
+    @media (max-width: 960px) and (min-width: 769px) {
         font-size: 14px;
     }
     @media (min-width: 1440px) {
@@ -996,6 +1010,12 @@ textarea {
         overflow: hidden;
     }
 
+}
+
+.sub-item-text {
+    min-width: 0;
+    word-break: break-word;
+    white-space: normal;
 }
 
 .item-card li .sub-item-text:before {
@@ -3271,6 +3291,7 @@ select:focus {
     max-width: 420px;
     text-align: center;
     animation: tutorial-modal-appear 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .tutorial-modal-content h2 {

@@ -575,11 +575,14 @@ const ChartRenderer = {
 
         // Get actual container dimensions
         const containerNode = document.getElementById(containerId);
-        const actualWidth = containerNode.clientWidth;
+        const isMobile = window.innerWidth < 768;
+        const actualWidth = isMobile ? window.innerWidth : containerNode.clientWidth;
         const aspectRatio = actualWidth / window.innerHeight;
         const actualHeight = aspectRatio > 1.69
             ? Math.round(actualWidth / 1.69)   // letterbox: grow container taller so full pie is visible
-            : Math.max(containerNode.clientHeight, 660);
+            : isMobile
+                ? Math.max(containerNode.clientHeight, 400)   // mobile: CSS controls height, small floor as fallback
+                : Math.max(containerNode.clientHeight, 660);
 
         if (this.viewMode === 'tree') {
             // Treemap: use actual dimensions, no scaling
@@ -603,10 +606,12 @@ const ChartRenderer = {
             this.width  = 1440;
             this.height = Math.round(actualHeight * (this.width / actualWidth));
         }  else {
-            // Pie: small/mobile screens — render at 1280px virtual canvas, scale down via viewBox
-            this.width  = 1280;
-            this.height = Math.round(actualHeight * (this.width / actualWidth));
+            // Mobile: render at fixed 1000px width — user pans/scrolls to see full pie
+            this.width  = 1000;
+            this.height = actualHeight;
         }
+
+        this.isMobile = isMobile;
 
         if (this.viewMode !== 'tree') {
             // Shared pie setup: radius and SVG (runs after width/height are decided above)
@@ -616,16 +621,50 @@ const ChartRenderer = {
             this.innerRadius = this.outerRadius - 40;
             this.baseCategoryRingWidth = this.outerRadius - this.innerRadius;
 
-            const svgEl = container.append('svg')
-                .attr('width',  actualWidth)
-                .attr('height', actualHeight);
+            // On mobile: create an inner scroll wrapper so the container can have
+            // overflow:visible (avoids CSS forcing overflow-y to clip on the scroll axis)
+            let svgParent = container;
+            let scrollNode = null;
+            if (isMobile) {
+                const scrollDiv = document.createElement('div');
+                scrollDiv.className = 'chart-scroll-inner';
+                containerNode.appendChild(scrollDiv);
+                svgParent = d3.select(scrollDiv);
+                scrollNode = scrollDiv;
+            }
 
-            if (actualWidth < 1920) {
+            // On mobile, add bottom buffer so spoke labels + schedule pills below the outer ring
+            // aren't clipped. No top buffer — top spokes bleed over the header (higher z-index).
+            const svgBuffer = isMobile ? 200 : 0;
+            const svgHeight = actualHeight + svgBuffer;
+
+            const svgEl = svgParent.append('svg')
+                .attr('width',  isMobile ? this.width : actualWidth)
+                .attr('height', svgHeight)
+                .style('overflow', 'visible');
+
+            if (!isMobile && actualWidth < 1920) {
                 svgEl.attr('viewBox', `0 0 ${this.width} ${this.height}`);
             }
 
+            const centerY = isMobile
+                ? actualHeight / 2 + window.innerHeight * 0.02 + 100
+                : this.height / 2;
             this.svg = svgEl.append('g')
-                .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
+                .attr('transform', `translate(${this.width / 2}, ${centerY})`);
+
+            // On mobile, set container height to full SVG height so spoke labels aren't
+            // clipped by the cards section below. CSS height (80vh) is overridden here.
+            if (isMobile) {
+                containerNode.style.height = svgHeight + 'px';
+            }
+
+            // On mobile, center the scroll so the pie is horizontally centered
+            if (isMobile && scrollNode) {
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    scrollNode.scrollLeft = (this.width - actualWidth) / 2;
+                }));
+            }
         }
 
         // Create a group for highlighted/expanded slices (drawn on top)
@@ -821,9 +860,10 @@ const ChartRenderer = {
 
             const arcLength = labelRadius * (d.endAngle - d.startAngle);
 
-            // Font size first — linear reduction for narrow arcs, max 2px (15–17px)
-            // Linear: 15px at arcLength ≤ 100, 17px at arcLength ≥ 200
-            const fontSize = Math.max(15, Math.min(17, Math.round(15 + (arcLength - 100) / 50)));
+            // Font size first — linear reduction for narrow arcs, max 2px range
+            // Mobile: 9–11px (pie radius ~200px); Desktop: 15–17px
+            const [minFs, maxFs] = this.isMobile ? [9, 11] : [15, 17];
+            const fontSize = Math.max(minFs, Math.min(maxFs, Math.round(minFs + (arcLength - 100) / 50)));
 
             // Offset arc radius to vertically centre text within the band.
             // SVG text baseline sits on the path; the body extends outward (normal arc) or
