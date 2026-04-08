@@ -104,7 +104,7 @@ const ChartRenderer = {
                 if (diffDays < 0) dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 else if (diffDays === 0) dateStr = 'Today';
                 else if (diffDays === 1) dateStr = 'Tomorrow';
-                else if (diffDays <= 7) dateStr = `${this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}`;
+                else if (diffDays <= 7) { const targetIsSunday = d.getDay() === 0; dateStr = `${!targetIsSunday && this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}`; }
                 else dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                 return timeStr ? `${dateStr} ${timeStr}` : dateStr;
             }
@@ -316,6 +316,32 @@ const ChartRenderer = {
         return null;
     },
 
+    _initScrollIndicator(scrollNode, containerNode) {
+        // Remove any existing indicator
+        const existing = containerNode.querySelector('.scroll-indicator');
+        if (existing) existing.remove();
+
+        const maxScroll = scrollNode.scrollWidth - scrollNode.clientWidth;
+        if (maxScroll <= 0) return;
+
+        const track = document.createElement('div');
+        track.className = 'scroll-indicator';
+        const thumb = document.createElement('div');
+        thumb.className = 'scroll-indicator-thumb';
+        track.appendChild(thumb);
+        containerNode.appendChild(track);
+
+        const updateThumb = () => {
+            const progress = scrollNode.scrollLeft / maxScroll;
+            const trackW = track.offsetWidth;
+            const thumbW = thumb.offsetWidth;
+            thumb.style.transform = `translateX(${progress * (trackW - thumbW)}px)`;
+        };
+
+        updateThumb();
+        scrollNode.addEventListener('scroll', updateThumb, { passive: true });
+    },
+
     // Returns true if any Saturday or Sunday falls strictly between today and target (exclusive).
     // Used to distinguish "This Mon" (same week) from "Next Mon" (crosses a weekend).
     crossesWeekend(today, target) {
@@ -380,7 +406,11 @@ const ChartRenderer = {
         if (diffDays < 0) return `${months[d.getMonth()]} ${d.getDate()}${timeStr}`;
         if (diffDays === 0) return `Today${timeStr}`;
         if (diffDays === 1) return `Tomorrow${timeStr}`;
-        if (diffDays <= 7) return `${this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}${timeStr}`;
+        if (diffDays <= 7) {
+            // Sunday targets: Saturday before Sunday is not a "next week" boundary — it's still "This Sun"
+            const targetIsSunday = d.getDay() === 0;
+            return `${!targetIsSunday && this.crossesWeekend(today, d) ? 'Next' : 'This'} ${dayName}${timeStr}`;
+        }
 
         // Beyond 2 weeks: frequency-specific format
         if (freq === 'MONTHLY') {
@@ -663,6 +693,7 @@ const ChartRenderer = {
             if (isMobile && scrollNode) {
                 requestAnimationFrame(() => requestAnimationFrame(() => {
                     scrollNode.scrollLeft = (this.width - actualWidth) / 2;
+                    this._initScrollIndicator(scrollNode, containerNode);
                 }));
             }
         }
