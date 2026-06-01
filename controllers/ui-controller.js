@@ -1686,7 +1686,7 @@ const UI = {
                 }, 600);
             }, { passive: false });
             btn.addEventListener('touchend', () => clearTimeout(longPressTimer));
-            btn.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+            btn.addEventListener('touchmove', () => clearTimeout(longPressTimer), { passive: true });
 
             container.appendChild(btn);
         });
