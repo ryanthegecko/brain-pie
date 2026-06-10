@@ -261,8 +261,9 @@ const FirebaseAdapter = {
     },
 
     /**
-     * Sign in with Google
-     * Requests Calendar API scope for 2-way calendar sync
+     * Sign in with Google (identity only — no calendar/tasks scopes).
+     * Calendar access is handled separately via GoogleAuthAdapter to comply
+     * with Google's incremental authorization policy.
      * @returns {Promise<Object>} User object
      */
     async signInWithGoogle() {
@@ -278,27 +279,11 @@ const FirebaseAdapter = {
         }
 
         const provider = new firebase.auth.GoogleAuthProvider();
-
-        // Request Calendar API scope for 2-way calendar sync
-        provider.addScope('https://www.googleapis.com/auth/calendar.events');
-        // Request Tasks API scope for Google Tasks import
-        provider.addScope('https://www.googleapis.com/auth/tasks');
+        // No sensitive scopes here — calendar/tasks requested lazily via GoogleAuthAdapter
 
         try {
             const result = await this.auth.signInWithPopup(provider);
-
-            // Capture OAuth access token for Calendar API
-            if (result.credential) {
-                this.accessToken = result.credential.accessToken;
-                // Token expires in ~1 hour, store expiry time
-                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000); // 55 minutes
-                // Persist token to localStorage for page refreshes
-                this.saveTokenToLocal();
-                Debug.log('Google sign-in successful, calendar access granted:', result.user.displayName);
-            } else {
-                Debug.log('Google sign-in successful (no credential):', result.user.displayName);
-            }
-
+            Debug.log('Google sign-in successful:', result.user.displayName);
             return result.user;
         } catch (e) {
             Debug.log('Google sign-in failed:', e.message);
@@ -307,50 +292,21 @@ const FirebaseAdapter = {
     },
 
     /**
-     * Get a valid access token for Calendar API
-     * Tries: memory → localStorage → re-auth popup (last resort)
+     * Get a valid access token for Calendar API.
+     * FirebaseAdapter no longer requests calendar scopes — returns stored token
+     * only if one was saved from a previous session (backwards compatibility).
+     * New calendar access goes through GoogleAuthAdapter.
      * @returns {Promise<string|null>} Access token or null
      */
     async getAccessToken() {
-        // Check if token exists in memory and is still valid
+        // Return stored token if still valid (backwards compat for existing sessions)
         if (this.accessToken && this.accessTokenExpiry && Date.now() < this.accessTokenExpiry) {
             return this.accessToken;
         }
-
-        // Try loading from localStorage
         if (this.loadTokenFromLocal()) {
             return this.accessToken;
         }
-
-        // Token expired or missing - need to re-authenticate
-        if (!this.user) {
-            Debug.log('Cannot refresh token: not signed in');
-            return null;
-        }
-
-        // Note: This will show a popup - not truly silent
-        // But it's the only way to get a fresh token for Calendar API
-        try {
-            Debug.log('Token expired, re-authenticating...');
-
-            const provider = new firebase.auth.GoogleAuthProvider();
-            provider.addScope('https://www.googleapis.com/auth/calendar.events');
-            provider.addScope('https://www.googleapis.com/auth/tasks');
-
-            // Re-authenticate to get fresh token
-            const result = await this.user.reauthenticateWithPopup(provider);
-
-            if (result.credential) {
-                this.accessToken = result.credential.accessToken;
-                this.accessTokenExpiry = Date.now() + (55 * 60 * 1000);
-                this.saveTokenToLocal();
-                Debug.log('Access token refreshed');
-                return this.accessToken;
-            }
-        } catch (e) {
-            Debug.log('Failed to refresh access token:', e.message);
-        }
-
+        // No token — CalendarAdapter will fall back to GoogleAuthAdapter
         return null;
     },
 
