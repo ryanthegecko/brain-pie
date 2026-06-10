@@ -10,6 +10,9 @@ const StorageAdapter = {
     // Current storage mode: 'local' or 'firebase'
     currentMode: 'local',
 
+    // Active backend adapter — LocalStorageAdapter or FirebaseAdapter
+    adapter: null,
+
     // Track if we're initialized
     initialized: false,
 
@@ -48,6 +51,7 @@ const StorageAdapter = {
     async init() {
         if (this.initialized) return;
 
+        this.adapter = LocalStorageAdapter;
         Debug.log('StorageAdapter initializing...');
 
         // Check if cloud sync is enabled
@@ -70,12 +74,14 @@ const StorageAdapter = {
                     FirebaseAdapter.onAuthStateChanged(async (user) => {
                         if (user) {
                             this.currentMode = 'firebase';
+                            this.adapter = FirebaseAdapter;
                             Debug.log('StorageAdapter: switched to firebase mode');
 
                             // Sync Firebase data before setting up listeners
                             await this.syncOnConnect();
                         } else {
                             this.currentMode = 'local';
+                            this.adapter = LocalStorageAdapter;
                             Debug.log('StorageAdapter: switched to local mode (not signed in)');
                         }
                     });
@@ -310,61 +316,41 @@ const StorageAdapter = {
     },
 
     /**
-     * Set up Firebase real-time listeners for active pie + priorities + meta
+     * Set up real-time listeners for active pie + priorities + meta (adapter-routed)
      */
     setupFirebaseListener() {
         const activePieId = DataModel.getActivePieId();
 
         if (activePieId) {
-            // Multi-pie mode: subscribe to active pie
-            FirebaseAdapter.subscribeToPie(activePieId, (data) => {
-                if (this.isSaving) return;
-                if (this._isSyncingData) {
-                    Debug.log('StorageAdapter: Ignoring pie update during sync');
-                    return;
-                }
+            this.adapter.subscribeToPie(activePieId, (data) => {
+                if (this.isSaving || this._isSyncingData) return;
                 Debug.log('StorageAdapter: Received remote pie update');
-                if (this.updateCallback) {
-                    this.updateCallback(data);
-                }
+                if (this.updateCallback) this.updateCallback(data);
             });
 
-            // Subscribe to per-user priorities for active pie
-            FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
+            this.adapter.subscribeToPriorityChanges((priorityList) => {
                 if (this.isSavingPriorities || this._isSyncingData) return;
                 Debug.log('StorageAdapter: Received remote priority update');
-                if (this.priorityUpdateCallback) {
-                    this.priorityUpdateCallback(priorityList);
-                }
+                if (this.priorityUpdateCallback) this.priorityUpdateCallback(priorityList);
             }, activePieId);
 
-            // Subscribe to meta changes (team members adding/deleting pies)
-            FirebaseAdapter.subscribeToMeta((meta) => {
-                if (this._isSyncingMeta) {
-                    Debug.log('StorageAdapter: Ignoring meta update during sync');
-                    return;
-                }
+            this.adapter.subscribeToMeta((meta) => {
+                if (this._isSyncingMeta) return;
                 Debug.log('StorageAdapter: Received remote meta update');
-                if (this.metaUpdateCallback) {
-                    this.metaUpdateCallback(meta);
-                }
+                if (this.metaUpdateCallback) this.metaUpdateCallback(meta);
             });
         } else {
             // Legacy single-pie mode
-            FirebaseAdapter.subscribeToChanges((data) => {
+            this.adapter.subscribeToChanges((data) => {
                 if (this.isSaving) return;
                 if (data._saveId && data._saveId === this.lastSaveId) return;
                 Debug.log('StorageAdapter: Received remote update from', data._savedBy || 'unknown');
-                if (this.updateCallback) {
-                    this.updateCallback(data);
-                }
+                if (this.updateCallback) this.updateCallback(data);
             });
 
-            FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
+            this.adapter.subscribeToPriorityChanges((priorityList) => {
                 if (this.isSavingPriorities || this._isSyncingData) return;
-                if (this.priorityUpdateCallback) {
-                    this.priorityUpdateCallback(priorityList);
-                }
+                if (this.priorityUpdateCallback) this.priorityUpdateCallback(priorityList);
             });
         }
     },
@@ -373,95 +359,46 @@ const StorageAdapter = {
      * Switch pie listeners: detach old, attach new
      */
     switchPieListeners(pieId) {
-        if (this.currentMode !== 'firebase' || !FirebaseAdapter.isConnected()) return;
+        if (!this.adapter.supportsRealtime) return;
 
-        // Detach old listeners
-        FirebaseAdapter.unsubscribeFromChanges();
-        FirebaseAdapter.unsubscribeFromPriorityChanges();
+        this.adapter.unsubscribeFromChanges();
+        this.adapter.unsubscribeFromPriorityChanges();
 
-        // Attach new listeners for the new pie
-        FirebaseAdapter.subscribeToPie(pieId, (data) => {
-            if (this.isSaving) return;
-            if (this._isSyncingData) {
-                Debug.log('StorageAdapter: Ignoring pie update during sync (switched)');
-                return;
-            }
+        this.adapter.subscribeToPie(pieId, (data) => {
+            if (this.isSaving || this._isSyncingData) return;
             Debug.log('StorageAdapter: Received remote pie update (switched)');
-            if (this.updateCallback) {
-                this.updateCallback(data);
-            }
+            if (this.updateCallback) this.updateCallback(data);
         });
 
-        FirebaseAdapter.subscribeToPriorityChanges((priorityList) => {
+        this.adapter.subscribeToPriorityChanges((priorityList) => {
             if (this.isSavingPriorities) return;
-            if (this.priorityUpdateCallback) {
-                this.priorityUpdateCallback(priorityList);
-            }
+            if (this.priorityUpdateCallback) this.priorityUpdateCallback(priorityList);
         }, pieId);
     },
 
     // --- Multi-pie routing methods ---
 
     async saveMeta(meta) {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            // Use transaction to safely merge with concurrent changes
-            const path = FirebaseAdapter.getMetaPath();
-            try {
-                await FirebaseAdapter.db.ref(path).transaction((currentMeta) => {
-                    // Use our local meta but preserve any pie IDs added concurrently
-                    if (!currentMeta) return meta;
-
-                    let remotePieIds = currentMeta.pieIds || [];
-                    if (!Array.isArray(remotePieIds)) remotePieIds = Object.values(remotePieIds);
-                    let localPieIds = meta.pieIds || [];
-                    if (!Array.isArray(localPieIds)) localPieIds = Object.values(localPieIds);
-
-                    // Union of both pie ID lists (preserve remote pies we don't know about)
-                    const mergedIds = [...localPieIds];
-                    for (const id of remotePieIds) {
-                        if (!mergedIds.includes(id)) {
-                            mergedIds.push(id);
-                        }
-                    }
-
-                    // Use local tombstonedPieIds as source of truth — supports explicit restores
-                    const mergedTombstoned = meta.tombstonedPieIds || [];
-
-                    return {
-                        pieIds: mergedIds,
-                        pieNames: { ...(currentMeta.pieNames || {}), ...(meta.pieNames || {}) },
-                        tombstonedPieIds: mergedTombstoned
-                    };
-                });
-                Debug.log('StorageAdapter: saveMeta transaction committed');
-            } catch (e) {
-                Debug.log('StorageAdapter: saveMeta transaction failed, falling back to set:', e.message);
-                await FirebaseAdapter.saveMeta(meta);
-            }
-            // Also save to localStorage for offline access
-            Storage.saveMeta(meta);
-        } else {
-            Storage.saveMeta(meta);
+        await this.adapter.saveMeta(meta);
+        if (this.currentMode === 'firebase') {
+            LocalStorageAdapter.saveMeta(meta); // local backup for offline access
         }
     },
 
     async loadMeta() {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            const meta = await FirebaseAdapter.loadMeta();
-            if (meta) return meta;
+        const data = await this.adapter.loadMeta();
+        if (!data && this.currentMode === 'firebase') {
+            return LocalStorageAdapter.loadMeta(); // fallback if Firebase empty
         }
-        return Storage.loadMeta();
+        return data;
     },
 
     async savePie(pieId, data) {
         this.isSaving = true;
         try {
-            if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-                await FirebaseAdapter.savePie(pieId, data);
-                // Also save to localStorage as backup
-                Storage.savePie(pieId, data);
-            } else {
-                Storage.savePie(pieId, data);
+            await this.adapter.savePie(pieId, data);
+            if (this.currentMode === 'firebase') {
+                LocalStorageAdapter.savePie(pieId, data); // local backup
             }
             return true;
         } finally {
@@ -470,27 +407,26 @@ const StorageAdapter = {
     },
 
     async loadPie(pieId) {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            const data = await FirebaseAdapter.loadPie(pieId);
-            if (data) return data;
+        const data = await this.adapter.loadPie(pieId);
+        if (!data && this.currentMode === 'firebase') {
+            return LocalStorageAdapter.loadPie(pieId); // fallback if Firebase empty
         }
-        return Storage.loadPie(pieId);
+        return data;
     },
 
     async deletePie(pieId) {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            // Atomically remove from meta, then delete pie data
+        if (this.currentMode === 'firebase') {
+            // Atomically remove from meta before deleting data
             await FirebaseAdapter.removePieFromMeta(pieId);
-            await FirebaseAdapter.deletePie(pieId);
         }
-        Storage.deletePie(pieId);
+        await this.adapter.deletePie(pieId);
+        if (this.currentMode === 'firebase') {
+            LocalStorageAdapter.deletePie(pieId); // clean up local backup
+        }
     },
 
     async migrateToMultiPie() {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            return await FirebaseAdapter.migrateToMultiPie();
-        }
-        return Storage.migrateToMultiPie();
+        return this.adapter.migrateToMultiPie();
     },
 
     /**
@@ -522,6 +458,7 @@ const StorageAdapter = {
             // If user is already signed in, switch to firebase mode now
             if (FirebaseAdapter.isConnected()) {
                 this.currentMode = 'firebase';
+                this.adapter = FirebaseAdapter;
                 Debug.log('StorageAdapter: Cloud sync enabled, already connected');
             } else {
                 Debug.log('StorageAdapter: Cloud sync enabled, waiting for auth');
@@ -534,10 +471,12 @@ const StorageAdapter = {
                 FirebaseAdapter.onAuthStateChanged(async (user) => {
                     if (user) {
                         this.currentMode = 'firebase';
+                        this.adapter = FirebaseAdapter;
                         Debug.log('StorageAdapter: switched to firebase mode');
                         await this.syncOnConnect();
                     } else {
                         this.currentMode = 'local';
+                        this.adapter = LocalStorageAdapter;
                         Debug.log('StorageAdapter: switched to local mode (not signed in)');
                     }
                 });
@@ -554,124 +493,83 @@ const StorageAdapter = {
      * Disable cloud sync
      */
     async disableCloudSync() {
-        // Sign out of Firebase
         await FirebaseAdapter.signOut();
-
-        // Clear config
         FirebaseAdapter.clearConfig();
-
-        // Switch to local mode
         this.currentMode = 'local';
-
+        this.adapter = LocalStorageAdapter;
         Debug.log('StorageAdapter: Cloud sync disabled');
     },
 
     /**
-     * Save data to storage
-     * Uses Firebase if connected, otherwise localStorage
-     * @param {Object} data - Data to save
-     * @returns {Promise}
+     * Save data to storage (legacy single-pie path).
      */
     async save(data) {
         this.isSaving = true;
-
-        // Generate unique save ID to identify our own updates
         this.lastSaveId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
         try {
-            if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-                // Add save ID to data so we can identify our own updates
+            if (this.currentMode === 'firebase') {
                 const dataWithSaveId = {
                     ...data,
                     _saveId: this.lastSaveId,
-                    _savedBy: FirebaseAdapter.user?.uid
+                    _savedBy: this.adapter.user?.uid
                 };
-
-                const success = await FirebaseAdapter.save(dataWithSaveId);
-
+                const success = await this.adapter.save(dataWithSaveId);
                 if (success) {
                     Debug.log('StorageAdapter: Saved to Firebase with saveId:', this.lastSaveId);
-                    // Also save to localStorage as backup (without the _saveId)
-                    Storage.save(data);
-                    return true;
                 } else {
-                    // Fallback to localStorage
                     Debug.log('StorageAdapter: Firebase save failed, using localStorage fallback');
-                    Storage.save(data);
-                    return true;
                 }
+                LocalStorageAdapter.save(data); // always keep local backup
             } else {
-                // Local mode
-                Storage.save(data);
+                await this.adapter.save(data);
                 Debug.log('StorageAdapter: Saved to localStorage');
-                return true;
             }
+            return true;
         } finally {
-            // Small delay before allowing updates again
-            setTimeout(() => {
-                this.isSaving = false;
-            }, 1000);
+            setTimeout(() => { this.isSaving = false; }, 1000);
         }
     },
 
     /**
-     * Load data from storage
-     * Uses Firebase if connected, otherwise localStorage
-     * @returns {Promise<Object|null>}
+     * Load data from storage (legacy single-pie path).
      */
     async load() {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            const firebaseData = await FirebaseAdapter.load();
-
+        if (this.currentMode === 'firebase') {
+            const firebaseData = await this.adapter.load();
             if (firebaseData) {
                 Debug.log('StorageAdapter: Loaded from Firebase');
-                // Clean internal metadata before returning
                 const { _saveId, _savedBy, ...cleanData } = firebaseData;
                 return cleanData;
             }
-
-            // Fallback to localStorage if Firebase is empty
             Debug.log('StorageAdapter: Firebase empty, trying localStorage');
         }
-
-        // Load from localStorage
-        const localData = Storage.load();
+        const localData = await LocalStorageAdapter.load();
         Debug.log('StorageAdapter: Loaded from localStorage');
         return localData;
     },
 
     /**
-     * Save priorities to per-user storage (per-pie in multi-pie mode)
-     * @param {Array} priorityList - Priority list array
-     * @param {string} pieId - Optional pie ID (defaults to active)
-     * @returns {Promise}
+     * Save priorities to per-user storage (per-pie in multi-pie mode).
+     * localStorage: no-op — priorities are saved inside the pie blob via savePie().
      */
     async savePriorities(priorityList, pieId) {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            this.isSavingPriorities = true;
-            const activePieId = pieId || DataModel.getActivePieId();
-            try {
-                await FirebaseAdapter.savePriorities(priorityList, activePieId);
-            } finally {
-                setTimeout(() => {
-                    this.isSavingPriorities = false;
-                }, 1000);
-            }
+        if (!this.adapter.supportsRealtime) return;
+        this.isSavingPriorities = true;
+        const activePieId = pieId || DataModel.getActivePieId();
+        try {
+            await this.adapter.savePriorities(priorityList, activePieId);
+        } finally {
+            setTimeout(() => { this.isSavingPriorities = false; }, 1000);
         }
-        // localStorage: priorities are saved as part of the pie blob via savePie()
     },
 
     /**
-     * Load priorities from per-user storage (per-pie in multi-pie mode)
-     * @param {string} pieId - Optional pie ID (defaults to active)
-     * @returns {Promise<Array|null>}
+     * Load priorities from per-user storage (per-pie in multi-pie mode).
+     * localStorage: returns null — priorities are loaded from the pie blob.
      */
     async loadPriorities(pieId) {
-        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
-            const activePieId = pieId || DataModel.getActivePieId();
-            return await FirebaseAdapter.loadPriorities(activePieId);
-        }
-        return null;
+        const activePieId = pieId || DataModel.getActivePieId();
+        return this.adapter.loadPriorities(activePieId);
     },
 
     /**
@@ -702,7 +600,7 @@ const StorageAdapter = {
      * @returns {boolean}
      */
     isFirebaseMode() {
-        return this.currentMode === 'firebase' && FirebaseAdapter.isConnected();
+        return this.currentMode === 'firebase' && this.adapter.isConnected();
     },
 
     /**
@@ -718,10 +616,7 @@ const StorageAdapter = {
      * @returns {string|null}
      */
     getProjectId() {
-        if (this.currentMode === 'firebase') {
-            return FirebaseAdapter.getProjectId();
-        }
-        return null;
+        return this.adapter.getProjectId();
     }
 };
 
