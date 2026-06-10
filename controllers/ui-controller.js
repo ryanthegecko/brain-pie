@@ -1535,6 +1535,14 @@ const UI = {
         document.getElementById('disclaimer-overlay').classList.remove('active');
     },
 
+    showPrivacy() {
+        document.getElementById('privacy-overlay').classList.add('active');
+    },
+
+    closePrivacy() {
+        document.getElementById('privacy-overlay').classList.remove('active');
+    },
+
     // ==========================================
     // Documentation Popup
     // ==========================================

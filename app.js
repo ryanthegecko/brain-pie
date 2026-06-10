@@ -368,6 +368,11 @@ const App = {
             setTimeout(() => this.syncCalendarEvents(), 500);
         }
 
+        // Show privacy policy modal when ?page=privacy is present
+        if (new URLSearchParams(window.location.search).get('page') === 'privacy') {
+            setTimeout(() => UI.showPrivacy(), 300);
+        }
+
         // Add resize listener
         let resizeTimeout;
         window.addEventListener('resize', () => {
