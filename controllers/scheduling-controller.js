@@ -1159,6 +1159,23 @@ Object.assign(UI, {
         const type = this._getSelectedSpokeEditorType();
         const { categoryId, itemId, spokeIndex, spokeName, sliceName, categoryName } = this.pendingSpokeEditor;
 
+        // Set spoke notes before updateSpokeType fires its internal saveToStorage
+        const notesValue = (document.getElementById('se-spoke-notes')?.value || '').trim() || null;
+        const _notesCat = DataModel.categories.find(c => c.id === categoryId);
+        const _notesItem = _notesCat?.items.find(i => i.id === itemId);
+        if (_notesItem && typeof _notesItem.subItems[spokeIndex] === 'string') {
+            _notesItem.subItems[spokeIndex] = {
+                text: _notesItem.subItems[spokeIndex],
+                type: 'static',
+                notes: null,
+                children: [],
+                scheduled: null,
+                metadata: { condition: null, calendarEventId: null, nextState: null, recurrence: null }
+            };
+        }
+        const _noteSpoke = _notesItem?.subItems[spokeIndex];
+        if (typeof _noteSpoke === 'object') _noteSpoke.notes = notesValue;
+
         if (type === 'single') {
             const data = this._readSingleFieldsData();
             if (!data.date) { alert('Please select a date'); return; }
