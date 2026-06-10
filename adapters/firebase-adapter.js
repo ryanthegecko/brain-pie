@@ -29,6 +29,8 @@ const FirebaseAdapter = {
     // Per-user priority listener unsubscribe function
     unsubscribePriorityListener: null,
 
+    supportsRealtime: true,
+
     // Connection state
     connected: false,
 
@@ -495,7 +497,27 @@ const FirebaseAdapter = {
         if (!this.db || !this.user) return false;
         try {
             const path = this.getMetaPath();
-            await this.db.ref(path).set(meta);
+            // Transaction merges concurrent pie-list changes from other devices.
+            // Uses local tombstonedPieIds as source of truth (supports explicit restores).
+            await this.db.ref(path).transaction((currentMeta) => {
+                if (!currentMeta) return meta;
+
+                let remotePieIds = currentMeta.pieIds || [];
+                if (!Array.isArray(remotePieIds)) remotePieIds = Object.values(remotePieIds);
+                let localPieIds = meta.pieIds || [];
+                if (!Array.isArray(localPieIds)) localPieIds = Object.values(localPieIds);
+
+                const mergedIds = [...localPieIds];
+                for (const id of remotePieIds) {
+                    if (!mergedIds.includes(id)) mergedIds.push(id);
+                }
+
+                return {
+                    pieIds: mergedIds,
+                    pieNames: { ...(currentMeta.pieNames || {}), ...(meta.pieNames || {}) },
+                    tombstonedPieIds: meta.tombstonedPieIds || [],
+                };
+            });
             Debug.log('Firebase: saved meta at', path);
             return true;
         } catch (e) {
