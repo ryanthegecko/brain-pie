@@ -1042,7 +1042,7 @@ Object.assign(UI, {
             document.getElementById('se-event-minute').value = '00';
             document.getElementById('se-event-duration').value = '60';
             document.getElementById('se-event-location').value = '';
-            document.getElementById('se-event-notes').value = '';
+            document.getElementById('se-event-notes').value = document.getElementById('se-spoke-notes')?.value.trim() || '';
             document.getElementById('se-event-invitees').value = '';
             document.getElementById('se-event-allday').checked = true;
         }
