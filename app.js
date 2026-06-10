@@ -110,6 +110,39 @@ const License = {
 
 window.License = License;
 
+const ApiAccess = {
+    WORKER_URL: 'https://brain-pie-license.brainpie.workers.dev',
+    KEY_STORAGE:     'brainPie_apiKey',
+    USER_ID_STORAGE: 'brainPie_apiUserId',
+
+    getKey()    { return localStorage.getItem(this.KEY_STORAGE); },
+    getUserId() { return localStorage.getItem(this.USER_ID_STORAGE); },
+
+    async generate() {
+        const existingKey = this.getKey();
+        const headers = {};
+        if (existingKey) headers['Authorization'] = 'Bearer ' + existingKey;
+
+        const resp = await fetch(this.WORKER_URL + '/api/keys', {
+            method: 'POST',
+            headers
+        });
+        if (!resp.ok) throw new Error('Server error: ' + resp.status);
+
+        const { key, userId } = await resp.json();
+        localStorage.setItem(this.KEY_STORAGE, key);
+        localStorage.setItem(this.USER_ID_STORAGE, userId);
+        return { key, userId };
+    },
+
+    revoke() {
+        localStorage.removeItem(this.KEY_STORAGE);
+        localStorage.removeItem(this.USER_ID_STORAGE);
+    },
+};
+
+window.ApiAccess = ApiAccess;
+
 const Controls = {
   HIDE_LABELS_KEY: 'hideSubitemLabels',
 

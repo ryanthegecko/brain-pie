@@ -1,3 +1,9 @@
 name = "brain-pie-license"
 main = "worker.js"
 compatibility_date = "2024-01-01"
+
+# Create with: wrangler kv namespace create BRAIN_PIE_KV
+# Then paste the returned id below.
+[[kv_namespaces]]
+binding = "BRAIN_PIE_KV"
+id = "ba2fec9c87644b349b568ec517997754"

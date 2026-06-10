@@ -727,6 +727,7 @@ const UI = {
         this.loadCalendarSyncState();
         this.loadCloudSyncState();
         this.updateCalendarImportButton();
+        this.renderApiAccessSection();
     },
     
     closeSettings() {
@@ -1885,5 +1886,70 @@ const UI = {
         if (confirm(`Delete "${name}" and all its data? This cannot be undone.`)) {
             App.deletePie(pieId);
         }
-    }
+    },
+
+    // -------------------------------------------------------------------------
+    // API Access (Settings section)
+    // -------------------------------------------------------------------------
+
+    renderApiAccessSection() {
+        const key    = ApiAccess.getKey();
+        const userId = ApiAccess.getUserId();
+        const display = document.getElementById('api-key-display');
+        const actions = document.getElementById('api-key-actions');
+        const generate = document.getElementById('api-generate-btn');
+        if (!display) return;
+
+        if (key) {
+            display.style.display = 'block';
+            const valueEl = document.getElementById('api-key-value');
+            if (valueEl) valueEl.textContent = key;
+            const userEl = document.getElementById('api-user-id');
+            if (userEl) userEl.textContent = userId ?? '';
+            if (actions) actions.style.display = 'flex';
+            if (generate) generate.style.display = 'none';
+        } else {
+            display.style.display = 'none';
+            if (actions) actions.style.display = 'none';
+            if (generate) generate.style.display = '';
+        }
+    },
+
+    async generateApiKey() {
+        const btn = document.getElementById('api-generate-btn');
+        const rotateBtn = document.getElementById('api-rotate-btn');
+        const statusEl = document.getElementById('api-key-status');
+        const active = btn?.style.display !== 'none' ? btn : rotateBtn;
+
+        if (active) active.disabled = true;
+        if (statusEl) { statusEl.textContent = 'Generating…'; statusEl.className = ''; }
+
+        try {
+            await ApiAccess.generate();
+            if (statusEl) statusEl.textContent = '';
+            this.renderApiAccessSection();
+        } catch {
+            if (statusEl) { statusEl.textContent = '✗ Failed to generate key. Try again.'; statusEl.className = 'license-status-err'; }
+        } finally {
+            if (active) active.disabled = false;
+        }
+    },
+
+    copyApiKey() {
+        const key = ApiAccess.getKey();
+        if (!key) return;
+        navigator.clipboard.writeText(key).then(() => {
+            const btn = document.getElementById('api-copy-btn');
+            if (!btn) return;
+            const orig = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+        });
+    },
+
+    revokeApiKey() {
+        if (!confirm('Remove your API key? Any apps using it will lose access.')) return;
+        ApiAccess.revoke();
+        this.renderApiAccessSection();
+    },
 };
