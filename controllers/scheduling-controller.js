@@ -1252,21 +1252,36 @@ Object.assign(UI, {
 
         const notesValue = (document.getElementById('se-spoke-notes')?.value || '').trim() || null;
 
+        // Resolve spoke — normalise string spokes to objects first so we can set notes
+        // before any saveToStorage fires (updateSpokeType calls saveToStorage internally,
+        // and we need notes already on the object at that point to avoid a race)
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        const item = category?.items.find(i => i.id === itemId);
+        if (item && typeof item.subItems[spokeIndex] === 'string') {
+            // Convert legacy string spoke to object so notes can be attached
+            item.subItems[spokeIndex] = {
+                text: item.subItems[spokeIndex],
+                type: 'static',
+                notes: null,
+                children: [],
+                scheduled: null,
+                metadata: { condition: null, calendarEventId: null, nextState: null, recurrence: null }
+            };
+        }
+        const spoke = item?.subItems[spokeIndex];
+        if (typeof spoke === 'object') {
+            spoke.notes = notesValue;
+        }
+
         // If on Tab 2 with Single/Repeating, "Done" saves type + any entered field data
         // (without touching the calendar — user can still "Add to Calendar" later)
         if (this.spokeEditorTab === 2 && (type === 'single' || type === 'repeating')) {
             DataModel.updateSpokeType(categoryId, itemId, spokeIndex, type);
 
-            const category = DataModel.categories.find(c => c.id === categoryId);
-            const item = category?.items.find(i => i.id === itemId);
-            const spoke = item?.subItems[spokeIndex];
-
             if (typeof spoke === 'object') {
-                spoke.notes = notesValue;
                 if (type === 'single') {
                     const data = this._readSingleFieldsData();
                     if (data.date) {
-                        // Preserve existing calendarEventId if present
                         const existingEventId = spoke.scheduled?.calendarEventId ?? null;
                         spoke.scheduled = { ...data, calendarEventId: existingEventId };
                     }
@@ -1274,7 +1289,6 @@ Object.assign(UI, {
                     const recurrence = this._readRepeatingFieldsData();
                     if (recurrence.startDate) {
                         if (!spoke.metadata) spoke.metadata = {};
-                        // Preserve existing calendarEventId if present
                         const existingEventId = spoke.metadata.calendarEventId ?? null;
                         spoke.metadata.recurrence = recurrence;
                         spoke.metadata.calendarEventId = existingEventId;
@@ -1287,23 +1301,19 @@ Object.assign(UI, {
             return;
         }
 
-        // Otherwise save type and notes
+        // Tab 1 path: update type (notes already set above before this call)
         DataModel.updateSpokeType(categoryId, itemId, spokeIndex, type);
 
-        const category = DataModel.categories.find(c => c.id === categoryId);
-        const item = category?.items.find(i => i.id === itemId);
-        const spoke = item?.subItems[spokeIndex];
-
         if (typeof spoke === 'object') {
-            spoke.notes = notesValue;
             // For static type, clear spoke-level schedule
             if (type === 'static') {
                 spoke.scheduled = null;
                 if (spoke.metadata) spoke.metadata.recurrence = null;
             }
-            DataModel.saveToStorage();
         }
 
+        // updateSpokeType already called saveToStorage with notes on the object.
+        // No second save needed.
         this.closeSpokeEditor();
     },
 
