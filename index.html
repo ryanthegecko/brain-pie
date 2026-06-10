@@ -483,6 +483,20 @@
                     <li>You can also export the Firebase config as a JSON file.</li>
                 </ul>
 
+                <h3>Personal Mode vs Shared Mode</h3>
+                <p>By default, all users on the same Firebase project share the same set of pies — changes made by one person are visible to everyone. This is <strong>shared mode</strong> and is ideal for teams or households collaborating on the same data.</p>
+                <p>In <strong>personal mode</strong>, each Google account gets its own isolated set of pies in the same Firebase project. Changes are private to each user. Priority lists are always personal regardless of mode.</p>
+                <p>To enable personal mode, add <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;">"mode": "personal"</code> to your Firebase config JSON before pasting it into Brain Pie:</p>
+                <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;">{
+  "apiKey": "...",
+  "authDomain": "...",
+  "databaseURL": "...",
+  "projectId": "your-project-id",
+  "mode": "personal"
+}</pre>
+                <p>The shareable config URL also encodes this setting, so other devices that connect via your URL will use the same mode automatically.</p>
+                <p style="color:#888;font-size:13px;"><strong>Note:</strong> If you connect with the wrong mode, the app will find no data and create a fresh empty pie. To fix it, go to Settings → Cloud Sync, disconnect, update the config to include the correct mode, and reconnect.</p>
+
                 <h3>Real-Time Sync</h3>
                 <p>Changes sync instantly across all connected devices. The sync indicator in the UI shows connection status.</p>
 
