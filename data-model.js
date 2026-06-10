@@ -1034,6 +1034,7 @@ const DataModel = {
             return {
                 text: spoke,
                 type: 'static',
+                notes: null,
                 children: [],
                 scheduled: null,
                 metadata: {
@@ -1055,13 +1056,15 @@ const DataModel = {
         return {
             text: spoke.text || '',
             type: type,
+            notes: spoke.notes || null,
             children: (Array.isArray(spoke.children) ? spoke.children : Object.values(spoke.children || {})).map(child => {
                 if (typeof child === 'string') return { text: child, children: [], completed: false };
                 return {
                     text: child.text || '',
                     children: child.children || [],
                     completed: child.completed || false,
-                    scheduled: child.scheduled || null
+                    scheduled: child.scheduled || null,
+                    recurrence: child.recurrence || null
                 };
             }),
             scheduled: spoke.scheduled || null, // For single/repeating: spoke-level scheduling
