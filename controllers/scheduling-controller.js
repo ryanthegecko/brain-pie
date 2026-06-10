@@ -882,6 +882,10 @@ Object.assign(UI, {
             this.pendingScheduleData.repeating = { ...spoke.metadata.recurrence };
         }
 
+        // Notes field
+        const notesEl = document.getElementById('se-spoke-notes');
+        if (notesEl) notesEl.value = (typeof spoke === 'object' && spoke.notes) ? spoke.notes : '';
+
         // Actions section for list type
         this._updateSpokeEditorActionsVisibility(spokeType);
 
@@ -1246,6 +1250,8 @@ Object.assign(UI, {
         const type = this._getSelectedSpokeEditorType();
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
 
+        const notesValue = (document.getElementById('se-spoke-notes')?.value || '').trim() || null;
+
         // If on Tab 2 with Single/Repeating, "Done" saves type + any entered field data
         // (without touching the calendar — user can still "Add to Calendar" later)
         if (this.spokeEditorTab === 2 && (type === 'single' || type === 'repeating')) {
@@ -1256,13 +1262,13 @@ Object.assign(UI, {
             const spoke = item?.subItems[spokeIndex];
 
             if (typeof spoke === 'object') {
+                spoke.notes = notesValue;
                 if (type === 'single') {
                     const data = this._readSingleFieldsData();
                     if (data.date) {
                         // Preserve existing calendarEventId if present
                         const existingEventId = spoke.scheduled?.calendarEventId ?? null;
                         spoke.scheduled = { ...data, calendarEventId: existingEventId };
-                        DataModel.saveToStorage();
                     }
                 } else if (type === 'repeating') {
                     const recurrence = this._readRepeatingFieldsData();
@@ -1272,28 +1278,30 @@ Object.assign(UI, {
                         const existingEventId = spoke.metadata.calendarEventId ?? null;
                         spoke.metadata.recurrence = recurrence;
                         spoke.metadata.calendarEventId = existingEventId;
-                        DataModel.saveToStorage();
                     }
                 }
+                DataModel.saveToStorage();
             }
 
             this.closeSpokeEditor();
             return;
         }
 
-        // Otherwise just save the type
+        // Otherwise save type and notes
         DataModel.updateSpokeType(categoryId, itemId, spokeIndex, type);
 
-        // For static type, clear spoke-level schedule
-        if (type === 'static') {
-            const category = DataModel.categories.find(c => c.id === categoryId);
-            const item = category.items.find(i => i.id === itemId);
-            const spoke = item.subItems[spokeIndex];
-            if (typeof spoke === 'object') {
+        const category = DataModel.categories.find(c => c.id === categoryId);
+        const item = category?.items.find(i => i.id === itemId);
+        const spoke = item?.subItems[spokeIndex];
+
+        if (typeof spoke === 'object') {
+            spoke.notes = notesValue;
+            // For static type, clear spoke-level schedule
+            if (type === 'static') {
                 spoke.scheduled = null;
                 if (spoke.metadata) spoke.metadata.recurrence = null;
-                DataModel.saveToStorage();
             }
+            DataModel.saveToStorage();
         }
 
         this.closeSpokeEditor();

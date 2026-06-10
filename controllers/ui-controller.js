@@ -1012,6 +1012,7 @@ const UI = {
                                                 </button>
                                             </div>
                                         </div>
+                                        ${(typeof sub === 'object' && sub.notes) ? `<div class="spoke-notes-preview">${sub.notes.replace(/</g, '&lt;')}</div>` : ''}
                                         ${children.length > 0 ? `
                                             <ul class="action-list"
                                             style="margin-left: 20px; font-size: 11px; margin-top: 6px;">
