@@ -915,7 +915,7 @@ const UI = {
                              ondragover="UI.handleItemDragOver(event)"
                             ondrop="UI.handleItemDrop(event)"
                              >
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; gap: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 0px;">
                                 <span class="item-drag-handle" style="font-size: 16px; color: #999; cursor: move; padding: 2px 4px; margin-top: 2px;">⋮⋮</span>
                                 <button class="priority-star-btn ${UI.isPrioritised({type:'slice', categoryId:category.id, itemId:item.id}) ? 'active' : ''}"
                                     onclick="event.stopPropagation(); UI.addToPriorities({type:'slice', categoryId:'${category.id}', itemId:'${item.id}'})"
@@ -931,7 +931,7 @@ const UI = {
                                        title="Change color"
                                        style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;"
                                        onchange="App.updateItemColor('${category.id}', '${item.id}', this.value)">
-                                <button style="background: #4CAF50; margin-left: 5px;" onclick="UI.showAddSpokeInput('${category.id}', '${item.id}')" title="Add spoke">+ <span class="btn-label">New Spoke</span></button>
+                                <button style="background: #4CAF50; margin-left: 5px;" onclick="UI.showAddSpokeInput('${category.id}', '${item.id}')" title="Add spoke">+ <span class="btn-label">Spoke</span></button>
                                 <button class="warn" style="margin-left: 5px;" onclick="App.removeItem('${category.id}', '${item.id}')">
                                     <img width="15" height="15" src="./assets/trash.svg" />
                                 </button>
@@ -1134,7 +1134,7 @@ const UI = {
                                style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
                     </div>
-                    <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">+ <span class="btn-label">New Slice</span></button>
+                    <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">+ <span class="btn-label">Slice</span></button>
                     <button class="warn" style="margin-left: 5px;" onclick="App.removeCategory('${category.id}')">
                         <img width="15" height="15" src="./assets/trash.svg" />
                     </button>

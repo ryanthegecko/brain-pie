@@ -10,15 +10,25 @@
  * Then paste the deployed workers.dev URL into License.WORKER_URL in app.js.
  */
 
-const ALLOWED_ORIGIN = 'https://brainpie.app';
+const ALLOWED_ORIGINS = new Set([
+    'https://brainpie.app',
+    'http://localhost:8000',
+]);
+
+function getAllowedOrigin(request) {
+    const origin = request.headers.get('Origin') || '';
+    return ALLOWED_ORIGINS.has(origin) ? origin : 'https://brainpie.app';
+}
 
 export default {
     async fetch(request, env) {
+        const origin = getAllowedOrigin(request);
+
         // CORS preflight
         if (request.method === 'OPTIONS') {
             return new Response(null, {
                 headers: {
-                    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+                    'Access-Control-Allow-Origin': origin,
                     'Access-Control-Allow-Methods': 'POST',
                     'Access-Control-Allow-Headers': 'Content-Type',
                 }
@@ -35,12 +45,12 @@ export default {
         } catch {
             return new Response(JSON.stringify({ valid: false, error: 'Invalid request body' }), {
                 status: 400,
-                headers: corsHeaders(ALLOWED_ORIGIN)
+                headers: corsHeaders(origin)
             });
         }
 
         if (!key || typeof key !== 'string') {
-            return Response.json({ valid: false }, { headers: corsHeaders(ALLOWED_ORIGIN) });
+            return Response.json({ valid: false }, { headers: corsHeaders(origin) });
         }
 
         // Verify against Gumroad license API
@@ -57,7 +67,7 @@ export default {
         const data = await gumroadResp.json();
         return Response.json(
             { valid: data.success === true },
-            { headers: corsHeaders(ALLOWED_ORIGIN) }
+            { headers: corsHeaders(origin) }
         );
     }
 };

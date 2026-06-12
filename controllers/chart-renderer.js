@@ -1690,6 +1690,7 @@ const ChartRenderer = {
         const cardPadding = 24;
         const headerHeight = 64;
         const inputRowHeight = 64;
+        const spokeActionsRowHeight = 52;
         const cardWidth = Math.min(640, this.width - 40);
         const listTopPaddingVal = 20;
         const maxVisibleRows = 10;
@@ -1697,7 +1698,7 @@ const ChartRenderer = {
         const listAreaHeight = visibleRows * rowHeight;
         const needsScroll = children.length > maxVisibleRows;
         const fullListHeight = children.length * rowHeight;
-        const cardHeight = Math.min(headerHeight + listTopPaddingVal + listAreaHeight + inputRowHeight + 8, this.height - 40);
+        const cardHeight = Math.min(headerHeight + listTopPaddingVal + listAreaHeight + inputRowHeight + spokeActionsRowHeight + 8, this.height - 40);
 
         // Position near click, clamped within SVG bounds
         let minX, maxX, minY, maxY;
@@ -2113,6 +2114,57 @@ const ChartRenderer = {
         });
         // Prevent dimmer click when clicking input
         input.on('click', (event) => event.stopPropagation());
+
+        // Gear + Delete Spoke buttons below the input row, right-aligned
+        const spokeActionsY = inputRowY + inputRowHeight;
+        const spokeActionsGroup = branchGroup.append('g');
+        const trashPath = 'M184.581,230.833l9.521-100.238c0.575-6.048,5.931-10.48,11.991-9.911c6.048,0.575,10.485,5.943,9.911,11.991l-9.521,100.238c-0.541,5.694-5.332,9.961-10.938,9.961c-0.348,0-0.699-0.017-1.053-0.05C188.444,242.249,184.007,236.881,184.581,230.833z M45.306,37.023h216.644c6.075,0,11-4.925,11-11s-4.925-11-11-11h-61.998c0.49-1.246,0.759-2.604,0.759-4.023c0-6.075-4.925-11-11-11h-72.165c-6.075,0-11,4.925-11,11c0,1.42,0.269,2.777,0.759,4.023H45.306c-6.075,0-11,4.925-11,11S39.23,37.023,45.306,37.023z M153.624,260.644c6.075,0,11-4.925,11-11V113.864c0-6.075-4.925-11-11-11s-11,4.925-11,11v135.779C142.624,255.719,147.549,260.644,153.624,260.644z M273.279,68.477l-25.58,228.996c-0.622,5.568-5.329,9.779-10.932,9.779H70.484c-5.603,0-10.31-4.211-10.932-9.779L33.973,68.477c-0.348-3.11,0.646-6.222,2.733-8.555c2.086-2.333,5.068-3.666,8.198-3.666h217.443c3.13,0,6.112,1.333,8.198,3.666C272.633,62.255,273.627,65.366,273.279,68.477z M250.051,78.256H57.201l23.123,206.996h146.604L250.051,78.256z M100.772,232.913c0.54,5.694,5.33,9.961,10.938,9.961c0.348,0,0.699-0.017,1.053-0.05c6.048-0.575,10.485-5.943,9.911-11.991l-9.52-100.238c-0.575-6.048-5.938-10.484-11.991-9.911c-6.048,0.575-10.485,5.943-9.911,11.991L100.772,232.913z';
+
+        // Delete Spoke button (red) — rightmost
+        const deleteBtnW = 200;
+        const deleteBtnX = cardX + cardWidth - cardPadding - deleteBtnW;
+        const deleteBtnGroup = spokeActionsGroup.append('g')
+            .attr('transform', `translate(${deleteBtnX}, ${spokeActionsY + 4})`)
+            .style('cursor', 'pointer')
+            .on('click', (event) => {
+                event.stopPropagation();
+                that.collapseBranch();
+                App.removeSubItem(categoryId, itemId, spokeIndex);
+            });
+        deleteBtnGroup.append('rect')
+            .attr('width', deleteBtnW).attr('height', 44)
+            .attr('rx', 8).attr('fill', '#f05252');
+        deleteBtnGroup.append('text')
+            .attr('x', deleteBtnW / 2 - 16).attr('y', 30)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '20px')
+            .attr('fill', '#fff')
+            .text('Delete Spoke');
+        deleteBtnGroup.append('path')
+            .attr('d', trashPath)
+            .attr('fill', '#fff')
+            .attr('transform', `translate(${deleteBtnW - 30}, 11) scale(0.07)`);
+
+        // Gear button (blue) — left of Delete Spoke
+        const gearBtnW = 44;
+        const gearBtnX = deleteBtnX - gearBtnW - 8;
+        const gearBtnGroup = spokeActionsGroup.append('g')
+            .attr('transform', `translate(${gearBtnX}, ${spokeActionsY + 4})`)
+            .style('cursor', 'pointer')
+            .on('click', (event) => {
+                event.stopPropagation();
+                that.collapseBranch();
+                UI.showSpokeEditor(categoryId, itemId, spokeIndex);
+            });
+        gearBtnGroup.append('rect')
+            .attr('width', gearBtnW).attr('height', 44)
+            .attr('rx', 8).attr('fill', '#2196F3');
+        gearBtnGroup.append('text')
+            .attr('x', gearBtnW / 2).attr('y', 30)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '24px')
+            .attr('fill', '#fff')
+            .text('⚙');
 
         this.highlightGroup.raise();
 

@@ -465,7 +465,68 @@ const CalendarAdapter = {
 
                 for (let spokeIndex = 0; spokeIndex < item.subItems.length; spokeIndex++) {
                     const spoke = item.subItems[spokeIndex];
-                    if (typeof spoke !== 'object' || !spoke.children) continue;
+                    if (typeof spoke !== 'object') continue;
+
+                    // Sync spoke-level scheduled event (single/static spokes with a date)
+                    const spokeEventId = spoke.scheduled?.calendarEventId;
+                    if (spokeEventId) {
+                        results.synced++;
+                        try {
+                            const event = await this.getEvent(spokeEventId);
+                            if (!event || event.status === 'cancelled') {
+                                Debug.log('CalendarAdapter: Spoke event deleted from calendar, removing spoke:', spokeEventId);
+                                item.subItems.splice(spokeIndex, 1);
+                                spokeIndex--;
+                                results.deleted++;
+                                hasChanges = true;
+                                continue;
+                            } else if (event.start?.dateTime) {
+                                const eventStart = new Date(event.start.dateTime);
+                                const eventEnd = new Date(event.end.dateTime);
+                                const duration = Math.round((eventEnd - eventStart) / 60000);
+                                const eventDate = eventStart.toISOString().split('T')[0];
+                                const eventTime = eventStart.toTimeString().slice(0, 5);
+                                if (spoke.scheduled.date !== eventDate ||
+                                    spoke.scheduled.time !== eventTime ||
+                                    spoke.scheduled.duration !== duration) {
+                                    Debug.log('CalendarAdapter: Spoke event time changed:', spokeEventId);
+                                    spoke.scheduled.date = eventDate;
+                                    spoke.scheduled.time = eventTime;
+                                    spoke.scheduled.duration = duration;
+                                    results.updated++;
+                                    hasChanges = true;
+                                }
+                            } else if (event.start?.date && spoke.scheduled.date !== event.start.date) {
+                                spoke.scheduled.date = event.start.date;
+                                results.updated++;
+                                hasChanges = true;
+                            }
+                        } catch (e) {
+                            Debug.log('CalendarAdapter: Error syncing spoke event:', spokeEventId, e.message);
+                        }
+                    }
+
+                    // Sync spoke-level repeating event (metadata.calendarEventId)
+                    const spokeRecurringEventId = spoke.metadata?.calendarEventId;
+                    if (spokeRecurringEventId) {
+                        results.synced++;
+                        try {
+                            const event = await this.getEvent(spokeRecurringEventId);
+                            if (!event || event.status === 'cancelled') {
+                                Debug.log('CalendarAdapter: Recurring spoke event deleted from calendar, removing spoke:', spokeRecurringEventId);
+                                item.subItems.splice(spokeIndex, 1);
+                                spokeIndex--;
+                                results.deleted++;
+                                hasChanges = true;
+                                continue;
+                            }
+                        } catch (e) {
+                            Debug.log('CalendarAdapter: Error syncing recurring spoke event:', spokeRecurringEventId, e.message);
+                        }
+                    }
+
+                    // Sync child actions
+                    if (!spoke.children) continue;
 
                     for (let childIndex = 0; childIndex < spoke.children.length; childIndex++) {
                         const action = spoke.children[childIndex];
@@ -478,16 +539,12 @@ const CalendarAdapter = {
                             const event = await this.getEvent(eventId);
 
                             if (!event || event.status === 'cancelled') {
-                                // Event was deleted from calendar
-                                // For non-recurring actions, delete the entire action
-                                // (Recurring events will be handled differently in Phase 2)
                                 Debug.log('CalendarAdapter: Event deleted from calendar, removing action:', eventId);
                                 spoke.children.splice(childIndex, 1);
-                                childIndex--; // Adjust index since we removed an item
+                                childIndex--;
                                 results.deleted++;
                                 hasChanges = true;
                             } else if (event.start && event.start.dateTime) {
-                                // Event exists - check if time changed
                                 const eventStart = new Date(event.start.dateTime);
                                 const eventEnd = new Date(event.end.dateTime);
                                 const duration = Math.round((eventEnd - eventStart) / 60000);
@@ -498,7 +555,6 @@ const CalendarAdapter = {
                                 if (action.scheduled.date !== eventDate ||
                                     action.scheduled.time !== eventTime ||
                                     action.scheduled.duration !== duration) {
-                                    // Time changed - update local data
                                     Debug.log('CalendarAdapter: Event time changed:', eventId);
                                     action.scheduled.date = eventDate;
                                     action.scheduled.time = eventTime;

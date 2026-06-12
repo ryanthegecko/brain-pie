@@ -926,6 +926,46 @@ Object.assign(UI, {
         }
     },
 
+    renameSpokeFromEditor() {
+        const p = this.pendingSpokeEditor;
+        if (!p) return;
+        const nameEl = document.getElementById('spoke-editor-name');
+        if (!nameEl) return;
+        nameEl.contentEditable = 'true';
+        nameEl.focus();
+        // Select all text
+        const range = document.createRange();
+        range.selectNodeContents(nameEl);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        const commit = () => {
+            nameEl.contentEditable = 'false';
+            const newName = nameEl.textContent.trim();
+            if (newName) {
+                const { categoryId, itemId, spokeIndex } = p;
+                const category = DataModel.categories.find(c => c.id === categoryId);
+                const item = category?.items.find(i => i.id === itemId);
+                if (item && item.subItems[spokeIndex]) {
+                    if (typeof item.subItems[spokeIndex] === 'string') {
+                        item.subItems[spokeIndex] = newName;
+                    } else {
+                        item.subItems[spokeIndex].text = newName;
+                    }
+                    DataModel.saveToStorage();
+                    App.render();
+                }
+            }
+            nameEl.removeEventListener('blur', commit);
+            nameEl.removeEventListener('keydown', onKey);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { nameEl.contentEditable = 'false'; nameEl.removeEventListener('blur', commit); nameEl.removeEventListener('keydown', onKey); }
+        };
+        nameEl.addEventListener('blur', commit);
+        nameEl.addEventListener('keydown', onKey);
+    },
+
     deleteSpokeFromEditor() {
         const p = this.pendingSpokeEditor;
         if (!p) return;
@@ -962,6 +1002,35 @@ Object.assign(UI, {
     },
 
     selectSpokeEditorType(type) {
+        const previousType = this._getSelectedSpokeEditorType();
+
+        // Type conversion: migrate content at selection time so the list renders immediately
+        if (this.pendingSpokeEditor && previousType !== type) {
+            const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
+            const category = DataModel.categories.find(c => c.id === categoryId);
+            const item = category?.items.find(i => i.id === itemId);
+            const spoke = typeof item?.subItems[spokeIndex] === 'object' ? item.subItems[spokeIndex] : null;
+            const notesEl = document.getElementById('se-spoke-notes');
+
+            if (previousType === 'list' && type !== 'list' && spoke) {
+                // Move unchecked children to notes; discard ticked items
+                const unchecked = (spoke.children || []).filter(c => !c.completed).map(c => c.text).filter(Boolean);
+                if (unchecked.length) {
+                    const existing = (notesEl?.value || '').trim();
+                    if (notesEl) notesEl.value = existing ? `${existing}\n${unchecked.join('\n')}` : unchecked.join('\n');
+                }
+                if (spoke) spoke.children = [];
+            } else if (previousType === 'static' && type === 'list' && spoke) {
+                // Split notes by line into children; clear the notes field
+                const lines = ((notesEl?.value || '').trim()).split('\n').map(l => l.trim()).filter(Boolean);
+                if (lines.length) {
+                    if (!spoke.children) spoke.children = [];
+                    lines.forEach(text => spoke.children.push({ text, completed: false }));
+                    if (notesEl) notesEl.value = '';
+                }
+            }
+        }
+
         // Toggle button selection
         document.querySelectorAll('#spoke-editor-type-btns .spoke-type-picker-btn').forEach(btn => {
             btn.classList.toggle('selected', btn.dataset.spokeType === type);
@@ -1267,7 +1336,7 @@ Object.assign(UI, {
         const type = this._getSelectedSpokeEditorType();
         const { categoryId, itemId, spokeIndex } = this.pendingSpokeEditor;
 
-        const notesValue = (document.getElementById('se-spoke-notes')?.value || '').trim() || null;
+        let notesValue = (document.getElementById('se-spoke-notes')?.value || '').trim() || null;
 
         // Resolve spoke — normalise string spokes to objects first so we can set notes
         // before any saveToStorage fires (updateSpokeType calls saveToStorage internally,
@@ -1286,6 +1355,7 @@ Object.assign(UI, {
             };
         }
         const spoke = item?.subItems[spokeIndex];
+
         if (typeof spoke === 'object') {
             spoke.notes = notesValue;
         }
