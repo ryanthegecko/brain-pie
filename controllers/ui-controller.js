@@ -943,9 +943,9 @@ const UI = {
                                        min="0" 
                                        max="100" 
                                        step="0.1"
-                                       style="width: 80px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;"
+                                       style="width: 47px; padding: 0 4px 4px 0; border: 1px solid #ddd; border-radius: 4px;padding-inline: 1px"
                                        onchange="App.updateItemPercentage('${category.id}', '${item.id}', parseFloat(this.value))">
-                                <span>% of category</span>
+                                <span>%</span>
                             </div>
                             ${item.subItems && item.subItems.length > 0
                                 ? `<ul
@@ -994,7 +994,7 @@ const UI = {
                                         ondragover="UI.handleSubItemDragOver(event)"
                                         ondrop="UI.handleSubItemDrop(event)"
                                         style="cursor: move;">
-                                        <div style="display: flex; align-items: flex-start; gap: 4px; margin-bottom: 4px; width: 100%; overflow: hidden;">
+                                        <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px; width: 100%; overflow: hidden;">
                                             <button class="priority-star-btn ${UI.isPrioritised({type:'spoke', categoryId:category.id, itemId:item.id, spokeIndex}) ? 'active' : ''}"
                                                 onclick="event.stopPropagation(); UI.addToPriorities({type:'spoke', categoryId:'${category.id}', itemId:'${item.id}', spokeIndex:${spokeIndex}})"
                                                 title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
@@ -1085,7 +1085,7 @@ const UI = {
                                         </div>
                                     </li>
                                 `}).join('')}</ul>`
-                                : '<p style="color: #999; font-size: 12px; margin: 8px 0;">No Spokes</p>'}
+                                : ''}
                             <div id="add-spoke-${category.id}-${item.id}" class="add-spoke-input-container"
                                 style="margin-top: 10px; display: none; gap: 8px; align-items: center;">
                                 <input type="text"
@@ -1123,9 +1123,9 @@ const UI = {
                                        min="0"
                                        max="100"
                                        step="0.1"
-                                       style="width: 70px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"
+                                       style="width: 54px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;padding-inline: 1px"
                                        onchange="App.updateCategoryPercentage('${category.id}', parseFloat(this.value))">
-                                <span class="auto-percentage">% (${category.items.length} items)</span>
+                                <span class="auto-percentage">%</span>
                             </div>
                         </div>
                         <input type="color"
