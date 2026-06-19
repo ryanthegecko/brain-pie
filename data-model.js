@@ -587,7 +587,7 @@ const DataModel = {
         const category = this.getCategory(categoryId);
         if (!category) return null;
 
-        const id = Date.now().toString();
+        const id = crypto.randomUUID();
         category.items.push({
             id,
             name,
