@@ -252,9 +252,7 @@ const FirebaseAdapter = {
                 this.unsubscribeFromChanges();
             }
 
-            if (this.onAuthChangeCallback) {
-                this.onAuthChangeCallback(user);
-            }
+            this._fireAuthChange(user);
         });
 
         Debug.log('Firebase initialized');
@@ -343,14 +341,39 @@ const FirebaseAdapter = {
     },
 
     /**
-     * Set auth state change callback
+     * Register an auth state change callback.
+     * Multiple callbacks can be registered — all are called on each auth change.
+     * Each call also fires immediately with the current user state.
      * @param {Function} callback - Called with user object or null
      */
     onAuthStateChanged(callback) {
+        // Legacy single-callback path (kept for compatibility)
         this.onAuthChangeCallback = callback;
-        // Call immediately with current state
+
+        // Multi-listener path: push into array so multiple callers can register
+        if (!this._authChangeCallbacks) this._authChangeCallbacks = [];
+        if (!this._authChangeCallbacks.includes(callback)) {
+            this._authChangeCallbacks.push(callback);
+        }
+
+        // Fire immediately with current state
         if (callback) {
             callback(this.user);
+        }
+    },
+
+    /**
+     * Internal: fire all registered auth change callbacks.
+     * Called by the Firebase SDK auth listener registered in init().
+     * @param {Object|null} user
+     */
+    _fireAuthChange(user) {
+        if (this._authChangeCallbacks) {
+            for (const cb of this._authChangeCallbacks) {
+                try { cb(user); } catch (e) { Debug.log('FirebaseAdapter: auth callback error:', e.message); }
+            }
+        } else if (this.onAuthChangeCallback) {
+            this.onAuthChangeCallback(user);
         }
     },
 

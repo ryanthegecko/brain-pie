@@ -3,15 +3,24 @@
  * Abstracts storage layer to switch between localStorage and Firebase.
  *
  * Modes:
- * - 'local': Uses localStorage via Storage object (default)
- * - 'firebase': Uses Firebase Realtime Database via FirebaseAdapter
+ * - 'local':    Uses localStorage via LocalStorageAdapter (default)
+ * - 'file':     Uses LocalFileAdapter (File System Access API)
+ * - 'firebase': Uses FirebaseAdapter (live real-time sync)
+ *
+ * These modes are for the active working adapter. Firebase can additionally
+ * be configured as an optional backup target (backupAdapter) independently
+ * of which working mode is active.
  */
 const StorageAdapter = {
-    // Current storage mode: 'local' or 'firebase'
+    // Current storage mode: 'local', 'file', or 'firebase'
     currentMode: 'local',
 
-    // Active backend adapter — LocalStorageAdapter or FirebaseAdapter
+    // Active backend adapter — LocalStorageAdapter, LocalFileAdapter, or FirebaseAdapter
     adapter: null,
+
+    // Optional Firebase backup adapter (independent of currentMode).
+    // Set when firebaseBackupEnabled is true but we are NOT in live firebase mode.
+    backupAdapter: null,
 
     // Track if we're initialized
     initialized: false,
@@ -37,6 +46,9 @@ const StorageAdapter = {
     // Track if auth state listener is registered
     _authListenerRegistered: false,
 
+    // Track if backup auth state listener is registered
+    _backupAuthListenerRegistered: false,
+
     // Suppress meta listener during sync operations
     _isSyncingMeta: false,
 
@@ -44,8 +56,19 @@ const StorageAdapter = {
     _isSyncingData: false,
 
     /**
-     * Initialize the storage adapter
-     * Checks URL for Firebase config, checks localStorage for saved config
+     * Initialize the storage adapter.
+     *
+     * Step 1 — Working mode (independent of backup):
+     *   a. If 'localFileSyncEnabled' and File System Access API available → mode = 'file'
+     *   b. Otherwise fall back to mode = 'local'
+     *   c. If 'cloudSyncEnabled' → init Firebase + auth → mode = 'firebase'
+     *      (takes precedence; file/local stay as fallback while waiting for auth)
+     *
+     * Step 2 — Firebase backup (independent of working mode):
+     *   If 'firebaseBackupEnabled' is set and we are NOT already in live firebase mode,
+     *   init a FirebaseAdapter instance for one-shot backup operations only.
+     *   No auth listener is registered for the backup adapter.
+     *
      * @returns {Promise}
      */
     async init() {
@@ -54,13 +77,33 @@ const StorageAdapter = {
         this.adapter = LocalStorageAdapter;
         Debug.log('StorageAdapter initializing...');
 
-        // Check if cloud sync is enabled
+        // --- Step 1a: Local File working mode ---
+        const localFileSyncEnabled = localStorage.getItem('localFileSyncEnabled') === 'true';
+        const supportsFileAPI = typeof window.showOpenFilePicker === 'function';
+
+        if (localFileSyncEnabled && supportsFileAPI) {
+            try {
+                const ready = await LocalFileAdapter.restoreHandle();
+                if (ready) {
+                    this.currentMode = 'file';
+                    this.adapter = LocalFileAdapter;
+                    Debug.log('StorageAdapter: restored local file handle, using file mode');
+                } else {
+                    // Handle gone or permission revoked — fall back to local
+                    localStorage.removeItem('localFileSyncEnabled');
+                    Debug.log('StorageAdapter: local file handle could not be restored, reverting to local');
+                }
+            } catch (e) {
+                Debug.log('StorageAdapter: local file restore failed, using local:', e.message);
+            }
+        }
+
+        // --- Step 1b/c: Live Firebase working mode ---
+        // cloudSyncEnabled overrides file/local as the active working adapter once auth succeeds.
         const cloudSyncEnabled = localStorage.getItem('cloudSyncEnabled') === 'true';
 
         if (cloudSyncEnabled) {
-            // Try to load config from URL first, then localStorage
             let config = FirebaseAdapter.parseConfigFromURL();
-
             if (!config) {
                 config = FirebaseAdapter.loadConfigFromLocal();
             }
@@ -69,42 +112,94 @@ const StorageAdapter = {
                 try {
                     await FirebaseAdapter.init(config);
 
-                    // Set up auth state listener
                     this._authListenerRegistered = true;
                     FirebaseAdapter.onAuthStateChanged(async (user) => {
                         if (user) {
                             this.currentMode = 'firebase';
                             this.adapter = FirebaseAdapter;
+                            // If Firebase was acting as backup adapter, clear that role now
+                            // (we're in live mode, backupAdapter is redundant)
+                            this.backupAdapter = null;
                             Debug.log('StorageAdapter: switched to firebase mode');
-
-                            // Sync Firebase data before setting up listeners
                             await this.syncOnConnect();
                         } else {
-                            this.currentMode = 'local';
-                            this.adapter = LocalStorageAdapter;
-                            Debug.log('StorageAdapter: switched to local mode (not signed in)');
+                            // Revert to file or local while waiting for auth
+                            if (localFileSyncEnabled && LocalFileAdapter.isConnected()) {
+                                this.currentMode = 'file';
+                                this.adapter = LocalFileAdapter;
+                            } else {
+                                this.currentMode = 'local';
+                                this.adapter = LocalStorageAdapter;
+                            }
+                            Debug.log('StorageAdapter: switched to', this.currentMode, 'mode (not signed in)');
                         }
                     });
 
                     Debug.log('StorageAdapter: Firebase initialized, waiting for auth');
                 } catch (e) {
-                    Debug.log('StorageAdapter: Firebase init failed, using local:', e.message);
-                    this.currentMode = 'local';
+                    Debug.log('StorageAdapter: Firebase init failed:', e.message);
                 }
             } else {
-                Debug.log('StorageAdapter: No Firebase config found, using local');
-                this.currentMode = 'local';
+                Debug.log('StorageAdapter: No Firebase config found, using', this.currentMode, 'mode');
+                // Check URL for config even if not enabled (for first-time setup)
+                const urlConfig = FirebaseAdapter.parseConfigFromURL();
+                if (urlConfig) {
+                    Debug.log('StorageAdapter: Found config in URL, ready for setup');
+                }
             }
         } else {
-            // Check URL for config even if not enabled (for first-time setup)
+            // Check URL for config (for first-time setup via shared link)
             const urlConfig = FirebaseAdapter.parseConfigFromURL();
             if (urlConfig) {
                 Debug.log('StorageAdapter: Found config in URL, ready for setup');
-                // Don't auto-enable, just prepare for manual setup
             }
+        }
 
-            this.currentMode = 'local';
-            Debug.log('StorageAdapter: Cloud sync not enabled, using local');
+        // --- Step 2: Firebase backup adapter (independent of working mode) ---
+        const firebaseBackupEnabled = localStorage.getItem('firebaseBackupEnabled') === 'true';
+
+        if (firebaseBackupEnabled && !cloudSyncEnabled) {
+            // Firebase SDK may already be loaded from live-sync path above (no-op if so)
+            const backupConfig = FirebaseAdapter.loadConfigFromLocal();
+            if (backupConfig) {
+                try {
+                    // Re-use the same FirebaseAdapter instance (it handles duplicate init
+                    // gracefully). We register a separate auth listener so the backup
+                    // adapter is ready for REST-style pushes once the user is signed in.
+                    if (!FirebaseAdapter.app) {
+                        await FirebaseAdapter.init(backupConfig);
+                    }
+
+                    if (!this._backupAuthListenerRegistered) {
+                        this._backupAuthListenerRegistered = true;
+                        // Use onAuthStateChanged on the underlying auth; since FirebaseAdapter
+                        // only supports one callback we piggy-back on the existing mechanism.
+                        // We simply mark backupAdapter once auth is confirmed.
+                        const checkBackupAuth = () => {
+                            if (FirebaseAdapter.isConnected() && this.currentMode !== 'firebase') {
+                                this.backupAdapter = FirebaseAdapter;
+                                Debug.log('StorageAdapter: Firebase backup adapter ready');
+                            }
+                        };
+                        // Check immediately (user may already be signed in from a prior session)
+                        checkBackupAuth();
+                        // Also register a proper listener in case auth fires later
+                        FirebaseAdapter.onAuthStateChanged((user) => {
+                            if (user && this.currentMode !== 'firebase') {
+                                this.backupAdapter = FirebaseAdapter;
+                                Debug.log('StorageAdapter: Firebase backup adapter ready (auth resolved)');
+                            } else if (!user) {
+                                // Don't clear backupAdapter immediately — the user may re-auth
+                                Debug.log('StorageAdapter: Firebase backup adapter lost auth');
+                            }
+                        });
+                    }
+                } catch (e) {
+                    Debug.log('StorageAdapter: Firebase backup init failed:', e.message);
+                }
+            } else {
+                Debug.log('StorageAdapter: firebaseBackupEnabled but no config found, skipping backup init');
+            }
         }
 
         this.initialized = true;
@@ -490,13 +585,28 @@ const StorageAdapter = {
     },
 
     /**
-     * Disable cloud sync
+     * Disable live Firebase cloud sync.
+     * Before switching away, push one final snapshot to backupAdapter if configured
+     * so Firebase always holds the latest state.
      */
     async disableCloudSync() {
+        // Auto-push final snapshot if there is a backup adapter distinct from live Firebase.
+        // (In live mode the primary adapter IS Firebase, so we push directly before signing out.)
+        if (this.currentMode === 'firebase' && FirebaseAdapter.isConnected()) {
+            try {
+                await this._pushSnapshotToFirebase();
+                Debug.log('StorageAdapter: pushed final snapshot before disabling cloud sync');
+            } catch (e) {
+                Debug.log('StorageAdapter: final snapshot push failed (continuing):', e.message);
+            }
+        }
+
         await FirebaseAdapter.signOut();
         FirebaseAdapter.clearConfig();
         this.currentMode = 'local';
         this.adapter = LocalStorageAdapter;
+        this.backupAdapter = null;
+        this._authListenerRegistered = false;
         Debug.log('StorageAdapter: Cloud sync disabled');
     },
 
@@ -550,10 +660,15 @@ const StorageAdapter = {
 
     /**
      * Save priorities to per-user storage (per-pie in multi-pie mode).
-     * localStorage: no-op — priorities are saved inside the pie blob via savePie().
+     * localStorage mode: no-op — priorities are saved inside the pie blob via savePie().
+     * firebase mode: writes to per-user path in Firebase.
+     * file mode: writes to the 'priorities' section of the local JSON file.
      */
     async savePriorities(priorityList, pieId) {
-        if (!this.adapter.supportsRealtime) return;
+        // LocalStorageAdapter is a true no-op for priorities (they live inside the pie blob).
+        // LocalFileAdapter and FirebaseAdapter both have real implementations, so we must
+        // let those through even though supportsRealtime is false on LocalFileAdapter.
+        if (!this.adapter.supportsRealtime && this.currentMode !== 'file') return;
         this.isSavingPriorities = true;
         const activePieId = pieId || DataModel.getActivePieId();
         try {
@@ -617,6 +732,320 @@ const StorageAdapter = {
      */
     getProjectId() {
         return this.adapter.getProjectId();
+    },
+
+    /**
+     * Enable local file sync.
+     * Switches the active adapter to LocalFileAdapter and persists the choice.
+     * If live Firebase sync was active, it is disabled first (with a final snapshot push).
+     * Firebase can remain configured as a backup adapter independently.
+     *
+     * NOTE: The caller is responsible for calling LocalFileAdapter.openFile() or
+     * LocalFileAdapter.createFile() BEFORE calling this method so that the handle
+     * is already set on the adapter.
+     */
+    async enableLocalFileSync() {
+        // Disable live Firebase sync if active (this also pushes a final snapshot)
+        if (this.currentMode === 'firebase') {
+            await this.disableCloudSync();
+        }
+
+        this.currentMode = 'file';
+        this.adapter = LocalFileAdapter;
+        localStorage.setItem('localFileSyncEnabled', 'true');
+        Debug.log('StorageAdapter: local file sync enabled');
+    },
+
+    /**
+     * Disable local file sync and revert to localStorage mode.
+     * Before clearing the handle, push a final snapshot to backupAdapter if configured.
+     */
+    async disableLocalFileSync() {
+        if (this.backupAdapter && this.currentMode === 'file') {
+            try {
+                await this._pushSnapshotToFirebase();
+                Debug.log('StorageAdapter: pushed final snapshot before disabling local file sync');
+            } catch (e) {
+                Debug.log('StorageAdapter: final snapshot push failed (continuing):', e.message);
+            }
+        }
+
+        await LocalFileAdapter.clearHandle();
+        localStorage.removeItem('localFileSyncEnabled');
+        this.currentMode = 'local';
+        this.adapter = LocalStorageAdapter;
+        Debug.log('StorageAdapter: local file sync disabled, reverted to local');
+    },
+
+    /**
+     * Check if currently in local file sync mode with an active handle.
+     * @returns {boolean}
+     */
+    isLocalFileMode() {
+        return this.currentMode === 'file' && LocalFileAdapter.isConnected();
+    },
+
+    // -------------------------------------------------------------------------
+    // Firebase backup methods (independent of live sync / working mode)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Configure Firebase as a backup target without switching the working mode.
+     * Saves config, marks firebaseBackupEnabled, initialises FirebaseAdapter (SDK
+     * load + app init only — does NOT call enableCloudSync() or change currentMode).
+     *
+     * @param {Object} config - Firebase config object
+     * @returns {Promise<boolean>} true if init succeeded and auth resolved
+     */
+    async configureFirebaseBackup(config) {
+        try {
+            if (!FirebaseAdapter.app) {
+                await FirebaseAdapter.init(config);
+            } else {
+                FirebaseAdapter.config = config;
+            }
+
+            FirebaseAdapter.saveConfigToLocal(config);
+            localStorage.setItem('firebaseBackupEnabled', 'true');
+
+            // Register backup auth listener (only once)
+            if (!this._backupAuthListenerRegistered) {
+                this._backupAuthListenerRegistered = true;
+                FirebaseAdapter.onAuthStateChanged((user) => {
+                    if (user && this.currentMode !== 'firebase') {
+                        this.backupAdapter = FirebaseAdapter;
+                        Debug.log('StorageAdapter: Firebase backup adapter ready');
+                    }
+                });
+            }
+
+            // If already connected, assign immediately
+            if (FirebaseAdapter.isConnected() && this.currentMode !== 'firebase') {
+                this.backupAdapter = FirebaseAdapter;
+            }
+
+            Debug.log('StorageAdapter: Firebase backup configured');
+            return true;
+        } catch (e) {
+            Debug.log('StorageAdapter: configureFirebaseBackup failed:', e.message);
+            return false;
+        }
+    },
+
+    /**
+     * Remove the Firebase backup configuration.
+     * Does NOT sign the user out of live Firebase sync if that is active.
+     */
+    disableFirebaseBackup() {
+        this.backupAdapter = null;
+        localStorage.removeItem('firebaseBackupEnabled');
+        this._backupAuthListenerRegistered = false;
+        // If not in live firebase mode, also clear the stored config so init()
+        // doesn't try to restore it on next page load
+        if (this.currentMode !== 'firebase') {
+            FirebaseAdapter.clearConfig();
+        }
+        Debug.log('StorageAdapter: Firebase backup disabled');
+    },
+
+    /**
+     * Switch from backup mode to live Firebase sync.
+     * Firebase must already be configured (via configureFirebaseBackup or saved config).
+     * This calls enableCloudSync() which will change currentMode to 'firebase' once auth completes.
+     *
+     * @returns {Promise<boolean>}
+     */
+    async enableLiveFirebaseSync() {
+        const config = FirebaseAdapter.config || FirebaseAdapter.loadConfigFromLocal();
+        if (!config) {
+            Debug.log('StorageAdapter: cannot enable live sync — no Firebase config');
+            return false;
+        }
+
+        // Promote to live sync
+        localStorage.setItem('cloudSyncEnabled', 'true');
+        localStorage.removeItem('firebaseBackupEnabled');
+
+        const ok = await this.enableCloudSync(config);
+        if (ok) {
+            // backupAdapter is superseded by live mode
+            this.backupAdapter = null;
+            this._backupAuthListenerRegistered = false;
+        }
+        return ok;
+    },
+
+    /**
+     * Push full current state to Firebase as a one-shot snapshot.
+     * Does NOT switch currentMode. Does NOT set up any real-time listeners.
+     * Stores a lastFirebaseBackup timestamp in localStorage on success.
+     *
+     * @returns {Promise<boolean>} true if push succeeded
+     */
+    async pushToFirebase() {
+        const target = this.currentMode === 'firebase' ? this.adapter : this.backupAdapter;
+        if (!target || !target.isConnected()) {
+            Debug.log('StorageAdapter: pushToFirebase — no connected Firebase adapter');
+            return false;
+        }
+
+        try {
+            const ok = await this._pushSnapshotToFirebase(target);
+            if (ok) {
+                const ts = new Date().toISOString();
+                localStorage.setItem('lastFirebaseBackup', ts);
+                Debug.log('StorageAdapter: pushed snapshot to Firebase, ts:', ts);
+            }
+            return ok;
+        } catch (e) {
+            Debug.log('StorageAdapter: pushToFirebase failed:', e.message);
+            return false;
+        }
+    },
+
+    /**
+     * Internal helper — write meta + all pies + priorities to a FirebaseAdapter
+     * instance in one go. Does not modify currentMode or backupAdapter.
+     *
+     * @param {Object} [target] - FirebaseAdapter instance to write to (defaults to backupAdapter or FirebaseAdapter)
+     * @returns {Promise<boolean>}
+     */
+    async _pushSnapshotToFirebase(target) {
+        target = target || this.backupAdapter || (FirebaseAdapter.isConnected() ? FirebaseAdapter : null);
+        if (!target || !target.isConnected()) {
+            Debug.log('StorageAdapter: _pushSnapshotToFirebase — no connected target');
+            return false;
+        }
+
+        const meta = await this.adapter.loadMeta();
+        if (!meta || !meta.pieIds) {
+            Debug.log('StorageAdapter: _pushSnapshotToFirebase — no meta to push');
+            return false;
+        }
+
+        const pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+
+        // Write meta
+        await target.saveMeta(meta);
+
+        // Write each pie + priorities
+        for (const pieId of pieIds) {
+            const tombstoned = (meta.tombstonedPieIds || []).includes(pieId);
+            if (tombstoned) continue;
+
+            const pieData = await this.adapter.loadPie(pieId);
+            if (pieData && pieData.categories) {
+                await target.savePie(pieId, pieData);
+            }
+
+            const priorities = await this.adapter.loadPriorities(pieId);
+            if (Array.isArray(priorities) && priorities.length > 0) {
+                await target.savePriorities(priorities, pieId);
+            }
+        }
+
+        return true;
+    },
+
+    /**
+     * Pull latest snapshot from Firebase, replace current working data, and
+     * write it into the active adapter (local file or localStorage).
+     * Shows a confirm() dialog before overwriting.
+     *
+     * @returns {Promise<boolean>} true if pull and replace succeeded
+     */
+    async pullFromFirebase() {
+        const source = this.currentMode === 'firebase' ? this.adapter : this.backupAdapter;
+        if (!source || !source.isConnected()) {
+            Debug.log('StorageAdapter: pullFromFirebase — no connected Firebase adapter');
+            alert('Firebase is not connected. Please sign in first.');
+            return false;
+        }
+
+        const confirmed = confirm(
+            'This will replace your current working data with the latest Firebase snapshot.\n\n' +
+            'Any changes made since the last backup will be overwritten. Continue?'
+        );
+        if (!confirmed) return false;
+
+        try {
+            const meta = await source.loadMeta();
+            if (!meta || !meta.pieIds) {
+                alert('No data found in Firebase.');
+                return false;
+            }
+
+            const pieIds = Array.isArray(meta.pieIds) ? meta.pieIds : Object.values(meta.pieIds);
+            const tombstonedPieIds = Array.isArray(meta.tombstonedPieIds) ? meta.tombstonedPieIds : Object.values(meta.tombstonedPieIds || []);
+            const pieNames = meta.pieNames || {};
+
+            // Determine active pie
+            let activePieId = meta.activePieId || source.loadActivePieId && await source.loadActivePieId();
+            if (!activePieId || !pieIds.includes(activePieId) || tombstonedPieIds.includes(activePieId)) {
+                activePieId = pieIds.find(id => !tombstonedPieIds.includes(id)) || pieIds[0];
+            }
+
+            const metaObj = { pieIds, pieNames, activePieId, tombstonedPieIds };
+
+            // Write into active adapter
+            await this.adapter.saveMeta(metaObj);
+
+            for (const pieId of pieIds) {
+                if (tombstonedPieIds.includes(pieId)) continue;
+                const pieData = await source.loadPie(pieId);
+                if (pieData && pieData.categories) {
+                    await this.adapter.savePie(pieId, pieData);
+                }
+                const priorities = await source.loadPriorities(pieId);
+                if (Array.isArray(priorities)) {
+                    await this.adapter.savePriorities(priorities, pieId);
+                }
+            }
+
+            // Update DataModel + re-render
+            if (typeof DataModel !== 'undefined') {
+                DataModel.pieMeta = metaObj;
+                DataModel.setActivePieId(activePieId);
+                DataModel.currentPieName = pieNames[activePieId] || 'My Pie';
+
+                const activePie = await this.adapter.loadPie(activePieId);
+                if (activePie && activePie.categories) {
+                    DataModel.categories = activePie.categories;
+                    DataModel.categoryPercentageOverrides = activePie.categoryPercentageOverrides || {};
+                    DataModel.normalizeAllSpokes && DataModel.normalizeAllSpokes();
+                }
+
+                const priorities = await this.adapter.loadPriorities(activePieId);
+                DataModel.priorityList = Array.isArray(priorities) ? priorities : [];
+                DataModel.validatePriorityList && DataModel.validatePriorityList();
+            }
+
+            if (typeof App !== 'undefined') App.render();
+            if (typeof Storage !== 'undefined') Storage.showStatus('Restored from Firebase backup', 'success');
+
+            Debug.log('StorageAdapter: pullFromFirebase complete');
+            return true;
+        } catch (e) {
+            Debug.log('StorageAdapter: pullFromFirebase failed:', e.message);
+            alert('Restore failed: ' + e.message);
+            return false;
+        }
+    },
+
+    /**
+     * Returns true if a Firebase backup adapter is configured and connected.
+     * @returns {boolean}
+     */
+    hasFirebaseBackup() {
+        return !!(this.backupAdapter && this.backupAdapter.isConnected());
+    },
+
+    /**
+     * Returns the last Firebase backup timestamp from localStorage, or null.
+     * @returns {string|null} ISO timestamp string, or null if never backed up
+     */
+    getLastBackupTimestamp() {
+        return localStorage.getItem('lastFirebaseBackup') || null;
     }
 };
 

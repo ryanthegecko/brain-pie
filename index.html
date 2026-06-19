@@ -722,59 +722,140 @@
                 </div>
             </div>
 
-            <div class="settings-section" id="cloud-sync-section">
-                <h3>Cloud Sync</h3>
+            <!-- ============================================================ -->
+            <!-- Section 1: Working mode                                      -->
+            <!-- ============================================================ -->
+            <div class="settings-section" id="working-mode-section">
+                <h3>Working mode</h3>
                 <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
-                    Sync your Brain Pie with your devices using Firebase
+                    Where Brain Pie stores your data while you work
                 </p>
 
-                <!-- Collapsed state: just the enable button -->
-                <div id="cloud-sync-collapsed">
-                    <button class="tertiary" onclick="UI.enableCloudSync()">
-                        🔄 Enable Cloud Sync
+                <!-- Local file toggle (hidden on unsupported browsers) -->
+                <div id="local-file-sync-section">
+
+                    <!-- Browser not supported: hide toggle, show note -->
+                    <div id="local-file-unsupported" style="display: none;">
+                        <p style="color: #999; font-size: 13px; margin-bottom: 12px;">
+                            Saving to a local file requires Chrome or Edge.
+                        </p>
+                    </div>
+
+                    <!-- Collapsed: show enable button -->
+                    <div id="local-file-collapsed">
+                        <button class="tertiary" onclick="UI.enableLocalFileSync()">
+                            Save to a local file
+                        </button>
+                        <p style="color: #999; font-size: 12px; margin-top: 6px; margin-bottom: 0;">
+                            Currently using browser storage
+                        </p>
+                    </div>
+
+                    <!-- Expanded: file is active -->
+                    <div id="local-file-expanded" style="display: none;">
+                        <!-- Current file status -->
+                        <div id="local-file-status" class="sync-status" style="margin-bottom: 12px;">
+                            <span class="sync-indicator offline"></span>
+                            <span class="sync-text" id="local-file-status-text">No file selected</span>
+                        </div>
+
+                        <!-- File picker buttons -->
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                            <button class="small secondary" onclick="UI.openLocalFile()">
+                                Choose file
+                            </button>
+                            <button class="small secondary" onclick="UI.createLocalFile()">
+                                New file
+                            </button>
+                        </div>
+
+                        <!-- Disable -->
+                        <button class="warn small" onclick="UI.disableLocalFileSync()">
+                            Stop saving to file
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- Section 2: Cloud backup (Firebase)                           -->
+            <!-- ============================================================ -->
+            <div class="settings-section" id="cloud-backup-section">
+                <h3>Cloud backup</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                    Back up to Firebase on demand, or switch to live sync
+                </p>
+
+                <!-- Not yet configured -->
+                <div id="cloud-backup-unconfigured">
+                    <button class="tertiary" onclick="UI.showFirebaseBackupConfig()">
+                        Configure Firebase
                     </button>
                 </div>
 
-                <!-- Expanded state: Firebase config and auth -->
-                <div id="cloud-sync-expanded" style="display: none;">
-                    <!-- Status indicator -->
-                    <div id="cloud-sync-status" class="sync-status">
-                        <span class="sync-indicator offline"></span>
-                        <span class="sync-text">Not connected</span>
+                <!-- Firebase config input (shown when "Configure Firebase" is clicked) -->
+                <div id="cloud-backup-config-form" style="display: none; margin-top: 12px;">
+                    <div class="input-group">
+                        <label for="firebase-config-input">Firebase Config (paste JSON)</label>
+                        <textarea id="firebase-config-input"
+                                  placeholder='Paste your Firebase config here (from Firebase console)'
+                                  rows="4"
+                                  style="width: 100%; font-family: monospace; font-size: 11px;"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                        <button class="secondary" onclick="UI.connectFirebaseBackup()">
+                            Connect to Firebase
+                        </button>
+                        <button class="small" onclick="UI.hideFirebaseBackupConfig()">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Auth section (shown after config is accepted) -->
+                <div id="cloud-backup-auth" style="display: none; margin-top: 12px;">
+                    <div id="firebase-signed-out">
+                        <button onclick="UI.signInWithGoogle()">
+                            Sign in with Google
+                        </button>
+                    </div>
+                    <div id="firebase-signed-in" style="display: none;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <img id="firebase-user-photo" style="width: 32px; height: 32px; border-radius: 50%;" src="" alt="" />
+                            <span id="firebase-user-name" style="font-weight: 500;"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configured + connected: backup controls -->
+                <div id="cloud-backup-controls" style="display: none;">
+                    <!-- Signed-in user info -->
+                    <div id="cloud-backup-user" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <img id="cloud-backup-user-photo" style="width: 28px; height: 28px; border-radius: 50%; display:none;" src="" alt="" />
+                        <span id="cloud-backup-user-name" style="font-size: 13px; color: #555;"></span>
                     </div>
 
-                    <!-- Firebase Config Input -->
-                    <div id="firebase-config-form" style="margin-top: 15px;">
-                        <div class="input-group">
-                            <label for="firebase-config-input">Firebase Config (paste JSON)</label>
-                            <textarea id="firebase-config-input"
-                                      placeholder='Paste your Firebase config here (from Firebase console)'
-                                      rows="4"
-                                      style="width: 100%; font-family: monospace; font-size: 11px;"></textarea>
-                        </div>
-                        <button class="secondary" onclick="UI.connectFirebase()" style="margin-top: 10px;">
-                            Connect to Firebase
+                    <!-- Status line: last backup time -->
+                    <div id="cloud-sync-status" class="sync-status" style="margin-bottom: 12px;">
+                        <span class="sync-indicator offline"></span>
+                        <span class="sync-text" id="cloud-backup-last-ts">Last backup: never</span>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                        <button class="secondary small" onclick="UI.backupNow()">
+                            Back up now
+                        </button>
+                        <button class="secondary small" onclick="UI.restoreFromBackup()">
+                            Restore from backup
+                        </button>
+                        <button class="secondary small" onclick="UI.switchToLiveSync()">
+                            Switch to live sync
                         </button>
                     </div>
 
-                    <!-- Auth Section (shown after Firebase connected) -->
-                    <div id="firebase-auth-section" style="display: none; margin-top: 15px;">
-                        <div id="firebase-signed-out">
-                            <button onclick="UI.signInWithGoogle()">
-                                🔐 Sign in with Google
-                            </button>
-                        </div>
-                        <div id="firebase-signed-in" style="display: none;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                <img id="firebase-user-photo" style="width: 32px; height: 32px; border-radius: 50%;" src="" alt="" />
-                                <span id="firebase-user-name" style="font-weight: 500;"></span>
-                            </div>
-                            <button class="secondary" onclick="UI.signOutFirebase()">Sign Out</button>
-                        </div>
-                    </div>
-
-                    <!-- Share URL -->
-                    <div id="share-url-section" style="display: none; margin-top: 20px;">
+                    <!-- Share URL (visible once signed in) -->
+                    <div id="share-url-section" style="display: none; margin-top: 12px;">
                         <div class="input-group">
                             <label for="cloud-share-url">Share this URL with other devices or team:</label>
                             <input type="text" id="cloud-share-url" readonly
@@ -782,23 +863,66 @@
                         </div>
                         <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
                             <button class="small secondary" onclick="UI.copyShareURL()">
-                                📋 Copy URL
+                                Copy URL
                             </button>
                             <button class="small secondary" onclick="FirebaseAdapter.copyPersonalConfigURL()" title="Generate a URL where each person's data is stored separately under their own Google account">
-                                🔒 Copy Personal URL
+                                Copy Personal URL
                             </button>
                             <button class="small secondary" onclick="UI.exportFirebaseConfig()">
-                                📥 Export Config
+                                Export Config
                             </button>
                         </div>
                     </div>
 
-                    <!-- Disable button -->
-                    <button class="warn" onclick="UI.disableCloudSync()" style="margin-top: 20px;">
-                        Disable Cloud Sync
+                    <!-- Disable -->
+                    <button class="warn small" onclick="UI.disableFirebaseBackup()" style="margin-top: 12px;">
+                        Remove backup
+                    </button>
+                </div>
+
+                <!-- Live sync mode active (currentMode === 'firebase') -->
+                <div id="cloud-sync-live-section" style="display: none;">
+                    <div id="cloud-sync-status-live" class="sync-status" style="margin-bottom: 12px;">
+                        <span class="sync-indicator online"></span>
+                        <span class="sync-text">Live sync active</span>
+                    </div>
+
+                    <!-- Auth info -->
+                    <div id="firebase-auth-section" style="margin-bottom: 12px;">
+                        <div id="firebase-signed-in-live" style="display: none;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <img id="firebase-user-photo-live" style="width: 32px; height: 32px; border-radius: 50%;" src="" alt="" />
+                                <span id="firebase-user-name-live" style="font-weight: 500;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Share URL in live mode -->
+                    <div id="share-url-section-live" style="display: none; margin-top: 12px;">
+                        <div class="input-group">
+                            <label for="cloud-share-url-live">Share this URL with other devices or team:</label>
+                            <input type="text" id="cloud-share-url-live" readonly
+                                   style="font-size: 11px; background: #f5f5f5; font-family: monospace;" />
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                            <button class="small secondary" onclick="UI.copyShareURL('live')">
+                                Copy URL
+                            </button>
+                            <button class="small secondary" onclick="FirebaseAdapter.copyPersonalConfigURL()" title="Generate a URL where each person's data is stored separately under their own Google account">
+                                Copy Personal URL
+                            </button>
+                            <button class="small secondary" onclick="UI.exportFirebaseConfig()">
+                                Export Config
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="warn small" onclick="UI.disableCloudSync()" style="margin-top: 12px;">
+                        Disable live sync
                     </button>
                 </div>
             </div>
+
             <h3>Data</h3>
                 <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
                     Back up and import
@@ -1757,6 +1881,7 @@
     <script src="storage.js"></script>
     <script src="adapters/firebase-adapter.js"></script>
     <script src="adapters/local-storage-adapter.js"></script>
+    <script src="adapters/local-file-adapter.js"></script>
     <script src="adapters/google-auth-adapter.js"></script>
     <script src="adapters/calendar-adapter.js"></script>
     <script src="adapters/tasks-adapter.js"></script>
@@ -1767,6 +1892,7 @@
     <script src="controllers/ui-controller.js"></script>
     <script src="controllers/scheduling-controller.js"></script>
     <script src="controllers/cloud-sync-controller.js"></script>
+    <script src="controllers/local-file-sync-controller.js"></script>
     <script src="controllers/import-export-controller.js"></script>
     <script src="controllers/prioritiser-controller.js"></script>
     <script src="controllers/calendar-import-controller.js"></script>
