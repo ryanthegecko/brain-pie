@@ -280,20 +280,22 @@
                 <button class="docs-nav-btn" data-page="3" onclick="UI.switchDocsPage(3)">Spokes & Actions</button>
                 <button class="docs-nav-btn" data-page="4" onclick="UI.switchDocsPage(4)">Calendar</button>
                 <button class="docs-nav-btn" data-page="5" onclick="UI.switchDocsPage(5)">Priorities</button>
-                <button class="docs-nav-btn" data-page="6" onclick="UI.switchDocsPage(6)">Cloud Sync</button>
-                <button class="docs-nav-btn" data-page="7" onclick="UI.switchDocsPage(7)">Import / Export</button>
+                <button class="docs-nav-btn" data-page="6" onclick="UI.switchDocsPage(6)">Storage</button>
+                <button class="docs-nav-btn" data-page="7" onclick="UI.switchDocsPage(7)">Cloud Sync</button>
+                <button class="docs-nav-btn" data-page="8" onclick="UI.switchDocsPage(8)">Import / Export</button>
             </div>
 
             <!-- Page 1: Overview -->
             <div class="docs-page active" id="docs-page-1">
                 <h3>What is Brain Pie?</h3>
-                <p>Brain Pie is a visual mind organization tool that uses a 3-layer pie chart to help you organize thoughts, tasks, and actions. Everything stays in your browser by default — no accounts, no servers, no tracking.</p>
+                <p>Brain Pie is a visual mind organisation tool that uses a 4-layer pie chart to help you organise thoughts, tasks, and actions. Everything stays in your browser by default — no accounts, no servers, no tracking.</p>
 
-                <h3>The 3-Layer Hierarchy</h3>
+                <h3>The 4-Layer Hierarchy</h3>
                 <ul>
                     <li><strong>Categories</strong> — Top-level areas of life (the outer ring). Examples: Work, Health, Personal.</li>
                     <li><strong>Slices</strong> — Specific domains within a category (the inner pie wedges). Examples: under Health → Exercise, Diet, Sleep.</li>
-                    <li><strong>Spokes</strong> — Individual items radiating outward from slices. These can be reminders, tasks, or recurring events. List-type spokes can contain <strong>Actions</strong> — sub-items that can each be scheduled on your calendar independently.</li>
+                    <li><strong>Spokes</strong> — Individual items radiating outward from slices. These can be reminders, tasks, or recurring events.</li>
+                    <li><strong>Actions</strong> — Sub-items inside List-type spokes. Each action can be scheduled on your calendar independently.</li>
                 </ul>
 
                 <h3>Interacting with the Pie</h3>
@@ -305,7 +307,7 @@
                 </ul>
 
                 <h3>Privacy First</h3>
-                <p>All data is stored in your browser's localStorage. Nothing is sent to any server unless you explicitly enable Cloud Sync with your own Firebase project. There are no accounts, no cookies, and no analytics.</p>
+                <p>Your data never leaves your device unless you choose. By default everything is stored in your browser's localStorage — no accounts, no servers, no tracking. If you'd like more control, you can save to a local file on your computer, or connect your own Firebase project for cloud backup or live sync across devices. See the <strong>Storage</strong> page for the full breakdown.</p>
             </div>
 
             <!-- Page 2: Getting Started -->
@@ -471,10 +473,41 @@
                 <p>Checking off a completed action (List type) automatically removes it from the priority list.</p>
             </div>
 
-            <!-- Page 6: Cloud Sync -->
+            <!-- Page 6: Storage -->
             <div class="docs-page" id="docs-page-6">
+                <h3>Where Your Data Lives</h3>
+                <p>Brain Pie gives you three ways to store your data. You pick the one that suits how you work — and you can switch at any time from Settings.</p>
+
+                <h3>Browser localStorage (default)</h3>
+                <p>Out of the box, Brain Pie saves everything to your browser's localStorage. There's no setup, it works offline, and nothing ever leaves your device. The trade-off is that the data is tied to one browser on one machine. If you clear your browser data, you'll lose it — so it's worth doing an occasional export as a backup.</p>
+                <p>No action needed to use this mode. It's the default.</p>
+
+                <h3>Local File Mode</h3>
+                <p>If you want your data in a proper file you can back up, move, or open on another machine, local file mode saves your pie to a <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;">.json</code> file of your choosing. Every change is written automatically as you work.</p>
+                <ul>
+                    <li><strong>How to enable:</strong> go to <strong>Settings → Working mode → Save to a local file</strong>, then pick where you'd like to save it.</li>
+                    <li><strong>Reconnects automatically:</strong> when you reload the page, Brain Pie remembers the file and reconnects without you having to pick it again.</li>
+                    <li><strong>Browser support:</strong> local file mode uses the File System Access API, which is currently only supported in Chrome and Edge. It won't appear as an option in Firefox or Safari.</li>
+                </ul>
+
+                <h3>Cloud Backup (Firebase)</h3>
+                <p>Cloud backup lets you push a snapshot of your data to your own Firebase project on demand, and restore from it whenever you need. Crucially, it doesn't change how Brain Pie normally works — you stay in localStorage or local file mode, and the cloud is just a safety net.</p>
+                <ul>
+                    <li><strong>How to enable:</strong> go to <strong>Settings → Cloud backup</strong>, paste your Firebase config, and sign in with Google.</li>
+                    <li>Click <strong>Back up now</strong> to push a snapshot to Firebase.</li>
+                    <li>Click <strong>Restore</strong> to pull the last snapshot back down.</li>
+                    <li>Your day-to-day data still lives locally; the backup is separate.</li>
+                </ul>
+                <p>See the <strong>Cloud Sync</strong> page for Firebase project setup instructions — the same steps apply whether you're setting up backup or live sync.</p>
+
+                <h3>Firebase Live Sync</h3>
+                <p>Live sync keeps your data in Firebase continuously, syncing across all your devices in real time. It's the right choice if you regularly switch between machines or want a second device as a true mirror. You can switch to live sync from <strong>Settings → Cloud backup</strong> once Firebase is configured. Full details are on the next page.</p>
+            </div>
+
+            <!-- Page 7: Cloud Sync -->
+            <div class="docs-page" id="docs-page-7">
                 <h3>How Cloud Sync Works</h3>
-                <p>Brain Pie can optionally sync your data across devices using Firebase Realtime Database. You provide your own Firebase project — Brain Pie never stores your data on its servers.</p>
+                <p>Brain Pie can sync your data across devices in real time using Firebase Realtime Database. You provide your own Firebase project — Brain Pie never stores your data on its servers. To configure Firebase for either live sync or cloud backup, follow the steps below.</p>
 
                 <h3>Creating a Firebase Project</h3>
                 <ol>
@@ -503,10 +536,10 @@
 
                 <h3>Connecting to Brain Pie</h3>
                 <ul>
-                    <li>Go to <strong>Settings → Cloud Sync → Enable Cloud Sync</strong>.</li>
-                    <li>Paste your Firebase project config JSON and click "Connect to Firebase".</li>
+                    <li>Go to <strong>Settings → Cloud backup → Configure Firebase</strong>.</li>
+                    <li>Paste your Firebase project config JSON and click <strong>Connect to Firebase</strong>.</li>
                     <li>Sign in with Google to authenticate.</li>
-                    <li>On first sync, you'll be asked whether to push your local data to the cloud or start fresh.</li>
+                    <li>From here you can use Firebase as a cloud backup, or switch to live sync — Brain Pie will ask what you'd like on first connect.</li>
                 </ul>
 
                 <h3>Sharing with Other Devices</h3>
@@ -554,8 +587,8 @@
                 <p style="color: #888; font-size: 13px;">If you want to remove the warning permanently, you can submit your OAuth consent screen for Google verification — though this is a lengthy process and not required for personal or small-team use.</p>
             </div>
 
-            <!-- Page 7: Import / Export -->
-            <div class="docs-page" id="docs-page-7">
+            <!-- Page 8: Import / Export -->
+            <div class="docs-page" id="docs-page-8">
                 <h3>Exporting Data</h3>
                 <ul>
                     <li>Go to <strong>Settings → Export Data & Settings to JSON</strong>.</li>

@@ -1549,7 +1549,7 @@ const UI = {
     // ==========================================
 
     docsCurrentPage: 1,
-    docsTotalPages: 7,
+    docsTotalPages: 8,
 
     openDocs() {
         document.getElementById('docs-overlay').classList.add('active');
