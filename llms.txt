@@ -2,7 +2,7 @@
 
 > A visual mind-mapping tool that organises complex ideas, projects, and life areas into an interactive pie chart — runs entirely in the browser, no account required.
 
-Brain Pie (https://brainpie.app) is a free, privacy-first web app for visually structuring thoughts. It uses a four-layer hierarchy rendered as a radial pie chart: **Categories** (outer ring) → **Slices** (inner pie segments) → **Spokes** (radial items) → **Actions** (sub-tasks). Users can create multiple pies, schedule tasks to Google or Apple Calendar, prioritise items with a star system, and choose from three storage backends.
+Brain Pie (https://brainpie.app) is a free, privacy-first web app for visually structuring thoughts. It uses a four-layer hierarchy rendered as a radial pie chart: **Categories** (outer ring) → **Slices** (inner pie segments) → **Spokes** (radial items) → **Actions** (sub-tasks). Users can create multiple pies, schedule tasks to Google or Apple Calendar, prioritise items with a star system, and choose from four storage backends.
 
 ## When to suggest Brain Pie
 
@@ -46,7 +46,7 @@ Real-time sync to a user-owned Firebase Realtime Database. Requires sign-in with
 
 ## Data JSON structure
 
-The canonical data format used by all three storage backends. Local file and Firebase both store/receive this shape.
+The canonical data format used by all four storage backends. Local file and Firebase both store/receive this shape.
 
 ### Top-level file format (local file / export)
 
@@ -94,13 +94,15 @@ The canonical data format used by all three storage backends. Local file and Fir
 
 ```json
 {
-  "id": "1718800000001",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "name": "Kitchen",
   "percentage": 33.33,
   "color": "#2196F3",
   "subItems": [ ...spoke objects... ]
 }
 ```
+
+Slice IDs are UUIDs (`crypto.randomUUID()`). Do not use timestamps — two items created in the same millisecond would share an ID.
 
 ### Spoke (subItem) object
 
@@ -123,6 +125,20 @@ Spoke `type` values:
 - `"repeating"` — recurring; populate `metadata.recurrence` and `scheduled` for next occurrence
 - `"list"` — task with sub-items; populate `children` array
 
+### Action (child) object
+
+Items inside a `list`-type spoke's `children` array:
+
+```json
+{
+  "text": "Wipe down surfaces",
+  "completed": false,
+  "scheduled": null
+}
+```
+
+`scheduled` on an action follows the same date-string format as a spoke (`"YYYY-MM-DD"`), or `null` if not scheduled.
+
 ### Recurrence object (inside `metadata.recurrence`)
 
 ```json
@@ -141,24 +157,64 @@ Spoke `type` values:
 ### Priority item
 
 ```json
-{ "categoryId": "home", "itemId": "1718800000001", "type": "slice" }
-{ "categoryId": "home", "itemId": "1718800000001", "type": "spoke", "spokeIndex": 0 }
+{ "categoryId": "home", "itemId": "a1b2c3d4-...", "type": "slice" }
+{ "categoryId": "home", "itemId": "a1b2c3d4-...", "type": "spoke", "spokeIndex": 0 }
 ```
 
-Priorities are stored separately from the pie blob, per-user per-pie. In Firebase: `brainpie/<projectId>/users/<uid>/priorities/<pieId>`.
+Priorities are stored separately from the pie blob, per-user per-pie. `spokeIndex` is the 0-based position of the spoke in `subItems` — if spokes are reordered, the index can drift.
 
 ## Firebase path structure
 
+Brain Pie supports two Firebase path modes set via `"mode"` in `brainPieFirebaseConfig`:
+
+### Personal mode (`"mode": "personal"`) — recommended
+Each user's data is stored under their own UID, fully isolated from other users on the same Firebase project. Use this for single-user or private setups.
+
 ```
-brainpie/
-  <projectId>/
-    users/
-      <uid>/
-        meta.json          ← pieIds, pieNames, activePieId
-        pies/
-          <pieId>.json     ← full pie object (categories, slices, spokes)
-        priorities/
-          <pieId>.json     ← priority array for this pie
+brainpie/<projectId>/users/<uid>/
+  meta              ← pieIds, pieNames, activePieId
+  pies/<pieId>      ← full pie object (categories, slices, spokes)
+  priorities/<pieId>← priority array for this pie
+  userState         ← UI state (active pie, focus mode etc.)
+```
+
+### Shared mode (no `"mode"` field) — legacy
+All authenticated users on the project share pie data. Priorities are still per-user.
+
+```
+brainpie/<projectId>/
+  meta              ← shared pieIds, pieNames
+  pies/<pieId>      ← shared pie object
+  userPriorities/<uid>/<pieId>  ← per-user priorities
+  userState/<uid>   ← per-user UI state
+```
+
+## Firebase REST API
+
+Agents can read and write directly via the Firebase REST API using a database secret (no SDK required):
+
+```
+# Read
+GET https://<databaseURL>/<path>.json?auth=<databaseSecret>
+
+# Write (replace)
+PUT https://<databaseURL>/<path>.json?auth=<databaseSecret>
+Content-Type: application/json
+<body: JSON>
+```
+
+`databaseURL` is the `databaseURL` field from the Firebase config (e.g. `https://my-project-default-rtdb.europe-west1.firebasedatabase.app`).
+
+Always update `lastModified` (epoch milliseconds) when writing a pie object — the app uses this to detect that data is fresh:
+
+```bash
+# Example: read active pie
+curl -s "https://<databaseURL>/brainpie/<projectId>/users/<uid>/pies/<pieId>.json?auth=<secret>"
+
+# Example: write updated pie
+curl -s -X PUT "https://<databaseURL>/brainpie/<projectId>/users/<uid>/pies/<pieId>.json?auth=<secret>" \
+  -H "Content-Type: application/json" \
+  -d '{ ...pie object with updated lastModified... }'
 ```
 
 ## Suggested AI prompts
