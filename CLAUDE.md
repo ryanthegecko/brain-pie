@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
-**Last Updated:** March 2026
-**Current Version:** v0.20
+**Last Updated:** June 2026
+**Current Version:** v0.21
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -18,29 +18,50 @@ The app uses a hierarchical structure with four layers:
 ## Technical Stack
 - **Frontend:** Vanilla JavaScript (no framework)
 - **Visualization:** D3.js v7.8.5
-- **Storage:** Browser localStorage (default) or Firebase Realtime Database (cloud sync)
+- **Storage:** Four modes: browser localStorage (default), local file (File System Access API), Firebase backup (on-demand), Firebase live sync
 - **Styling:** CSS with responsive design
-- **Optional:** Firebase for cloud sync/collaboration (user-provided project)
+- **Testing:** Playwright e2e (20 tests across core, local-file, cloud-backup, settings-ui suites)
 
 ## File Structure
 
 ```
 brain-pie/
-├── index.html              # Main HTML structure, overlays, and modals
-├── styles.css              # All styling including responsive breakpoints
-├── app.js                  # Main application controller and initialization
-├── data-model.js           # Data structure management and business logic
-├── chart-renderer.js       # D3.js visualization and interactions
-├── ui-controller.js        # UI state, overlays, and user interactions
-├── storage.js              # localStorage persistence and import/export
-├── import-manager.js       # Granular import/merge orchestration
-├── tutorial-manager.js     # First-time user tutorial system
-├── firebase-adapter.js     # Firebase Realtime Database integration
-├── google-auth-adapter.js  # Standalone Google OAuth for calendar-only users
-├── calendar-adapter.js     # Google Calendar API wrapper
-├── storage-adapter.js      # Abstraction layer for localStorage/Firebase switching
-└── assets/                 # Images and icons
+├── index.html                          # Main HTML, overlays, modals, in-app docs
+├── styles.css                          # All styling and responsive breakpoints
+├── app.js                              # App controller and initialization
+├── data-model.js                       # Data structure, CRUD, business logic
+├── storage.js                          # localStorage persistence
+├── example-data.js                     # Default example pie for new users
+├── adapters/
+│   ├── storage-adapter.js              # Routes storage calls to active backend
+│   ├── local-storage-adapter.js        # localStorage backend
+│   ├── local-file-adapter.js           # File System Access API backend (Chrome/Edge)
+│   ├── firebase-adapter.js             # Firebase Realtime Database backend
+│   ├── google-auth-adapter.js          # Standalone Google OAuth (calendar-only)
+│   ├── calendar-adapter.js             # Google Calendar API wrapper
+│   └── tasks-adapter.js                # Google Tasks API wrapper
+├── controllers/
+│   ├── ui-controller.js                # UI state, overlays, interactions
+│   ├── chart-renderer.js               # D3.js visualization
+│   ├── cloud-sync-controller.js        # Firebase backup + live sync settings UI
+│   ├── local-file-sync-controller.js   # Local file settings UI
+│   ├── calendar-import-controller.js   # Import from Google Calendar wizard
+│   ├── import-export-controller.js     # Granular JSON import/export
+│   ├── prioritiser-controller.js       # Priority window UI
+│   ├── scheduling-controller.js        # Date/time and recurrence pickers
+│   ├── tasks-import-controller.js      # Import from Google Tasks wizard
+│   └── transform-controller.js         # AI-powered spoke transforms (pro)
+├── managers/
+│   ├── import-manager.js               # Import merge orchestration
+│   └── tutorial-manager.js             # First-time user tutorial
+├── tests/
+│   ├── core.spec.js                    # Tests 1–7: localStorage, core CRUD, multi-pie, priorities
+│   ├── local-file.spec.js              # Tests 1–12: local file mode
+│   ├── cloud-backup.spec.js            # Tests 1–9: Firebase backup/live sync
+│   └── settings-ui.spec.js             # Tests 1–10: settings panel UI
+└── assets/
     ├── og.png
+    ├── favicon.svg
     └── trash.svg
 ```
 
@@ -73,7 +94,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
       color: "#hexcolor",
       items: [
         {
-          id: "item-id",
+          id: "uuid-v4-string",   // crypto.randomUUID() — never use Date.now() (collision risk)
           name: "Slice Name",
           percentage: 33.33,
           color: "#hexcolor",
@@ -176,7 +197,7 @@ User Action → UI Controller → Data Model → Storage → Chart Renderer → 
 - Spoke Editor (unified tabbed overlay: Type tab + Schedule tab, replaces spoke-type-picker and spoke-config)
 - Prioritiser Window (fixed, draggable, with action buttons per spoke type)
 - Disclaimer/About
-- Documentation (7-page in-app reference with nav and prev/next)
+- Documentation (8-page in-app reference with nav and prev/next)
 
 #### 4. **Storage** (`storage.js`)
 - Multi-key localStorage persistence: meta key + per-pie keys
@@ -262,28 +283,45 @@ Spokes can have different types that affect their behavior:
 - **Example data** loaded for new users
 - **Privacy by default** - localStorage only unless cloud sync enabled
 
-### 7. Cloud Sync (Firebase)
-Optional real-time sync using Firebase Realtime Database:
-- **URL-based config** - Share `?config=base64...` URL for easy setup
-- **Google authentication** - Each user/team uses their own Firebase project
-- **Real-time sync** - Changes appear instantly across all connected devices
-- **Per-user priorities** - Priority lists stored per-user at `userPriorities/{uid}`, not in shared data
-- **First-time sync prompt** - Option to push local data or start fresh
-- **Export Firebase config** - Download config as JSON for sharing
-- **Offline fallback** - Automatically uses localStorage when disconnected
-- **Visual indicator** - Shows project name and sync status in main UI
+### 7. Storage Modes
+
+**Browser localStorage (default):** No setup, single device, offline.
+
+**Local file mode:** Saves to a `.json` file on disk via File System Access API (Chrome/Edge only). Handle persisted in IndexedDB — reconnects automatically on reload.
+
+**Firebase backup (on-demand):** Coexists with localStorage or local file. Push/pull snapshots without switching primary storage. Activated via `firebaseBackupEnabled` in localStorage.
+
+**Firebase live sync:** Replaces localStorage/file as primary backend. Real-time sync across devices/team. Google auth required. Activated via `cloudSyncEnabled` in localStorage.
+
+Shared settings UI features:
+- **URL-based config** - `?config=base64...` URL encodes Firebase config; Personal URL forces `mode: "personal"` (UID-scoped paths)
+- **Copy Personal URL** - Always generates a personal-mode URL regardless of current config
+- **Export config** - Download Firebase config as JSON
+- **Visual indicator** - Shows storage mode + project name + sync status in main UI
 
 **Firebase Path Structure:**
+
+Two modes set via `"mode"` in `brainPieFirebaseConfig`:
+
+*Personal mode (`"mode": "personal"`) — recommended. Each user's data isolated under their UID:*
+```
+brainpie/{projectId}/users/{uid}/
+├── meta              ← pieIds, pieNames, activePieId
+├── pies/{pieId}      ← categories, categoryPercentageOverrides
+├── priorities/{pieId}← per-user priority array
+└── userState         ← activePieId, UI state
+```
+
+*Shared mode (no `mode` field) — legacy. All users share pie data:*
 ```
 brainpie/{projectId}/
-├── meta                              ← SHARED: { pieIds: [...], pieNames: { id: "name" } }
-├── pies/
-│   ├── {pieId}                       ← SHARED: { categories, categoryPercentageOverrides }
-│   └── ...
-└── userPriorities/{uid}/
-    ├── {pieId}                       ← PER-USER PER-PIE: [priority refs]
-    └── ...
+├── meta              ← shared pieIds, pieNames
+├── pies/{pieId}      ← shared categories + overrides
+├── userPriorities/{uid}/{pieId}  ← per-user priorities
+└── userState/{uid}   ← per-user UI state
 ```
+
+"Copy Personal URL" in settings always forces `mode: "personal"`. "Copy URL" encodes the config as-is.
 
 ### 7. Responsive Design
 
@@ -1179,16 +1217,6 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 - ViewBox scaling may make text too small at mobile widths
 - May need a smaller virtual width or alternative approach for mobile
 
-### Completed
-- ~~Expansion Refactor~~ - Implemented as full-pie takeover in v0.8 (re-render approach with data override, not DOM transform)
-- ~~Prioritiser System~~ - Implemented in v0.9 (separate `priorityList` array, draggable window UI, star buttons)
-- ~~Spoke Label Clipping~~ - Implemented as ViewBox scaling in v0.10 (render at 1920px virtual canvas, scale down via SVG viewBox for viewports <1920px)
-- ~~All-Day Events~~ - Implemented in v0.12 (checkbox in datetime picker, defaults to all-day for new events)
-- ~~Invitees / Attendees~~ - Implemented in v0.12 (comma-separated emails, Google Calendar API + Apple .ics support)
-- ~~Unified Spoke Editor~~ - Implemented in v0.14 (Phase 0 of Transforms: merged spoke-type-picker + spoke-config into tabbed editor)
-- ~~Per-User Priorities~~ - Implemented in v0.15 (Firebase priorities stored at `userPriorities/{uid}`, team isolation, migration from shared blob)
-- ~~Multi-Pie Support~~ - Implemented in v0.16 (tab-based switching, per-pie storage, Firebase shared pies with per-user per-pie priorities)
-- ~~Focus Prioritised~~ - Implemented in v0.17 (toggle to filter pie/treemap to only prioritised items, `_originalIndex` annotations for correct spoke references)
 
 ## Development Notes
 
@@ -1404,8 +1432,8 @@ Debug.log('message', data)
 - [ ] **Tutorial**: Auto-progress on "Nice Work" and "Edit From Here Too" steps
 - [ ] **Tutorial**: Example data saved to localStorage only (not Firebase)
 - [ ] **Docs popup**: Opens from Settings → Help → "Full Documentation"
-- [ ] **Docs popup**: 7 pages with pill-style nav buttons
-- [ ] **Docs popup**: Previous hidden on page 1, Next hidden on page 7
+- [ ] **Docs popup**: 8 pages with pill-style nav buttons (Overview, Getting Started, Spokes & Actions, Calendar, Priorities, Storage, Cloud Sync, Import/Export)
+- [ ] **Docs popup**: Previous hidden on page 1, Next hidden on page 8
 - [ ] **Docs popup**: Click outside or ✕ to close
 - [ ] **Docs popup**: Content scrolls when exceeding viewport height
 - [ ] **Docs popup**: Mobile responsive (nav wraps, fits 90vh)
