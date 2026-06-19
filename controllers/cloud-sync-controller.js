@@ -7,40 +7,54 @@ Object.assign(UI, {
     // ==========================================
 
     /**
-     * Enable cloud sync - show expanded UI
+     * Enable cloud sync - show expanded UI.
+     * Delegates to the new backup panel in local-file-sync-controller.js.
      */
     enableCloudSync() {
-        document.getElementById('cloud-sync-collapsed').style.display = 'none';
-        document.getElementById('cloud-sync-expanded').style.display = 'block';
+        // If the new backup panel exists, delegate to it
+        if (typeof this.showFirebaseBackupConfig === 'function') {
+            this.showFirebaseBackupConfig();
+            return;
+        }
 
-        // Check for URL config parameter
+        // Fallback: legacy path
         const urlConfig = FirebaseAdapter.parseConfigFromURL();
         if (urlConfig) {
-            document.getElementById('firebase-config-input').value = JSON.stringify(urlConfig, null, 2);
-            // Auto-connect if config found in URL
+            const input = document.getElementById('firebase-config-input');
+            if (input) input.value = JSON.stringify(urlConfig, null, 2);
             this.connectFirebase();
         }
     },
 
     /**
-     * Disable cloud sync
+     * Disable cloud sync.
+     * If the new panel is available, delegates to its override; otherwise falls back.
+     * Note: local-file-sync-controller.js overrides this method via Object.assign after
+     * cloud-sync-controller.js loads, so by the time users click the button the
+     * override is in place. This version is only reached if the new controller
+     * hasn't loaded yet (shouldn't happen in normal flow).
      */
-    async disableCloudSync() {
+    async _disableCloudSyncLegacy() {
         if (!confirm('Disable Cloud Sync? Your data will remain in localStorage.')) return;
 
         await StorageAdapter.disableCloudSync();
-
-        document.getElementById('cloud-sync-collapsed').style.display = 'block';
-        document.getElementById('cloud-sync-expanded').style.display = 'none';
-
         this.updateSyncStatus('offline', 'Disconnected');
         this.updateMainSyncIndicator(null, null);
     },
 
     /**
-     * Connect to Firebase with config from textarea
+     * Connect to Firebase with config from textarea.
+     * In the new architecture this is the backup flow — delegates to connectFirebaseBackup().
      */
     async connectFirebase() {
+        if (typeof this.connectFirebaseBackup === 'function') {
+            return this.connectFirebaseBackup();
+        }
+        // Legacy fallback
+        return this._connectFirebaseLegacy();
+    },
+
+    async _connectFirebaseLegacy() {
         let configText = document.getElementById('firebase-config-input').value.trim();
 
         try {
@@ -67,8 +81,10 @@ Object.assign(UI, {
                 this.updateAuthUI();
             });
 
-            document.getElementById('firebase-config-form').style.display = 'none';
-            document.getElementById('firebase-auth-section').style.display = 'block';
+            const configForm = document.getElementById('firebase-config-form') || document.getElementById('cloud-backup-config-form');
+            const authSection = document.getElementById('firebase-auth-section');
+            if (configForm)   configForm.style.display   = 'none';
+            if (authSection)  authSection.style.display  = 'block';
 
             this.generateShareURL();
 
@@ -108,35 +124,43 @@ Object.assign(UI, {
     },
 
     /**
-     * Update auth UI based on current user state
+     * Update auth UI based on current user state.
+     * Handles two modes:
+     *   - Backup mode (firebaseBackupEnabled=true, currentMode != 'firebase'):
+     *     Do NOT call enableCloudSync() — just record that auth is available.
+     *   - Live sync mode (cloudSyncEnabled=true, currentMode='firebase'):
+     *     Enable StorageAdapter firebase mode, reload data, etc. (original behaviour).
      */
     updateAuthUI() {
         const user = FirebaseAdapter.user;
+        const isLiveMode = localStorage.getItem('cloudSyncEnabled') === 'true'
+                        || StorageAdapter.currentMode === 'firebase';
 
         if (user) {
-            document.getElementById('firebase-signed-out').style.display = 'none';
-            document.getElementById('firebase-signed-in').style.display = 'block';
+            // Sync signed-in user elements (IDs that may exist in backup or live panels)
+            this._syncFirebaseUserElements(user);
 
-            const photoEl = document.getElementById('firebase-user-photo');
-            const nameEl = document.getElementById('firebase-user-name');
+            if (isLiveMode) {
+                this.updateSyncStatus('online', 'Connected as ' + (user.displayName || user.email));
 
-            if (photoEl) photoEl.src = user.photoURL || '';
-            if (nameEl) nameEl.textContent = user.displayName || user.email;
+                // Enable live firebase mode in StorageAdapter
+                StorageAdapter.enableCloudSync(FirebaseAdapter.config);
 
-            document.getElementById('share-url-section').style.display = 'block';
+                // Update main UI indicator
+                this.updateMainSyncIndicator('synced', FirebaseAdapter.getProjectId());
 
-            this.updateSyncStatus('online', 'Connected as ' + (user.displayName || user.email));
-
-            // Enable cloud sync mode in StorageAdapter
-            StorageAdapter.enableCloudSync(FirebaseAdapter.config);
-
-            // Update main UI indicator
-            this.updateMainSyncIndicator('synced', FirebaseAdapter.getProjectId());
-
-            // Reload data from Firebase (only on first auth, not every Settings open)
-            if (!this._hasReloadedFromFirebase) {
-                this._hasReloadedFromFirebase = true;
-                this.reloadDataFromFirebase();
+                // Reload data from Firebase (only on first auth, not every Settings open)
+                if (!this._hasReloadedFromFirebase) {
+                    this._hasReloadedFromFirebase = true;
+                    this.reloadDataFromFirebase();
+                }
+            } else {
+                // Backup mode — Firebase is available but we stay in local/file mode.
+                // Mark the backup adapter ready.
+                if (StorageAdapter.currentMode !== 'firebase') {
+                    StorageAdapter.backupAdapter = FirebaseAdapter;
+                }
+                this.updateSyncStatus('online', 'Firebase connected (backup mode)');
             }
 
             // Sync calendar events (now that we have a fresh token)
@@ -146,13 +170,41 @@ Object.assign(UI, {
 
             this.updateCalendarImportButton();
         } else {
-            document.getElementById('firebase-signed-out').style.display = 'block';
-            document.getElementById('firebase-signed-in').style.display = 'none';
-            document.getElementById('share-url-section').style.display = 'none';
+            // Signed out
+            const signedOut = document.getElementById('firebase-signed-out');
+            const signedIn  = document.getElementById('firebase-signed-in');
+            if (signedOut) signedOut.style.display = 'block';
+            if (signedIn)  signedIn.style.display  = 'none';
+
+            const shareUrl = document.getElementById('share-url-section');
+            if (shareUrl) shareUrl.style.display = 'none';
 
             this.updateSyncStatus('offline', 'Not signed in');
             this.updateMainSyncIndicator(null, null);
             this.updateCalendarImportButton();
+        }
+    },
+
+    /**
+     * Sync user photo/name into any firebase-user-photo/name elements that exist in the DOM.
+     * Works with both the old single-instance IDs and the new duplicated backup/live panel IDs.
+     * @param {Object|null} user
+     */
+    _syncFirebaseUserElements(user) {
+        if (!user) return;
+        // All elements with these IDs (there may be more than one in the new layout)
+        document.querySelectorAll('#firebase-user-photo').forEach(el => { el.src = user.photoURL || ''; });
+        document.querySelectorAll('#firebase-user-name').forEach(el => { el.textContent = user.displayName || user.email; });
+
+        document.querySelectorAll('#firebase-signed-out').forEach(el => { el.style.display = 'none'; });
+        document.querySelectorAll('#firebase-signed-in').forEach(el => { el.style.display = 'block'; });
+
+        // Share URL section
+        const shareSection = document.getElementById('share-url-section');
+        if (shareSection) {
+            shareSection.style.display = 'block';
+            const input = document.getElementById('cloud-share-url');
+            if (input) input.value = FirebaseAdapter.generateShareURL() || '';
         }
     },
 
@@ -406,36 +458,18 @@ Object.assign(UI, {
     },
 
     /**
-     * Load cloud sync state when Settings opened
+     * Load cloud sync state when Settings opened.
+     * The new UI is handled by loadCloudBackupState() in local-file-sync-controller.js,
+     * which is called via loadStorageSettings(). This method is kept for backwards
+     * compatibility but delegates to the new handler if available.
      */
     loadCloudSyncState() {
-        const cloudSyncEnabled = localStorage.getItem('cloudSyncEnabled') === 'true';
-
-        if (cloudSyncEnabled && FirebaseAdapter.config) {
-            document.getElementById('cloud-sync-collapsed').style.display = 'none';
-            document.getElementById('cloud-sync-expanded').style.display = 'block';
-
-            // Hide config form if already connected
-            if (FirebaseAdapter.app) {
-                document.getElementById('firebase-config-form').style.display = 'none';
-                document.getElementById('firebase-auth-section').style.display = 'block';
-            }
-
-            this.updateAuthUI();
-            this.generateShareURL();
-        } else {
-            document.getElementById('cloud-sync-collapsed').style.display = 'block';
-            document.getElementById('cloud-sync-expanded').style.display = 'none';
-
-            // Check for URL config (for first-time setup)
-            const urlConfig = FirebaseAdapter.parseConfigFromURL();
-            if (urlConfig) {
-                // Pre-fill config and show expanded view
-                document.getElementById('cloud-sync-collapsed').style.display = 'none';
-                document.getElementById('cloud-sync-expanded').style.display = 'block';
-                document.getElementById('firebase-config-input').value = JSON.stringify(urlConfig, null, 2);
-            }
+        if (typeof this.loadCloudBackupState === 'function') {
+            this.loadCloudBackupState();
+            return;
         }
+        // Fallback for environments where the new controller hasn't loaded
+        this.updateAuthUI();
     },
 
     /**
