@@ -299,9 +299,11 @@ const App = {
         // Initialize Firebase from URL config BEFORE loading data, so that
         // loadFromStorageOrExample() can detect the config URL and skip example data.
         // Also allows cached auth to resolve before data loading.
+        // Skip if the user has already chosen file mode — don't override their choice.
         if (typeof FirebaseAdapter !== 'undefined') {
             const urlConfig = FirebaseAdapter.parseConfigFromURL();
-            if (urlConfig) {
+            const localFileSyncEnabled = localStorage.getItem('localFileSyncEnabled') === 'true';
+            if (urlConfig && !localFileSyncEnabled) {
                 try {
                     if (!FirebaseAdapter.app) {
                         await FirebaseAdapter.init(urlConfig);

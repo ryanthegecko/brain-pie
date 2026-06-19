@@ -307,13 +307,16 @@ const DataModel = {
     },
 
     async loadFromStorageOrExample() {
-        // If loading with a Firebase config URL, skip local caches entirely.
-        // Firebase will provide the authoritative data after sign-in.
+        // If loading with a Firebase config URL (and NOT in file mode), skip local
+        // caches entirely. Firebase will provide the authoritative data after sign-in.
         // Skipping localStorage prevents contamination from a sibling tab that
         // loaded the base URL (no config) and wrote example data to localStorage.
         // We do NOT save this empty state to localStorage/Firebase — it is
         // in-memory only until syncOnConnect() fills it with real Firebase data.
-        if (new URLSearchParams(window.location.search).has('config')) {
+        // Exception: if file mode is active, the ?config= URL is irrelevant — load
+        // normally from the file/localStorage.
+        const localFileSyncEnabled = localStorage.getItem('localFileSyncEnabled') === 'true';
+        if (new URLSearchParams(window.location.search).has('config') && !localFileSyncEnabled) {
             this.pieMeta = { pieIds: [], activePieId: null, pieNames: {} };
             this.currentPieName = '';
             this.categories = [];
