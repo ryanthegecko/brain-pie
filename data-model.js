@@ -328,9 +328,9 @@ const DataModel = {
         const meta = await this.loadMeta();
 
         if (meta && meta.activePieId) {
-            // Load active pie
+            // Load active pie — route through adapter for Firebase and file modes
             let pieData;
-            if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+            if (typeof StorageAdapter !== 'undefined' && (StorageAdapter.isFirebaseMode() || StorageAdapter.isLocalFileMode())) {
                 pieData = await StorageAdapter.loadPie(meta.activePieId);
             } else {
                 pieData = Storage.loadPie(meta.activePieId);
