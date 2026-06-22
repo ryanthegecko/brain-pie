@@ -164,9 +164,10 @@ const LocalFileAdapter = {
         }
 
         return {
-            meta:       parsed.meta       || null,
-            pies:       parsed.pies       || {},
-            priorities: parsed.priorities || {}
+            schemaVersion: parsed.schemaVersion || null,
+            meta:          parsed.meta          || null,
+            pies:          parsed.pies          || {},
+            priorities:    parsed.priorities    || {}
         };
     },
 
@@ -182,6 +183,9 @@ const LocalFileAdapter = {
         // Read current contents so we only overwrite what changed
         const current = await this._readFile();
         const updated = { ...current, ...patch };
+
+        // Always stamp schema version — preserve existing value if already ahead
+        if (!updated.schemaVersion || updated.schemaVersion < 1) updated.schemaVersion = 1;
 
         const writable = await this._handle.createWritable();
         await writable.write(JSON.stringify(updated, null, 2));
@@ -408,7 +412,7 @@ const LocalFileAdapter = {
     async saveMeta(meta) {
         if (!this._handle) return false;
         try {
-            await this._writeFile({ meta });
+            await this._writeFile({ meta: { ...meta, lastModified: Date.now() } });
             // Keep localStorage in sync as a backup
             if (typeof Storage !== 'undefined') Storage.saveMeta(meta);
             return true;

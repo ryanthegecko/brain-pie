@@ -520,61 +520,60 @@ PUT replaces the full blob at that path. There is no PATCH endpoint — always r
 
 ---
 
-## 11. Gaps and Improvement Suggestions for the Developer
+## 11. Schema notes
 
-These are issues noticed during analysis of the live data and the agent command spec. They are offered constructively for the BrainPie developer to consider.
+### 11.1 `schemaVersion`
 
-### 11.1 No schema version field
+`schemaVersion: 1` is written at the root of the file on every save (added Jun 2026). Agents can read this to detect format version. Treat absence as version 1 — files written before this change are equivalent.
 
-There is no `version` or `schemaVersion` in the JSON root or in pie objects. If the data format evolves (new fields, renamed keys, structural changes), agents and importers have no way to detect which version they're working with. A `"schemaVersion": 2` at the top level would solve this.
+### 11.2 Terminology map
 
-### 11.2 Terminology mismatch between UI and JSON
+Three naming conventions exist in parallel. This is the canonical mapping:
 
-The app UI (and its marketing copy) describes a 4-layer hierarchy: Categories → Slices → Spokes → Actions. The JSON uses `categories → items → subItems`. The Atlas command spec uses "slice" and "spoke" inconsistently with JSON key names. An authoritative terminology map in the docs (or a comment block in the schema) would prevent agents and developers from talking past each other.
+| Layer | UI label | JSON key | Atlas/agent term |
+|---|---|---|---|
+| Outer ring | Category | `categories[]` | category / slice |
+| Inner wedge | Slice / Spoke | `categories[].items[]` | spoke / item |
+| Task line | Action | `categories[].items[].subItems[]` | subItem / task |
 
-Suggested canonical mapping:
-- UI "Category" = JSON `categories[]` = Atlas "slice"
-- UI "Slice/Spoke" = JSON `categories[].items[]` = Atlas "spoke/item"
-- UI "Action" = JSON `categories[].items[].subItems[]` = Atlas "subItem/task"
+Use JSON key names when writing code. Use "spoke" / "subItem" when talking to Atlas.
 
-### 11.3 Inconsistent child vs subItem structure
+### 11.3 Child objects vs subItems — intentionally different
 
-SubItems of type `list` have a `children[]` array. Each child has `{ text, children, completed, scheduled, recurrence }`. However, top-level subItems have `{ text, type, notes, children, scheduled, metadata: { ..., recurrence } }`. The child format:
-- Has no `type` field
-- Has no `notes` field
-- Has `recurrence` as a direct field rather than inside a `metadata` wrapper
+Children of a `list` subItem are deliberately simpler than top-level subItems — they have no `type`, no `notes`, and `recurrence` sits directly on the object rather than inside `metadata`. This is intentional; children are lightweight checklist steps, not full task nodes. Do not add `type` or `metadata` to children when writing.
 
-This means agents must handle two different object shapes depending on nesting depth. A unified structure (or explicit documentation that children are intentionally simpler) would reduce error surface.
+### 11.4 `metadata.condition` and `metadata.nextState`
 
-### 11.4 `metadata.condition` and `metadata.nextState` are undocumented
+Both fields are reserved for future use and are always `null` in current data. Write them as `null`. Do not populate them.
 
-Both fields are present in every subItem and always `null` in the live data. Their intended purpose is unclear. If they're reserved for future features, a comment or stub in the schema would help agents know not to worry about them (vs. accidentally overlooking them when they become meaningful).
+### 11.5 ID format
 
-### 11.5 ID format inconsistency
+The app generates IDs in `<epoch-ms>-<random8chars>` format (e.g. `1781093699601-yt0go0a3x`). Category IDs often use `<semantic-slug>-<epoch-ms>` (e.g. `work-1773768490734`). When an agent creates new items, UUID v4 is acceptable and collision-safe — but `<epoch-ms>-<random8chars>` matches the native format if consistency matters.
 
-Three different ID conventions appear in the live data:
-- `qvc-1781093699600` — semantic prefix + epoch ms
-- `1781093699601-yt0go0a3x` — epoch ms + random suffix
-- `99038772-30e7-4091-aae0-988269769322` — standard UUID v4
+### 11.6 File vs Firebase mode detection
 
-The agent command doc says "generate a UUID", but the app-generated IDs use the `timestamp-random` format. A single recommended format (preferably UUID v4 for collision safety) would be cleaner.
+The sync mode is not stored in the JSON. It is set in `context/about.md` → `Sync mode:`. See §2.
 
-### 11.6 No way to detect file-vs-Firebase mode from the JSON itself
+### 11.7 `categoryPercentageOverrides` when absent
 
-The sync mode is stored in `context/about.md`, which is an Atlas-specific convention. The JSON file itself contains no indicator of which storage mode is active. An agent that only has the JSON file (no `about.md`) cannot determine where writes should go. A `"storageMode": "file"` field in `meta` would make this self-documenting.
+Categories absent from `categoryPercentageOverrides` share the remaining percentage equally. Example: if one category has an override of 40, and two others have no override, those two split the remaining 60 — 30 each. The app normalises on render, so values don't need to sum to exactly 100.
 
-### 11.7 `categoryPercentageOverrides` behaviour when absent
+### 11.8 Health check
 
-It is not documented what happens to categories absent from `categoryPercentageOverrides`. Based on observed data (the `uk-*` and `internal-*` categories are absent from overrides but still render), they appear to split the unallocated percentage equally. Documenting this explicitly — or exposing it as a schema rule — would let agents calculate display percentages accurately without loading the app.
+BrainPie is a static site with no server. There is no status endpoint. To verify the file is being watched, check that `meta.lastModified` updates after a write.
 
-### 11.8 No health check or manifest endpoint
+### 11.9 `meta.lastModified`
 
-There is no `/.well-known/` endpoint, no `/manifest.json`, and no API endpoint that returns the app version or confirms the data format. An agent integrating a new instance has no way to verify the app is the expected version or that the file it's writing to is being watched. Even a simple `GET /api/status` returning `{ "version": "...", "storageMode": "...", "fileConnected": true }` would help agents self-orient.
+`meta.lastModified` (epoch ms) is written on every `saveMeta` call (added Jun 2026). Agents can use this for a quick freshness check without opening each pie.
 
-### 11.9 `lastModified` only at pie level
+### 11.10 `priorities[pieId]` absent when empty
 
-There is no `lastModified` at the root `meta` level. An agent reading the file cannot tell from the top-level structure when anything last changed — it must open each pie. A `lastModified` on `meta` (updated whenever any pie changes) would allow a quick freshness check.
+When a pie has no priorities, its key is absent from `priorities` (not set to `[]`). The app actively deletes the key when the list is cleared — this is intentional, to keep the file lean. Always read with a fallback:
 
-### 11.10 `priorities` is `{}` when empty, not `{ "<pieId>": [] }`
+```python
+priorities = data.get('priorities', {}).get(pie_id, [])
+```
 
-When no priorities exist, `priorities` is an empty object `{}`. Agents must handle both `data.priorities[pieId]` returning `undefined` (empty) and an actual array. Using `.get('priorities', {}).get(active_pie_id, [])` guards against this, but it's worth documenting explicitly, and the schema could standardise on always initialising the pie key as an empty array.
+```js
+const priorities = (data.priorities?.[pieId]) ?? [];
+```
