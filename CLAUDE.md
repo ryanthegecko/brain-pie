@@ -1220,6 +1220,16 @@ The ViewBox scaling approach (v0.10) solves spoke label clipping at smaller view
 
 ## Development Notes
 
+### First-time clone setup
+
+After cloning, activate the committed git hooks:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+This enables the pre-push credential scan (`.githooks/pre-push`), which blocks any push that contains credential-like patterns in the diff. The same scan also runs automatically when Claude pushes via the Claude Code hook in `.claude/settings.json`.
+
 ### Adding New Features
 1. Update **data-model.js** for data structure changes
 2. Add UI elements in **index.html** and **styles.css**
