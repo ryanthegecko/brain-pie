@@ -267,16 +267,17 @@ priorities = data.get('priorities', {}).get(active_pie_id, [])
 ### Firebase mode
 
 ```bash
-DB="https://ryan-atlas-brainpie-default-rtdb.europe-west1.firebasedatabase.app"
-PROJ="ryan-atlas-brainpie"
-FUID="FUID_REDACTED"  # ⚠️ Use FUID not UID (UID is a reserved shell variable)
-SECRET="SECRET_REDACTED"
+# Values from context/about.md → Brain Pie
+DB="<databaseURL>"
+PROJ="<projectId>"
+FUID="<firebaseUID>"   # ⚠️ Use FUID not UID (UID is a reserved shell variable)
+SECRET="<databaseSecret>"
 
 # Get active pie ID
 curl -s "${DB}/brainpie/${PROJ}/users/${FUID}/meta.json?auth=${SECRET}"
 
 # Read pie (substitute actual pie ID)
-PIE_ID="pie-1779793204736"
+PIE_ID="<pieId>"
 curl -s "${DB}/brainpie/${PROJ}/users/${FUID}/pies/${PIE_ID}.json?auth=${SECRET}"
 
 # Read priorities
@@ -501,11 +502,12 @@ The `priorities` object maps pie IDs to ordered arrays. The order of the array i
 ⚠️ **Use `FUID`, not `UID`.** `UID` is a reserved shell variable on most Unix systems and will cause "operation not permitted" errors. Always assign the Firebase UID to `FUID`.
 
 ```bash
-DB="https://ryan-atlas-brainpie-default-rtdb.europe-west1.firebasedatabase.app"
-PROJ="ryan-atlas-brainpie"
-FUID="FUID_REDACTED"
-SECRET="SECRET_REDACTED"
-PIE_ID="pie-1779793204736"
+# Values from context/about.md → Brain Pie
+DB="<databaseURL>"
+PROJ="<projectId>"
+FUID="<firebaseUID>"
+SECRET="<databaseSecret>"
+PIE_ID="<pieId>"
 ```
 
 | Operation | Method | URL | Headers |
