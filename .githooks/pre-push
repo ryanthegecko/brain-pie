@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Pre-push credential scan
+# Scans added lines in commits being pushed for credential-like patterns.
+# To bypass in an emergency: git push --no-verify
+
+PATTERNS=(
+    'AIza[0-9A-Za-z_-]{35}'
+    '(SECRET|PASSWORD|TOKEN|API_KEY|FUID)=["\x27][A-Za-z0-9+/]{20,}["\x27]'
+    '(SECRET|PASSWORD|TOKEN|API_KEY|FUID)=[A-Za-z0-9+/]{20,}[[:space:]]'
+)
+
+FOUND=0
+
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$local_sha" = "0000000000000000000000000000000000000000" ] && continue
+
+    if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        range="$local_sha"
+    else
+        range="$remote_sha..$local_sha"
+    fi
+
+    while IFS= read -r line; do
+        for pattern in "${PATTERNS[@]}"; do
+            if echo "$line" | grep -qE "$pattern"; then
+                echo "  $line"
+                FOUND=1
+                break
+            fi
+        done
+    done < <(git diff "$range" | grep '^+' | grep -v '^+++')
+done
+
+if [ "$FOUND" -ne 0 ]; then
+    echo ""
+    echo "Push blocked — potential credentials in diff (shown above)."
+    echo "Replace real values with placeholders. To bypass: git push --no-verify"
+    exit 1
+fi
+
+exit 0
