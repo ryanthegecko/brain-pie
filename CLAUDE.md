@@ -644,12 +644,13 @@ Unified spoke editor, schedule pill border states, expanded view sizing, clickab
 - `createCalendarEvent()` simplified to action-level only (spoke-level scheduling handled by `saveSpokeEditorSchedule`)
 
 **Schedule Pill Border States (complete):**
-- Past events: pill background turns orange (`#FF9800`) with red border (`#e65100`)
-- Today's events: orange border (`#FF9800`)
-- Tomorrow's events: black border (`#000000`)
-- Future events: white border (default)
-- Applied to both pie chart SVG pills (`addSchedulePill`) and treemap inline pills
-- Previously only summary card pills and some button pills had border states
+- Past events: red pill (`#D32F2F`), red border
+- Today: orange pill (`#F57C00`), red border — weight 600 text
+- Tomorrow: yellow pill (`#FFEB3B`), orange border (`#F57C00`), black text — weight 600
+- This week (2–7 days): green pill (`#4CAF50`), yellow border (`#FFEB3B`)
+- Future (>1 week): green pill, white border
+- Unscheduled single/repeating: blue pill (`#2196F3`)
+- Applied to pie chart SVG pills (`addSchedulePill`), treemap inline pills, and action pills
 
 **Expanded View Sizing:**
 - Clicking into a slice or category view now renders the pie 30% smaller (`outerRadius * 0.7`)

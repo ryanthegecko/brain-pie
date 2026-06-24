@@ -288,12 +288,14 @@ const ChartRenderer = {
             const date = this.getScheduledDate(spoke);
             if (date && this.isPast(date)) return '#D32F2F';
             if (date && this.isToday(date)) return '#F57C00';
+            if (date && this.isTomorrow(date)) return '#FFEB3B';
             return '#4CAF50';
         }
         if (type === 'repeating') {
             if (!hasRecurrence) return '#2196F3';
             const date = this.getScheduledDate(spoke);
             if (date && this.isToday(date)) return '#F57C00';
+            if (date && this.isTomorrow(date)) return '#FFEB3B';
             return '#4CAF50';
         }
         if (type === 'list') {
@@ -532,7 +534,8 @@ const ChartRenderer = {
                 if (pillText) {
                     const pillTextEl = pillGroup.append('text')
                         .attr('font-size', fontSize + 'px')
-                        .attr('fill', '#ffffff')
+                        .attr('fill', isTomorrowEvent ? '#000000' : '#ffffff')
+                        .attr('font-weight', (isTodayEvent || isTomorrowEvent) ? '600' : 'normal')
                         .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .attr('x', cursorX)
                         .attr('y', textY)
@@ -558,7 +561,7 @@ const ChartRenderer = {
                         rect.attr('stroke', '#F57C00')
                             .attr('stroke-width', 2);
                     } else if (isThisWeekEvent) {
-                        rect.attr('stroke', '#000000')
+                        rect.attr('stroke', '#FFEB3B')
                             .attr('stroke-width', 2);
                     } else {
                         rect.attr('stroke', '#ffffff')
@@ -1575,8 +1578,8 @@ const ChartRenderer = {
                                     .attr('x', pillX + pillPadX)
                                     .attr('y', lastLineY)
                                     .attr('font-size', '8px')
-                                    .attr('fill', '#ffffff')
-                                    .attr('font-weight', 'bold')
+                                    .attr('fill', isTomorrowEvent ? '#000000' : '#ffffff')
+                                    .attr('font-weight', (isTodayEvent || isTomorrowEvent) ? '600' : 'bold')
                                     .text(pillText);
 
                                 const pillBbox = pillTextEl.node().getBBox();
@@ -1595,7 +1598,7 @@ const ChartRenderer = {
                                 } else if (isTomorrowEvent) {
                                     rect.attr('stroke', '#F57C00').attr('stroke-width', 1.5);
                                 } else if (isThisWeekEvent) {
-                                    rect.attr('stroke', '#000000').attr('stroke-width', 1.5);
+                                    rect.attr('stroke', '#FFEB3B').attr('stroke-width', 1.5);
                                 } else {
                                     rect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
                                 }
@@ -2014,7 +2017,7 @@ const ChartRenderer = {
                     } else if (isTomorrowAction) {
                         pillRect.attr('stroke', '#F57C00').attr('stroke-width', 2);
                     } else if (isThisWeekAction) {
-                        pillRect.attr('stroke', '#000000').attr('stroke-width', 2);
+                        pillRect.attr('stroke', '#FFEB3B').attr('stroke-width', 2);
                     } else {
                         pillRect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
                     }
