@@ -26,7 +26,9 @@ const DataModel = {
      */
     async loadMeta() {
         let meta;
-        if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {
+        if (typeof StorageAdapter !== 'undefined' && (StorageAdapter.isFirebaseMode() || StorageAdapter.isLocalFileMode())) {
+            // Route through StorageAdapter so Firebase and local-file adapters both
+            // serve meta from their own source of truth rather than stale localStorage.
             meta = await StorageAdapter.loadMeta();
             if (!meta) {
                 meta = await StorageAdapter.migrateToMultiPie();

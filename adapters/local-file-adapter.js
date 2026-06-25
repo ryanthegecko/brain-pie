@@ -187,6 +187,9 @@ const LocalFileAdapter = {
         // Always stamp schema version — preserve existing value if already ahead
         if (!updated.schemaVersion || updated.schemaVersion < 1) updated.schemaVersion = 1;
 
+        // Always stamp lastModified on the meta so consumers can detect staleness
+        if (updated.meta) updated.meta.lastModified = Date.now();
+
         const writable = await this._handle.createWritable();
         await writable.write(JSON.stringify(updated, null, 2));
         await writable.close();
@@ -412,7 +415,7 @@ const LocalFileAdapter = {
     async saveMeta(meta) {
         if (!this._handle) return false;
         try {
-            await this._writeFile({ meta: { ...meta, lastModified: Date.now() } });
+            await this._writeFile({ meta });
             // Keep localStorage in sync as a backup
             if (typeof Storage !== 'undefined') Storage.saveMeta(meta);
             return true;
