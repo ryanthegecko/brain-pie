@@ -323,7 +323,7 @@
                 <h3>Adding Spokes</h3>
                 <ul>
                     <li>In Tab 2 of the Add menu, select a slice and type a spoke name into the input field.</li>
-                    <li>You can also add spokes from the summary cards at the bottom of the page using the green <strong>+</strong> button.</li>
+                    <li>You can also add spokes from the summary cards at the bottom of the page using the green <strong>+ Spoke</strong> button.</li>
                     <li>New spokes are created as <strong>Static</strong> type by default. Use the blue "Spoke type" button to change the type.</li>
                 </ul>
 
@@ -340,6 +340,7 @@
                     <li><strong>Pie view</strong> — The default circular visualization.</li>
                     <li><strong>Treemap view</strong> — Toggle the "Treemap" checkbox to see a rectangular grid layout instead.</li>
                     <li><strong>Hide spokes</strong> — Toggle to show only slices and categories (the pie scales larger).</li>
+                    <li><strong>Focus ★</strong> — Toggle to show only spokes marked as priorities.</li>
                 </ul>
             </div>
 
@@ -483,7 +484,8 @@
                 <p>No action needed to use this mode. It's the default.</p>
 
                 <h3>Local File Mode</h3>
-                <p>If you want your data in a proper file you can back up, move, or open on another machine, local file mode saves your pie to a <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;">.json</code> file of your choosing. Every change is written automatically as you work.</p>
+                <p>If you want your data in a proper file you can back up, move, or open on another machine, local file mode saves your pie to a <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;">.json</code> file of your choosing. Every change is written automatically as you work, and you can also write to the file yourself, or with 
+                    other tools.</p>
                 <ul>
                     <li><strong>How to enable:</strong> go to <strong>Settings → Working mode → Save to a local file</strong>, then pick where you'd like to save it.</li>
                     <li><strong>Reconnects automatically:</strong> when you reload the page, Brain Pie remembers the file and reconnects without you having to pick it again.</li>
@@ -527,11 +529,11 @@
                 <h3>Database Rules</h3>
                 <p>By default the database is locked. Replace the rules with the following to allow authenticated users to read and write:</p>
                 <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;">{
-  "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null"
-  }
-}</pre>
+                    "rules": {
+                        ".read": "auth != null  && (auth.token.email === 'your.username@gmail.com')",
+                        ".write": "auth != null  && (auth.token.email === 'your.username@gmail.com')"
+                    }
+                </pre>
                 <p>Set these under <strong>Realtime Database → Rules</strong> and click <strong>Publish</strong>.</p>
 
                 <h3>Connecting to Brain Pie</h3>
@@ -551,15 +553,17 @@
 
                 <h3>Personal Mode vs Shared Mode</h3>
                 <p>By default, all users on the same Firebase project share the same set of pies — changes made by one person are visible to everyone. This is <strong>shared mode</strong> and is ideal for teams or households collaborating on the same data.</p>
-                <p>In <strong>personal mode</strong>, each Google account gets its own isolated set of pies in the same Firebase project. Changes are private to each user. Priority lists are always personal regardless of mode.</p>
+                <p>It's also possible to run multiple separate accounts on the same database, this is <strong>personal mode</strong>, each Google account gets its own isolated set of pies in the same Firebase project. Changes are private to each user.</p>
+                <p>Priority lists are always personal regardless of mode.</p>
                 <p>To enable personal mode, add <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;">"mode": "personal"</code> to your Firebase config JSON before pasting it into Brain Pie:</p>
                 <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;">{
-  "apiKey": "...",
-  "authDomain": "...",
-  "databaseURL": "...",
-  "projectId": "your-project-id",
-  "mode": "personal"
-}</pre>
+                    "apiKey": "...",
+                    "authDomain": "...",
+                    "databaseURL": "...",
+                    "projectId": "your-project-id",
+                    "mode": "personal"
+                    }
+                </pre>
                 <p>The shareable config URL also encodes this setting, so other devices that connect via your URL will use the same mode automatically.</p>
                 <p style="color:#888;font-size:13px;"><strong>Note:</strong> If you connect with the wrong mode, the app will find no data and create a fresh empty pie. To fix it, go to Settings → Cloud Sync, disconnect, update the config to include the correct mode, and reconnect.</p>
 
@@ -914,7 +918,7 @@
 
                     <!-- Disable -->
                     <button class="warn small" onclick="UI.disableFirebaseBackup()" style="margin-top: 12px;">
-                        Remove backup
+                        Disconnect Firebase config
                     </button>
                 </div>
 

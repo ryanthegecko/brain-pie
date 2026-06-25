@@ -151,13 +151,13 @@ const TutorialManager = {
             getButtons: () => {
                 if (TutorialManager.hasStashedData()) {
                     return [
-                        { text: 'Back to Your Pie', action: 'restorePie', class: 'primary' },
-                        { text: 'Load Life Pie', action: 'loadLifePie', class: '' },
+                        { text: 'Back to Your Edited Life Pie', action: 'restorePie', class: 'primary' },
+                        { text: 'Reload Life Pie', action: 'loadLifePie', class: '' },
                         { text: 'Start Fresh', action: 'startFresh', class: '' }
                     ];
                 }
                 return [
-                    { text: 'Load Life Pie', action: 'loadLifePie', class: 'primary' },
+                    { text: 'Reload Life Pie', action: 'loadLifePie', class: 'primary' },
                     { text: 'Start Fresh', action: 'startFresh', class: '' }
                 ];
             }

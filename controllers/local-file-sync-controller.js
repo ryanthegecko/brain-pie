@@ -425,7 +425,7 @@ Object.assign(UI, {
      * "Remove backup" — clear Firebase backup config.
      */
     async disableFirebaseBackup() {
-        if (!confirm('Remove Firebase backup? You can re-add it at any time.')) return;
+        if (!confirm('Disconnect Firebase config? Your data in Firebase is untouched. You can reconnect at any time.')) return;
         StorageAdapter.disableFirebaseBackup();
         this._showCloudBackupPanel('unconfigured');
         this.updateMainSyncIndicator(null, null);
