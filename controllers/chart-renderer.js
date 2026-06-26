@@ -539,6 +539,7 @@ const ChartRenderer = {
 
                 // Render pill with text (if there's text beyond just the icon)
                 if (pillText) {
+                    if (!icon) cursorX += isRightSide ? 4 : -4;  // extra gap when no icon precedes pill
                     // Text colour: tomorrow pill needs contrast text (token); all others use white.
                     const pillTextEl = pillGroup.append('text')
                         .attr('font-size', fontSize + 'px')
@@ -1577,6 +1578,8 @@ const ChartRenderer = {
                             .attr('font-size', '10px')
                             .text(icon);
                         afterTextX += 14;
+                    } else if (pillText) {
+                        afterTextX += 4;  // extra gap when no icon precedes pill
                     }
 
                     // Inline schedule pill on last line
