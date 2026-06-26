@@ -1929,8 +1929,9 @@
             <div class="key-row"><span class="key-pill" style="background:var(--sched-color-today);outline:2px solid var(--sched-color-past)"></span>Today</div>
             <div class="key-row"><span class="key-pill" style="background:var(--sched-color-past)"></span>Past</div>
             <div class="schedule-key-tooltip" id="schedule-key-tooltip">
-                <button class="schedule-key-dismiss" onclick="UI.dismissScheduleKey(event)">Got it, hide</button>
-                <button class="schedule-key-theme-btn" id="schedule-key-theme-btn" onclick="UI.toggleThemePanel(event)">Theme</button>
+                <button class="schedule-key-dismiss" onclick="UI.dismissScheduleKey(event)" title="Dismiss">&#x2715;</button>
+                <div class="key-tooltip-divider"></div>
+                <button class="schedule-key-theme-btn" id="schedule-key-theme-btn" onclick="UI.toggleThemePanel(event)" title="Theme"><img width="13" height="13" src="./assets/gear.svg" style="display:block"></button>
             </div>
         </div>
         <!-- Theme picker panel — populated by UI.renderThemePanel(); shown via .theme-panel-open on #schedule-key -->

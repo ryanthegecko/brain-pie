@@ -3933,7 +3933,8 @@ select:focus {
     background: none;
     border: none;
     color: #aaa;
-    font-size: 11px;
+    font-size: 13px;
+    line-height: 1;
     cursor: pointer;
     padding: 0;
 }
@@ -3942,7 +3943,7 @@ select:focus {
 
 /* ── Theme picker ──────────────────────────────────────────── */
 
-/* Override: tooltip now contains two buttons — flex row instead of block */
+/* Override: tooltip now contains two icon buttons — flex row */
 .schedule-key.show-tooltip .schedule-key-tooltip {
     display: flex;
     flex-direction: row;
@@ -3950,17 +3951,26 @@ select:focus {
     align-items: center;
 }
 
-/* "Theme" button inside the tooltip — mirrors dismiss button style */
+/* Vertical divider between dismiss (×) and theme (⚙) */
+.key-tooltip-divider {
+    width: 1px;
+    height: 14px;
+    background: #555;
+    flex-shrink: 0;
+}
+
+/* Gear icon button */
 .schedule-key-theme-btn {
     background: none;
     border: none;
-    color: #aaa;
-    font-size: 11px;
     cursor: pointer;
     padding: 0;
+    display: flex;
+    align-items: center;
+    opacity: 0.6;
 }
 
-.schedule-key-theme-btn:hover { color: #fff; }
+.schedule-key-theme-btn:hover { opacity: 1; }
 
 /* Theme panel — hidden by default, shown via .theme-panel-open on #schedule-key.
    Positioned to the right of the legend using the fixed #schedule-key as
