@@ -87,6 +87,20 @@ const Themes = {
         defaultBorder: '#888888',  // mid grey — subtle ring on light pill
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
     },
+
+    // Monochrome inverse: ramp flipped — black for past, white for today, light → dark for future.
+    'monochrome-inverse': {
+        past:          '#111111',  // near-black — done; heavy, settled
+        today:         '#FFFFFF',  // white — right now; open, present
+        todayBorder:   '#444444',  // dark grey — visible ring on white pill
+        tomorrow:      '#888888',  // mid grey — coming tomorrow
+        tomorrowText:  '#111111',  // dark — readable on mid grey
+        week:          '#BBBBBB',  // light grey — this week
+        weekBorder:    '#888888',  // mid grey — contrast on light pill
+        base:          '#444444',  // dark grey — scheduled, not imminent
+        defaultBorder: '#888888',  // mid grey — ring on dark grey base pill
+        list:          '#666666',  // neutral grey — list type / unscheduled spoke
+    },
 };
 
 // ── Change this to switch the active theme ─────────────────────────────────
