@@ -546,8 +546,6 @@ Three naming conventions exist in parallel. This is the canonical mapping:
 
 Use JSON key names when writing code. Use **category / slice / spoke** when talking to agents or users.
 
-⚠️ Early BrainPie docs (and some internal code comments) use "spoke" or "item" to mean the middle-ring slice, and "action" or "task" to mean the inner spoke. This guide uses the canonical terms above throughout.
-
 ### 11.3 Child objects vs subItems — intentionally different
 
 Children of a `list` subItem are deliberately simpler than top-level subItems — they have no `type`, no `notes`, and `recurrence` sits directly on the object rather than inside `metadata`. This is intentional; children are lightweight checklist steps, not full task nodes. Do not add `type` or `metadata` to children when writing.
