@@ -3916,6 +3916,29 @@ select:focus {
     flex-shrink: 0;
 }
 
+/* Calendar icon prefix on the Scheduled row — marks the schedule section */
+.key-section-icon {
+    font-size: 11px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Thin rule separating schedule states from spoke-type rows */
+.key-section-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 2px 0;
+}
+
+/* Emoji icon in place of the pill swatch for type rows (Repeating, List) */
+.key-type-icon {
+    font-size: 11px;
+    line-height: 1;
+    width: 12px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
 /* Tooltip shown on click */
 .schedule-key-tooltip {
     display: none;
