@@ -266,7 +266,9 @@ const StorageAdapter = {
                     pieIds: pieIds,
                     pieNames: pieNames,
                     activePieId: activePieId,
-                    tombstonedPieIds: tombstonedPieIds
+                    tombstonedPieIds: tombstonedPieIds,
+                    // Carry theme from Firebase meta so it isn't silently dropped
+                    theme: meta.theme || null
                 };
                 DataModel.setActivePieId(activePieId);
                 Storage.saveMeta(DataModel.pieMeta);
@@ -296,6 +298,12 @@ const StorageAdapter = {
                 DataModel.validatePriorityList();
 
                 if (typeof App !== 'undefined') App.render();
+                // Apply the Firebase-synced theme now that DataModel.pieMeta is populated.
+                // This runs after App.render() so the chart is already painted before
+                // the CSS custom properties update — pill colours reflow in one pass.
+                if (DataModel.pieMeta && DataModel.pieMeta.theme) {
+                    applyTheme(DataModel.pieMeta.theme);
+                }
                 // Mark as loaded so updateAuthUI() won't trigger reloadDataFromFirebase()
                 if (typeof UI !== 'undefined') UI._hasReloadedFromFirebase = true;
                 Debug.log('StorageAdapter: synced from Firebase on connect');

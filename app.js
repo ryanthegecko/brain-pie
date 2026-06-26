@@ -290,6 +290,13 @@ const App = {
                     tombstonedPieIds: remoteTombstoned
                 };
 
+                // Apply remote theme if present — allows a cross-device theme change
+                // to propagate to all connected sessions without a reload.
+                if (remoteMeta.theme) {
+                    DataModel.pieMeta.theme = remoteMeta.theme;
+                    applyTheme(remoteMeta.theme);
+                }
+
                 // Save locally
                 Storage.saveMeta(DataModel.pieMeta);
                 UI.renderPieTabs();
@@ -317,6 +324,11 @@ const App = {
 
         // Load data (now async to support Firebase)
         await DataModel.loadFromStorageOrExample();
+
+        // Apply persisted theme if one is stored in meta (overrides the early-paint default).
+        // Two applyTheme() calls on load (early-paint + this) is cheap: ten setProperty calls each.
+        const savedTheme = DataModel.pieMeta && DataModel.pieMeta.theme;
+        if (savedTheme) applyTheme(savedTheme);
 
         // Per-user priorities: load from Firebase user path if available (per-pie)
         if (typeof StorageAdapter !== 'undefined' && StorageAdapter.isFirebaseMode()) {

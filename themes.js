@@ -103,9 +103,9 @@ const Themes = {
     },
 };
 
-// ── Change this to switch the active theme ─────────────────────────────────
+// ── Default theme — used for first paint before persisted meta is loaded ─────
 const ACTIVE_THEME = 'default';
-// ───────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Write the active theme's colours as CSS custom properties on :root.

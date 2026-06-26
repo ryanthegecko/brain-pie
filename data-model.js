@@ -69,11 +69,13 @@ const DataModel = {
         if (this.pieMeta.activePieId) {
             localStorage.setItem('brainPie_activePieId', this.pieMeta.activePieId);
         }
-        // For Firebase, strip activePieId (it's per-user, not shared)
+        // For Firebase, strip activePieId (it's per-user, not shared).
+        // Include theme so it persists across all storage backends (Firebase, file, localStorage).
         const metaForStorage = {
             pieIds: this.pieMeta.pieIds,
             pieNames: this.pieMeta.pieNames || {},
-            tombstonedPieIds: this.pieMeta.tombstonedPieIds || []
+            tombstonedPieIds: this.pieMeta.tombstonedPieIds || [],
+            ...(this.pieMeta.theme ? { theme: this.pieMeta.theme } : {})
         };
         if (typeof StorageAdapter !== 'undefined') {
             StorageAdapter.saveMeta(metaForStorage).catch(e => {
