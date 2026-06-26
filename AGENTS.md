@@ -6,7 +6,7 @@ This guide is written for AI agents arriving cold at brainpie.app or at a repo t
 
 ## 1. What BrainPie Is
 
-BrainPie is a privacy-first visual task manager that displays work as a layered pie chart. The user sees a set of coloured wedges (categories) each subdivided into inner spokes (items), which in turn carry individual task lines (subItems). Data lives entirely in the user's browser by default, with optional sync to a local JSON file or Firebase. There is no server-side API, no accounts, and no network requests unless cloud features are explicitly enabled. Agents interact with it purely through the JSON data file — either on disk (file mode) or via Firebase REST (cloud mode).
+BrainPie is a privacy-first visual task manager that displays work as a layered pie chart. The user sees a set of coloured wedges (categories) each subdivided into slices (items), which in turn carry individual spokes (subItems) — the actual task lines. Data lives entirely in the user's browser by default, with optional sync to a local JSON file or Firebase. There is no server-side API, no accounts, and no network requests unless cloud features are explicitly enabled. Agents interact with it purely through the JSON data file — either on disk (file mode) or via Firebase REST (cloud mode).
 
 ---
 
@@ -97,11 +97,11 @@ Firebase credentials live in `context/about.md` → `## Brain Pie`. See §10 for
   "lastModified": 1782125951927,
   "categories": [ ... ],
   "categoryPercentageOverrides": {
-    "qvc-1781093699600": 30,
-    "smf-1781093699601": 30,
-    "apac-1781093699601": 20,
-    "elastic-1781093699601": 12,
-    "shopify-1781093699601": 8,
+    "project1-1781093699600": 30,
+    "project2-1781093699601": 30,
+    "project3-1781093699601": 20,
+    "project4-1781093699601": 12,
+    "project5-1781093699601": 8,
     "pipeline-8b54582a": 5
   }
 }
@@ -119,8 +119,8 @@ Firebase credentials live in `context/about.md` → `## Brain Pie`. See §10 for
 
 ```json
 {
-  "id": "qvc-1781093699600",
-  "name": "QVC",
+  "id": "client1-1781093699600",
+  "name": "Client 1",
   "color": "#D97706",
   "items": [ ... ]
 }
@@ -133,7 +133,7 @@ Firebase credentials live in `context/about.md` → `## Brain Pie`. See §10 for
 | `color` | Hex colour for the outer ring segment |
 | `items` | Array of item (spoke) objects within this category |
 
-### Item (spoke) object
+### Slice (item) object
 
 ```json
 {
@@ -148,12 +148,12 @@ Firebase credentials live in `context/about.md` → `## Brain Pie`. See §10 for
 | Field | Description |
 |---|---|
 | `id` | Unique string. Convention: `<timestamp>-<random8chars>` or UUID |
-| `name` | Displayed as the spoke/wedge label (2–5 words max) |
+| `name` | Displayed as the slice/wedge label |
 | `color` | Hex colour for this wedge |
-| `percentage` | Share of the category's pie segment occupied by this item. Values across all items in a category should sum to ~100. The app normalises them — if they don't sum to 100 the app redistributes proportionally. |
-| `subItems` | Array of task/action objects. May be empty `[]`. |
+| `percentage` | Share of the category's pie segment occupied by this slice. Values across all slices in a category should sum to ~100. The app normalises them — if they don't sum to 100 the app redistributes proportionally. |
+| `subItems` | Array of spoke objects. May be empty `[]`. |
 
-### SubItem object (task/action)
+### Spoke (subItem) object
 
 ```json
 {
@@ -173,15 +173,17 @@ Firebase credentials live in `context/about.md` → `## Brain Pie`. See §10 for
 
 | Field | Type | Description |
 |---|---|---|
-| `text` | string | The task label shown in the app |
+| `text` | string | The spoke label shown in the app. **Keep this short — 2–5 words.** See naming guidance below. |
 | `type` | string | One of `static`, `single`, `repeating`, `list` — see below |
-| `notes` | string \| null | Optional freetext notes attached to the task |
+| `notes` | string \| null | Extended detail for this spoke. Use this for anything that doesn't fit in 2–5 words. |
 | `children` | array | Only populated for `list` type — see child object below |
 | `scheduled` | object \| null | Date info — see scheduled object below |
 | `metadata.condition` | null | Reserved for future conditional logic (always null in current data) |
 | `metadata.calendarEventId` | string \| null | Google/Apple Calendar event ID if synced |
 | `metadata.nextState` | null | Reserved for future state machine use (always null in current data) |
 | `metadata.recurrence` | object \| null | Recurrence rule for `repeating` type |
+
+**Spoke naming:** `text` is displayed on the pie chart inside a small pill. Long text clips. Keep it to 2–5 words — enough to identify the task when read alongside the category and slice name. Use `notes` for anything more: context, links, blockers, detail. A spoke reading "Chase DNS update" with notes "Ask Sam about p2winsights.com — domain transferred but record not yet propagated" is correct. A spoke reading "Ask Sam about the DNS update for p2winsights.com" will clip and is wrong.
 
 ### Scheduled object
 
@@ -209,7 +211,7 @@ Children of a `list` spoke have a **different structure** from subItems — no `
 
 ```json
 {
-  "text": "Ask Andy: does Archie need APAC-specific content?",
+  "text": "Ask Jane: does Susan need targeted content?",
   "children": [],
   "completed": false,
   "scheduled": null,
@@ -230,8 +232,8 @@ Children of a `list` spoke have a **different structure** from subItems — no `
 ```json
 {
   "pie-1779793204736": [
-    { "categoryId": "qvc-1781093699600", "itemId": "1781093699601-yt0go0a3x", "type": "slice" },
-    { "categoryId": "smf-1781093699601", "itemId": "1781093699601-ook3ptp3j", "type": "spoke", "spokeIndex": 0 }
+    { "categoryId": "client1-1781093699600", "itemId": "1781093699601-yt0go0a3x", "type": "slice" },
+    { "categoryId": "client2-1781093699601", "itemId": "1781093699601-ook3ptp3j", "type": "spoke", "spokeIndex": 0 }
   ]
 }
 ```
@@ -334,9 +336,9 @@ After writing to Firebase, also write the updated data back to `context/brainpie
 
 ---
 
-## 6. Adding a New Spoke (Item)
+## 6. Adding a New Slice (Item)
 
-A "spoke" is an `item` entry inside a `category.items[]` array.
+A "slice" is an `item` entry inside a `category.items[]` array. Each slice contains one or more spokes (`subItems`).
 
 ### Step 1 — Generate a UUID
 
@@ -356,7 +358,7 @@ python3 -c "import uuid; print(uuid.uuid4())"
   "percentage": 25,
   "subItems": [
     {
-      "text": "Ask Andy about bfcminsights.com DNS",
+      "text": "Ask Sam about p2winsights.com DNS",
       "type": "static",
       "notes": null,
       "children": [],
@@ -376,7 +378,7 @@ python3 -c "import uuid; print(uuid.uuid4())"
 ```json
 {
   "id": "<generated-uuid>",
-  "name": "Thomas Work Experience",
+  "name": "Jonas Work Experience",
   "color": "#A78BFA",
   "percentage": 33,
   "subItems": [
@@ -433,7 +435,7 @@ Append the new item to the target `category.items[]` array. Existing `percentage
 
 ---
 
-## 7. Adding a New Category (Slice)
+## 7. Adding a New Category
 
 A category is a top-level entry in `pie.categories[]`.
 
@@ -461,15 +463,19 @@ Categories absent from `categoryPercentageOverrides` share the remaining percent
 
 ---
 
-## 8. Removing a Spoke
+## 8. Removing a Slice or Spoke
 
+**To remove a slice** (an `item` from `category.items[]`):
 1. Remove the item object from `category.items[]`.
 2. Check `priorities[pieId]` — remove any entry whose `itemId` matches the deleted item.
-3. Do **not** re-add a spoke that's absent from the pie — absence means the user deleted it intentionally. Only add new spokes for tasks that genuinely did not exist before.
-4. Log the removal in the relevant project context file under `## Recent changes`:
-   ```
-   - 2026-06-22 Deleted: "Plugin Updates" from QVC slice
-   ```
+3. Log the removal: `- 2026-06-22 Deleted slice: "Plugin Updates" from Client 1`
+
+**To remove a spoke** (a `subItem` from `item.subItems[]`):
+1. Remove the subItem from `item.subItems[]`.
+2. Check `priorities[pieId]` — if any entry references this slice (`itemId`) with `type: "spoke"`, check whether `spokeIndex` still points to the right subItem after removal and update accordingly.
+3. Log the removal: `- 2026-06-22 Deleted spoke: "Chase DNS" from Plugin Updates`
+
+Do **not** re-add a slice or spoke that's absent from the pie — absence means the user deleted it intentionally. Only add new ones for tasks that genuinely did not exist before.
 
 ---
 
@@ -480,8 +486,8 @@ The `priorities` object maps pie IDs to ordered arrays. The order of the array i
 ```json
 "priorities": {
   "pie-1779793204736": [
-    { "categoryId": "smf-1781093699601", "itemId": "1781093699601-ook3ptp3j", "type": "slice" },
-    { "categoryId": "elastic-1781093699601", "itemId": "1781093699601-3llxperg6", "type": "spoke", "spokeIndex": 0 }
+    { "categoryId": "client2-1781093699601", "itemId": "1781093699601-ook3ptp3j", "type": "slice" },
+    { "categoryId": "client3-1781093699601", "itemId": "1781093699601-3llxperg6", "type": "spoke", "spokeIndex": 0 }
   ]
 }
 ```
@@ -532,13 +538,15 @@ PUT replaces the full blob at that path. There is no PATCH endpoint — always r
 
 Three naming conventions exist in parallel. This is the canonical mapping:
 
-| Layer | UI label | JSON key | Atlas/agent term |
+| Layer | UI label | JSON key | canonical term |
 |---|---|---|---|
-| Outer ring | Category | `categories[]` | category / slice |
-| Inner wedge | Slice / Spoke | `categories[].items[]` | spoke / item |
-| Task line | Action | `categories[].items[].subItems[]` | subItem / task |
+| Outer ring | Category | `categories[]` | category |
+| Middle ring | Slice | `categories[].items[]` | slice / item |
+| Task line | Spoke | `categories[].items[].subItems[]` | spoke / subItem |
 
-Use JSON key names when writing code. Use "spoke" / "subItem" when talking to Atlas.
+Use JSON key names when writing code. Use **category / slice / spoke** when talking to agents or users.
+
+⚠️ Early BrainPie docs (and some internal code comments) use "spoke" or "item" to mean the middle-ring slice, and "action" or "task" to mean the inner spoke. This guide uses the canonical terms above throughout.
 
 ### 11.3 Child objects vs subItems — intentionally different
 
