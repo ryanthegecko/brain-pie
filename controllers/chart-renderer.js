@@ -500,14 +500,14 @@ const ChartRenderer = {
         const scheduledDate = this.getScheduledDate(spoke);
         const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
         const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
-        const iconSize = 14;
+        const iconSize = 16;
 
         // Get name text bounding box after brief delay
         setTimeout(() => {
             try {
                 const nameBbox = nameTextElement.node().getBBox();
                 const padding = { x: 6, y: 3 };
-                const gap = 8;
+                const gap = icon ? 6 : 8;  // tighter gap when icon follows text
 
                 const pillGroup = group.append('g').attr('class', 'schedule-pill');
                 let cursorX;
@@ -531,9 +531,9 @@ const ChartRenderer = {
 
                     const iconBbox = iconEl.node().getBBox();
                     if (isRightSide) {
-                        cursorX = iconBbox.x + iconBbox.width + 8;
+                        cursorX = iconBbox.x + iconBbox.width + 10;
                     } else {
-                        cursorX = iconBbox.x - 8;
+                        cursorX = iconBbox.x - 10;
                     }
                 }
 
@@ -1568,16 +1568,16 @@ const ChartRenderer = {
 
                     const lastLineY = cursorY + (lines.length - 1) * lineHeight;
                     const lastLineWidth = lines[lines.length - 1].length * charWidth;
-                    let afterTextX = textStartX + lastLineWidth + 4;
+                    let afterTextX = textStartX + lastLineWidth + (icon ? 2 : 4);
 
                     // Icon after text, before pill
                     if (icon) {
                         spokeGroup.append('text')
                             .attr('x', afterTextX)
                             .attr('y', lastLineY)
-                            .attr('font-size', '10px')
+                            .attr('font-size', '12px')
                             .text(icon);
-                        afterTextX += 14;
+                        afterTextX += 16;
                     } else if (pillText) {
                         afterTextX += 4;  // extra gap when no icon precedes pill
                     }
