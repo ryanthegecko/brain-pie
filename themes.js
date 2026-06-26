@@ -40,6 +40,26 @@ const Themes = {
         defaultBorder: '#aaa',
         list:          '#2196F3',  // blue — safe for CVD; distinct from urgency spectrum
     },
+
+    // Inverse urgency palette: red = scheduled / coming (attention), green = here / done (relax).
+    //
+    // Token → border role reminder (each state's border uses the next-more-urgent token):
+    //   base pill border      → defaultBorder
+    //   this-week pill border → tomorrow  (orange on red — "approaching")
+    //   tomorrow pill border  → today     (deep green on orange — readable contrast)
+    //   today/past pill border → past     (green-on-green, subtle — no alarm needed)
+    //
+    // Note: "this week" and "far-future" share --sched-color-base for their fill, so both
+    // render red; the orange border on this-week pills provides the proximity signal.
+    inverse: {
+        past:          '#4CAF50',  // green — it happened / it's here; relax
+        today:         '#388E3C',  // deeper green — "it's today, green means go"
+        tomorrow:      '#EE7733',  // orange — coming tomorrow; heads up
+        tomorrowText:  '#000000',  // black — readable contrast on orange
+        base:          '#D32F2F',  // red — scheduled and coming; attention required
+        defaultBorder: '#aaa',     // neutral ring on far-future base pills
+        list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
+    },
 };
 
 // ── Change this to switch the active theme ─────────────────────────────────
