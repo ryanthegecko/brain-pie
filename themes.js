@@ -24,6 +24,7 @@ const Themes = {
     // Original Material-Design traffic-light palette
     default: {
         past:          '#D32F2F',  // red
+        pastBorder:    '#D32F2F',  // red — same as fill; no extra signal needed
         today:         '#F57C00',  // orange
         todayBorder:   '#D32F2F',  // red — past colour as border
         tomorrow:      '#FFEB3B',  // yellow — light, needs dark text
@@ -39,6 +40,7 @@ const Themes = {
     // Uses the Bang Wong / Paul Tol set: no red-green confusion.
     colourblind: {
         past:          '#CC3311',  // vermillion — distinct from orange even without hue
+        pastBorder:    '#CC3311',  // vermillion — same as fill
         today:         '#EE7733',  // orange (warm, not red)
         todayBorder:   '#CC3311',  // vermillion — past colour as border
         tomorrow:      '#009988',  // teal — unambiguous against orange; dark enough for white text
@@ -63,6 +65,7 @@ const Themes = {
     // for the proximity signal even though fill and border now share the same hue.
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
+        pastBorder:    '#4CAF50',  // green — same as fill; no alarm on past
         today:         '#388E3C',  // deeper green — "it's today, green means go"
         todayBorder:   '#FFEB3B',  // yellow — warm signal on an otherwise calm green pill
         tomorrow:      '#FFEB3B',  // yellow — coming tomorrow; same as default
@@ -77,6 +80,7 @@ const Themes = {
     // then white for past — happened, gone, no weight.
     monochrome: {
         past:          '#FFFFFF',  // white — it's done; no weight
+        pastBorder:    '#111111',  // black — visible ring on white pill
         today:         '#111111',  // near-black — right now; maximum presence
         todayBorder:   '#FFFFFF',  // white — contrast ring on black pill
         tomorrow:      '#444444',  // dark grey — coming tomorrow
@@ -91,6 +95,7 @@ const Themes = {
     // Monochrome inverse: ramp flipped — black for past, white for today, light → dark for future.
     'monochrome-inverse': {
         past:          '#111111',  // near-black — done; heavy, settled
+        pastBorder:    '#444444',  // dark grey — subtle ring on near-black pill
         today:         '#FFFFFF',  // white — right now; open, present
         todayBorder:   '#444444',  // dark grey — visible ring on white pill
         tomorrow:      '#888888',  // mid grey — coming tomorrow
@@ -115,6 +120,7 @@ function applyTheme(themeName) {
     const theme = Themes[themeName] || Themes.default;
     const root = document.documentElement;
     root.style.setProperty('--sched-color-past',           theme.past);
+    root.style.setProperty('--sched-color-past-border',    theme.pastBorder);
     root.style.setProperty('--sched-color-today',          theme.today);
     root.style.setProperty('--sched-color-today-border',   theme.todayBorder);
     root.style.setProperty('--sched-color-tomorrow',       theme.tomorrow);

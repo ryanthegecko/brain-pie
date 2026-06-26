@@ -564,7 +564,10 @@ const ChartRenderer = {
                     // .style('stroke') is used (not .attr) so CSS custom properties resolve correctly.
                     const isPastEvent = scheduledDate && this.isPast(scheduledDate);
                     const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
-                    if (isPastEvent || isTodayEvent) {
+                    if (isPastEvent) {
+                        rect.style('stroke', 'var(--sched-color-past-border)')
+                            .attr('stroke-width', 2);
+                    } else if (isTodayEvent) {
                         rect.style('stroke', 'var(--sched-color-today-border)')
                             .attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
@@ -1607,7 +1610,9 @@ const ChartRenderer = {
                                 // captures lexical 'this' which is ChartRenderer — use this directly.
                                 const isPastEvent = scheduledDate && this.isPast(scheduledDate);
                                 const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
-                                if (isPastEvent || isTodayEvent) {
+                                if (isPastEvent) {
+                                    rect.style('stroke', 'var(--sched-color-past-border)').attr('stroke-width', 1.5);
+                                } else if (isTodayEvent) {
                                     rect.style('stroke', 'var(--sched-color-today-border)').attr('stroke-width', 1.5);
                                 } else if (isTomorrowEvent) {
                                     rect.style('stroke', 'var(--sched-color-today)').attr('stroke-width', 1.5);
@@ -2037,8 +2042,10 @@ const ChartRenderer = {
                         .style('fill', pillFill);
 
                     // Borders follow the urgency gradient (each state uses next-more-urgent colour).
-                    if (isPastAction || isTodayAction) {
-                        pillRect.style('stroke', 'var(--sched-color-past)').attr('stroke-width', 2);
+                    if (isPastAction) {
+                        pillRect.style('stroke', 'var(--sched-color-past-border)').attr('stroke-width', 2);
+                    } else if (isTodayAction) {
+                        pillRect.style('stroke', 'var(--sched-color-today-border)').attr('stroke-width', 2);
                     } else if (isTomorrowAction) {
                         pillRect.style('stroke', 'var(--sched-color-today)').attr('stroke-width', 2);
                     } else if (isThisWeekAction) {
