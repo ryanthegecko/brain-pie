@@ -58,8 +58,8 @@ const Themes = {
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         today:         '#388E3C',  // deeper green — "it's today, green means go"
-        tomorrow:      '#EE7733',  // orange — coming tomorrow; heads up
-        tomorrowText:  '#000000',  // black — readable contrast on orange
+        tomorrow:      '#FFEB3B',  // yellow — coming tomorrow; same as default
+        tomorrowText:  '#000000',  // black — readable contrast on yellow
         week:          '#EE7733',  // orange — this week; approaching but not imminent
         base:          '#D32F2F',  // red — far-future scheduled; attention required
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
