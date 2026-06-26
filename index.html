@@ -1920,6 +1920,21 @@
     <!-- Tutorial Resume Button (shown during explore mode) -->
     <button id="tutorial-resume-btn" class="tutorial-resume-btn" onclick="TutorialManager.resumeFromExplore()" style="display:none;">📖 Continue Tutorial</button>
 
+    <!-- Schedule key: bottom-left legend for pill colours -->
+    <div id="schedule-key" class="schedule-key">
+        <div class="schedule-key-legend" onclick="UI.scheduleKeyClick(event)">
+            <div class="key-row"><span class="key-pill" style="background:#4CAF50"></span>Scheduled</div>
+            <div class="key-row"><span class="key-pill" style="background:#4CAF50;outline:2px solid #FFEB3B"></span>This week</div>
+            <div class="key-row"><span class="key-pill" style="background:#FFEB3B;outline:2px solid #F57C00"></span>Tomorrow</div>
+            <div class="key-row"><span class="key-pill" style="background:#F57C00;outline:2px solid #D32F2F"></span>Today</div>
+            <div class="key-row"><span class="key-pill" style="background:#D32F2F"></span>Past</div>
+            <div class="schedule-key-tooltip" id="schedule-key-tooltip">
+                <button class="schedule-key-dismiss" onclick="UI.dismissScheduleKey(event)">Got it, hide</button>
+            </div>
+        </div>
+        <div class="schedule-key-collapsed" onclick="UI.expandScheduleKey()">🗝</div>
+    </div>
+
     <script src="storage.js"></script>
     <script src="adapters/firebase-adapter.js"></script>
     <script src="adapters/local-storage-adapter.js"></script>

@@ -3844,3 +3844,83 @@ select:focus {
         padding: 6px 10px;
     }
 }
+
+/* ── Schedule key ──────────────────────────────────────────── */
+.schedule-key {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 500;
+    font-size: 11px;
+    user-select: none;
+}
+
+.schedule-key-legend {
+    background: rgba(30, 30, 30, 0.82);
+    backdrop-filter: blur(6px);
+    border-radius: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    position: relative;
+}
+
+.schedule-key.is-collapsed .schedule-key-legend { display: none; }
+.schedule-key.is-collapsed .schedule-key-collapsed { display: flex; }
+
+.schedule-key-collapsed {
+    display: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(30, 30, 30, 0.82);
+    border-radius: 50%;
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.key-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.key-pill {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+/* Tooltip shown on click */
+.schedule-key-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    background: #222;
+    border-radius: 8px;
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
+.schedule-key.show-tooltip .schedule-key-tooltip { display: block; }
+
+.schedule-key-dismiss {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.schedule-key-dismiss:hover { color: #fff; }

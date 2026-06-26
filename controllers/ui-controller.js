@@ -18,10 +18,10 @@ const UI = {
     getScheduleBorderStyle(dateStr, timeStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
-        if (ChartRenderer.isPast(date)) return 'background: #D32F2F; border: 2px solid #D32F2F;';
-        if (ChartRenderer.isToday(date)) return 'background: #F57C00; border: 2px solid #D32F2F;';
-        if (ChartRenderer.isTomorrow(date)) return 'border: 2px solid #F57C00;';
-        if (ChartRenderer.isThisWeek(date)) return 'border: 2px solid #000000;';
+        if (ChartRenderer.isPast(date))     return 'background: #D32F2F; border: 2px solid #D32F2F;';
+        if (ChartRenderer.isToday(date))    return 'background: #F57C00; border: 2px solid #D32F2F; font-weight: 600;';
+        if (ChartRenderer.isTomorrow(date)) return 'background: #FFEB3B; border: 2px solid #F57C00; color: #000; font-weight: 600;';
+        if (ChartRenderer.isThisWeek(date)) return 'border: 2px solid #FFEB3B;';
         return 'border: 1.5px solid #fff;';
     },
 
@@ -1894,5 +1894,45 @@ const UI = {
         if (confirm(`Delete "${name}" and all its data? This cannot be undone.`)) {
             App.deletePie(pieId);
         }
+    },
+
+    // ── Schedule key ────────────────────────────────────────
+    initScheduleKey() {
+        const el = document.getElementById('schedule-key');
+        if (!el) return;
+        if (localStorage.getItem('scheduleKeyCollapsed') === 'true') {
+            el.classList.add('is-collapsed');
+        }
+    },
+
+    scheduleKeyClick(e) {
+        const el = document.getElementById('schedule-key');
+        if (!el) return;
+        // Toggle the dismiss tooltip on click; close if clicking outside
+        el.classList.toggle('show-tooltip');
+        e.stopPropagation();
+        if (el.classList.contains('show-tooltip')) {
+            const close = () => {
+                el.classList.remove('show-tooltip');
+                document.removeEventListener('click', close);
+            };
+            document.addEventListener('click', close);
+        }
+    },
+
+    dismissScheduleKey(e) {
+        e.stopPropagation();
+        const el = document.getElementById('schedule-key');
+        if (!el) return;
+        el.classList.remove('show-tooltip');
+        el.classList.add('is-collapsed');
+        localStorage.setItem('scheduleKeyCollapsed', 'true');
+    },
+
+    expandScheduleKey() {
+        const el = document.getElementById('schedule-key');
+        if (!el) return;
+        el.classList.remove('is-collapsed');
+        localStorage.setItem('scheduleKeyCollapsed', 'false');
     }
 };
