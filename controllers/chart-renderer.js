@@ -292,6 +292,7 @@ const ChartRenderer = {
             if (date && this.isPast(date))     return 'var(--sched-color-past)';
             if (date && this.isToday(date))    return 'var(--sched-color-today)';
             if (date && this.isTomorrow(date)) return 'var(--sched-color-tomorrow)';
+            if (date && this.isThisWeek(date)) return 'var(--sched-color-week)';
             return 'var(--sched-color-base)';
         }
         if (type === 'repeating') {
@@ -299,6 +300,7 @@ const ChartRenderer = {
             const date = this.getScheduledDate(spoke);
             if (date && this.isToday(date))    return 'var(--sched-color-today)';
             if (date && this.isTomorrow(date)) return 'var(--sched-color-tomorrow)';
+            if (date && this.isThisWeek(date)) return 'var(--sched-color-week)';
             return 'var(--sched-color-base)';
         }
         if (type === 'list') {
@@ -2020,9 +2022,10 @@ const ChartRenderer = {
 
                     // Resolve background via CSS custom property (use .style not .attr so vars work on SVG).
                     let pillFill;
-                    if (isPastAction)      pillFill = 'var(--sched-color-past)';
+                    if (isPastAction)         pillFill = 'var(--sched-color-past)';
                     else if (isTodayAction)   pillFill = 'var(--sched-color-today)';
                     else if (isTomorrowAction) pillFill = 'var(--sched-color-tomorrow)';
+                    else if (isThisWeekAction) pillFill = 'var(--sched-color-week)';
                     else                      pillFill = 'var(--sched-color-base)';
 
                     const pillRect = calGroup.append('rect')

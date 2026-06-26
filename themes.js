@@ -1,12 +1,13 @@
 /**
  * Schedule pill colour themes.
  *
- * Each theme defines seven colour tokens used by schedule urgency pills:
+ * Each theme defines eight colour tokens used by schedule urgency pills:
  *   past          — overdue items (background + border)
  *   today         — due today (background)
  *   tomorrow      — due tomorrow (background)
  *   tomorrowText  — text colour inside a tomorrow pill (contrast varies: black on yellow, white on teal)
- *   base          — any scheduled item with no urgency signal (background)
+ *   week          — scheduled this week (2–7 days away); distinct from far-future base
+ *   base          — far-future scheduled item with no urgency signal (background)
  *   defaultBorder — default scheduled item border (the subtle ring on a base-coloured pill)
  *   list          — list-type or unscheduled spoke indicator pill (blue — visually distinct from urgency states)
  *
@@ -24,6 +25,7 @@ const Themes = {
         today:         '#F57C00',  // orange
         tomorrow:      '#FFEB3B',  // yellow — light, needs dark text
         tomorrowText:  '#000000',  // black — readable on yellow
+        week:          '#4CAF50',  // green — same as base; no visual change in this theme
         base:          '#4CAF50',  // green
         defaultBorder: '#fff',
         list:          '#2196F3',  // blue — list type / unscheduled spoke
@@ -36,6 +38,7 @@ const Themes = {
         today:         '#EE7733',  // orange (warm, not red)
         tomorrow:      '#009988',  // teal — unambiguous against orange; dark enough for white text
         tomorrowText:  '#ffffff',  // white — readable on dark teal
+        week:          '#0077BB',  // blue — same as base; no visual change in this theme
         base:          '#0077BB',  // blue — safe for all CVD types
         defaultBorder: '#aaa',
         list:          '#2196F3',  // blue — safe for CVD; distinct from urgency spectrum
@@ -49,21 +52,23 @@ const Themes = {
     //   tomorrow pill border  → today     (deep green on orange — readable contrast)
     //   today/past pill border → past     (green-on-green, subtle — no alarm needed)
     //
-    // Note: "this week" and "far-future" share --sched-color-base for their fill, so both
-    // render red; the orange border on this-week pills provides the proximity signal.
+    // Note: "this week" gets its own orange fill (--sched-color-week) so it's distinct from
+    // the far-future red (--sched-color-base). The orange border on this-week pills is kept
+    // for the proximity signal even though fill and border now share the same hue.
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         today:         '#388E3C',  // deeper green — "it's today, green means go"
         tomorrow:      '#EE7733',  // orange — coming tomorrow; heads up
         tomorrowText:  '#000000',  // black — readable contrast on orange
-        base:          '#D32F2F',  // red — scheduled and coming; attention required
+        week:          '#EE7733',  // orange — this week; approaching but not imminent
+        base:          '#D32F2F',  // red — far-future scheduled; attention required
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
     },
 };
 
 // ── Change this to switch the active theme ─────────────────────────────────
-const ACTIVE_THEME = 'colourblind';
+const ACTIVE_THEME = 'inverse';
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
@@ -77,6 +82,7 @@ function applyTheme(themeName) {
     root.style.setProperty('--sched-color-today',          theme.today);
     root.style.setProperty('--sched-color-tomorrow',       theme.tomorrow);
     root.style.setProperty('--sched-color-tomorrow-text',  theme.tomorrowText);
+    root.style.setProperty('--sched-color-week',           theme.week);
     root.style.setProperty('--sched-color-base',           theme.base);
     root.style.setProperty('--sched-color-default-border', theme.defaultBorder);
     root.style.setProperty('--sched-color-list',           theme.list);

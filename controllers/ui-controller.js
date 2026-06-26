@@ -22,7 +22,7 @@ const UI = {
         if (ChartRenderer.isPast(date))     return 'background: var(--sched-color-past); border: 2px solid var(--sched-color-past);';
         if (ChartRenderer.isToday(date))    return 'background: var(--sched-color-today); border: 2px solid var(--sched-color-past); font-weight: 600;';
         if (ChartRenderer.isTomorrow(date)) return 'background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-today); color: #000; font-weight: 600;';
-        if (ChartRenderer.isThisWeek(date)) return 'border: 2px solid var(--sched-color-tomorrow);';
+        if (ChartRenderer.isThisWeek(date)) return 'background: var(--sched-color-week); border: 2px solid var(--sched-color-tomorrow);';
         return 'border: 1.5px solid var(--sched-color-default-border);';
     },
 

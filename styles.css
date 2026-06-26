@@ -5,6 +5,7 @@
     --sched-color-today:          #F57C00;
     --sched-color-tomorrow:       #FFEB3B;
     --sched-color-tomorrow-text:  #000000;  /* contrast text inside tomorrow pill (black on yellow) */
+    --sched-color-week:           #4CAF50;  /* this-week pill fill; matches default base */
     --sched-color-base:           #4CAF50;
     --sched-color-default-border: #fff;
     --sched-color-list:           #2196F3;  /* list-type / unscheduled spoke indicator */
