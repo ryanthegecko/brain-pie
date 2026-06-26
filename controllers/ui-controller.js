@@ -579,7 +579,7 @@ const UI = {
                     spokeTypeButton = `<button style="background: var(--sched-color-base); ${recBorder}" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Edit recurrence">${recurrenceText}</button>`;
                 } else {
                     // No recurrence set — use list colour to signal "needs configuration".
-                    spokeTypeButton = `<button style="background: var(--sched-color-list);" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">🔁 Set recurrence</button>`;
+                    spokeTypeButton = `<button style="background: var(--sched-color-list);" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">↻ Set recurrence</button>`;
                 }
             } else if (spokeType === 'list') {
                 spokeTypeButton = `<button style="background:#4CAF50;" onclick="UI.showAddActionInput('${categoryId}', '${itemId}', ${idx})" title="Add action">+</button><button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Manage actions"><img width="17" height="17" src="./assets/gear.svg"></button>`;
@@ -984,7 +984,7 @@ const UI = {
                                             spokeTypeBtn = `<button class="small" style="background: var(--sched-color-base); padding: 3px 17px; ${recBorder}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
                                         } else {
                                             // No recurrence set — list colour signals "needs configuration".
-                                            spokeTypeBtn = `<button class="small" style="background: var(--sched-color-list); padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set recurrence">🔁</button>`;
+                                            spokeTypeBtn = `<button class="small" style="background: var(--sched-color-list); padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set recurrence">↻</button>`;
                                         }
                                     } else if (spokeType === 'list') {
                                         spokeTypeBtn = `<button style="background:#4CAF50;" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${spokeIndex})" title="Add action">+</button><button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Manage actions"><img width="17" height="17" src="./assets/gear.svg"></button>`;

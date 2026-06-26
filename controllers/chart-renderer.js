@@ -40,15 +40,15 @@ const ChartRenderer = {
                 return ' 📅';
             case 'repeating':
                 if (hasRecurrence) {
-                    return ' 🔁';
+                    return ' ↻';
                 }
-                return ' 🔁';
+                return ' ↻';
             case 'list':
                 // For list type, show action count
                 if (hasChildren) {
                     return ` • (${spoke.children.length})`;
                 }
-                return ' ☑️';
+                return ' ☑';
             case 'static':
             default:
                 return '';
@@ -318,8 +318,8 @@ const ChartRenderer = {
         if (type === 'action') type = 'list';
 
         if (type === 'single') return '📅';
-        if (type === 'repeating') return '🔁';
-        if (type === 'list') return '☑️';
+        if (type === 'repeating') return '↻';
+        if (type === 'list') return '☑';
         return null;
     },
 
@@ -376,7 +376,7 @@ const ChartRenderer = {
     // Weekly every week with specific days: show day names (e.g. "Mon, Wed, Fri 9AM")
     // All other frequencies: within 2 weeks → Today/Tomorrow/This Thu/Next Thu; beyond → date
     formatRecurrencePillText(recurrence) {
-        if (!recurrence) return '🔁';
+        if (!recurrence) return '↻';
 
         const freq = recurrence.frequency;
         const interval = recurrence.interval || 1;
@@ -399,7 +399,7 @@ const ChartRenderer = {
         // For all other cases, show the next occurrence date
         const nextDate = this.getNextOccurrence(recurrence);
         if (!nextDate) {
-            return recurrence.time ? this.formatCompactTime(recurrence.time) : '🔁';
+            return recurrence.time ? this.formatCompactTime(recurrence.time) : '↻';
         }
 
         const d = new Date(nextDate + 'T00:00:00');
