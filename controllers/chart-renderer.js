@@ -317,7 +317,7 @@ const ChartRenderer = {
         let type = spoke.type || 'static';
         if (type === 'action') type = 'list';
 
-        if (type === 'single') return '📅';
+        if (type === 'single') return (spoke.scheduled && spoke.scheduled.date) ? null : '📅';
         if (type === 'repeating') return '↻';
         if (type === 'list') return '☑';
         return null;
