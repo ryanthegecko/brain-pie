@@ -273,7 +273,10 @@ const ChartRenderer = {
         return diffDays >= 2 && diffDays <= 7;
     },
 
-    // Get pill background color based on spoke state
+    // Get pill background colour as a CSS custom-property reference.
+    // Returns a var(--sched-color-*) string so the active theme is respected at paint time.
+    // Callers must use .style('fill', pillColor) — not .attr('fill', ...) — so the
+    // browser resolves the CSS variable correctly on the SVG element.
     getSchedulePillColor(spoke) {
         if (typeof spoke === 'string') return null;
 
@@ -284,22 +287,22 @@ const ChartRenderer = {
         const hasRecurrence = spoke.metadata && spoke.metadata.recurrence;
 
         if (type === 'single') {
-            if (!hasSchedule) return '#2196F3';
+            if (!hasSchedule) return 'var(--sched-color-list)';
             const date = this.getScheduledDate(spoke);
-            if (date && this.isPast(date)) return '#D32F2F';
-            if (date && this.isToday(date)) return '#F57C00';
-            if (date && this.isTomorrow(date)) return '#FFEB3B';
-            return '#4CAF50';
+            if (date && this.isPast(date))     return 'var(--sched-color-past)';
+            if (date && this.isToday(date))    return 'var(--sched-color-today)';
+            if (date && this.isTomorrow(date)) return 'var(--sched-color-tomorrow)';
+            return 'var(--sched-color-base)';
         }
         if (type === 'repeating') {
-            if (!hasRecurrence) return '#2196F3';
+            if (!hasRecurrence) return 'var(--sched-color-list)';
             const date = this.getScheduledDate(spoke);
-            if (date && this.isToday(date)) return '#F57C00';
-            if (date && this.isTomorrow(date)) return '#FFEB3B';
-            return '#4CAF50';
+            if (date && this.isToday(date))    return 'var(--sched-color-today)';
+            if (date && this.isTomorrow(date)) return 'var(--sched-color-tomorrow)';
+            return 'var(--sched-color-base)';
         }
         if (type === 'list') {
-            return '#2196F3';
+            return 'var(--sched-color-list)';
         }
 
         return null;
@@ -489,7 +492,9 @@ const ChartRenderer = {
         const pillText = this.getSchedulePillText(spoke);
         if (!icon && !pillText) return;
 
-        const pillColor = this.getSchedulePillColor(spoke) || '#4CAF50';
+        // Fallback to base colour if getSchedulePillColor returns null (e.g. static spoke — rare in practice
+        // since addSchedulePill returns early above when there's no icon or text to render).
+        const pillColor = this.getSchedulePillColor(spoke) || 'var(--sched-color-base)';
         const scheduledDate = this.getScheduledDate(spoke);
         const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
         const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
@@ -532,9 +537,10 @@ const ChartRenderer = {
 
                 // Render pill with text (if there's text beyond just the icon)
                 if (pillText) {
+                    // Text colour: tomorrow pill needs contrast text (token); all others use white.
                     const pillTextEl = pillGroup.append('text')
                         .attr('font-size', fontSize + 'px')
-                        .attr('fill', isTomorrowEvent ? '#000000' : '#ffffff')
+                        .style('fill', isTomorrowEvent ? 'var(--sched-color-tomorrow-text)' : '#ffffff')
                         .attr('font-weight', (isTodayEvent || isTomorrowEvent) ? '600' : 'normal')
                         .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .attr('x', cursorX)
@@ -542,6 +548,7 @@ const ChartRenderer = {
                         .text(pillText);
 
                     const pillTextBbox = pillTextEl.node().getBBox();
+                    // Use .style('fill') — not .attr('fill') — so CSS custom properties resolve on SVG.
                     const rect = pillGroup.insert('rect', 'text:last-of-type')
                         .attr('x', pillTextBbox.x - padding.x)
                         .attr('y', pillTextBbox.y - padding.y)
@@ -549,22 +556,23 @@ const ChartRenderer = {
                         .attr('height', pillTextBbox.height + padding.y * 2)
                         .attr('rx', 10)
                         .attr('ry', 10)
-                        .attr('fill', pillColor);
+                        .style('fill', pillColor);
 
-                    // Borders: past/today=red, tomorrow=orange, this week=black, future=white
+                    // Borders follow the urgency gradient: each state uses the next-more-urgent colour.
+                    // .style('stroke') is used (not .attr) so CSS custom properties resolve correctly.
                     const isPastEvent = scheduledDate && this.isPast(scheduledDate);
                     const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
                     if (isPastEvent || isTodayEvent) {
-                        rect.attr('stroke', '#D32F2F')
+                        rect.style('stroke', 'var(--sched-color-past)')
                             .attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
-                        rect.attr('stroke', '#F57C00')
+                        rect.style('stroke', 'var(--sched-color-today)')
                             .attr('stroke-width', 2);
                     } else if (isThisWeekEvent) {
-                        rect.attr('stroke', '#FFEB3B')
+                        rect.style('stroke', 'var(--sched-color-tomorrow)')
                             .attr('stroke-width', 2);
                     } else {
-                        rect.attr('stroke', '#ffffff')
+                        rect.style('stroke', 'var(--sched-color-default-border)')
                             .attr('stroke-width', 1.5);
                     }
                 }
@@ -1574,33 +1582,37 @@ const ChartRenderer = {
                                 const pillPadX = 5;
                                 const pillPadY = 2;
 
+                                // Text colour: tomorrow needs contrast text (token); all others use white.
                                 const pillTextEl = spokeGroup.append('text')
                                     .attr('x', pillX + pillPadX)
                                     .attr('y', lastLineY)
                                     .attr('font-size', '8px')
-                                    .attr('fill', isTomorrowEvent ? '#000000' : '#ffffff')
+                                    .style('fill', isTomorrowEvent ? 'var(--sched-color-tomorrow-text)' : '#ffffff')
                                     .attr('font-weight', (isTodayEvent || isTomorrowEvent) ? '600' : 'bold')
                                     .text(pillText);
 
                                 const pillBbox = pillTextEl.node().getBBox();
+                                // Use .style() so CSS custom properties resolve on SVG elements.
                                 const rect = spokeGroup.insert('rect', 'text:last-of-type')
                                     .attr('x', pillBbox.x - pillPadX)
                                     .attr('y', pillBbox.y - pillPadY)
                                     .attr('width', Math.min(pillBbox.width + pillPadX * 2, sliceW - pillX - 4))
                                     .attr('height', pillBbox.height + pillPadY * 2)
                                     .attr('rx', 6)
-                                    .attr('fill', pillColor);
+                                    .style('fill', pillColor);
 
-                                const isPastEvent = scheduledDate && that.isPast(scheduledDate);
-                                const isThisWeekEvent = scheduledDate && that.isThisWeek(scheduledDate);
+                                // Bug fix: 'that' is undefined in renderTreemap(); this arrow function
+                                // captures lexical 'this' which is ChartRenderer — use this directly.
+                                const isPastEvent = scheduledDate && this.isPast(scheduledDate);
+                                const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
                                 if (isPastEvent || isTodayEvent) {
-                                    rect.attr('stroke', '#D32F2F').attr('stroke-width', 1.5);
+                                    rect.style('stroke', 'var(--sched-color-past)').attr('stroke-width', 1.5);
                                 } else if (isTomorrowEvent) {
-                                    rect.attr('stroke', '#F57C00').attr('stroke-width', 1.5);
+                                    rect.style('stroke', 'var(--sched-color-today)').attr('stroke-width', 1.5);
                                 } else if (isThisWeekEvent) {
-                                    rect.attr('stroke', '#FFEB3B').attr('stroke-width', 1.5);
+                                    rect.style('stroke', 'var(--sched-color-tomorrow)').attr('stroke-width', 1.5);
                                 } else {
-                                    rect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
+                                    rect.style('stroke', 'var(--sched-color-default-border)').attr('stroke-width', 1.5);
                                 }
                             } catch (e) { /* element may not be in DOM */ }
                         }, 10);
@@ -2001,25 +2013,35 @@ const ChartRenderer = {
                     const pillLabel = `${dateStr}${timeStr ? ' ' + timeStr : ''}`;
                     const pillW = pillLabel.length * 13 + 24;
                     btnX -= isCompleted ? 0 : pillW;
-                    const isPastAction = that.isPast(schedDate);
-                    const isTodayAction = that.isToday(schedDate);
+                    const isPastAction    = that.isPast(schedDate);
+                    const isTodayAction   = that.isToday(schedDate);
                     const isTomorrowAction = that.isTomorrow(schedDate);
+                    const isThisWeekAction = that.isThisWeek(schedDate);
+
+                    // Resolve background via CSS custom property (use .style not .attr so vars work on SVG).
+                    let pillFill;
+                    if (isPastAction)      pillFill = 'var(--sched-color-past)';
+                    else if (isTodayAction)   pillFill = 'var(--sched-color-today)';
+                    else if (isTomorrowAction) pillFill = 'var(--sched-color-tomorrow)';
+                    else                      pillFill = 'var(--sched-color-base)';
+
                     const pillRect = calGroup.append('rect')
                         .attr('x', btnX)
                         .attr('y', rowY + 6)
                         .attr('width', pillW)
                         .attr('height', 40)
                         .attr('rx', 20)
-                        .attr('fill', isPastAction ? '#D32F2F' : isTodayAction ? '#F57C00' : '#4CAF50');
-                    const isThisWeekAction = that.isThisWeek(schedDate);
+                        .style('fill', pillFill);
+
+                    // Borders follow the urgency gradient (each state uses next-more-urgent colour).
                     if (isPastAction || isTodayAction) {
-                        pillRect.attr('stroke', '#D32F2F').attr('stroke-width', 2);
+                        pillRect.style('stroke', 'var(--sched-color-past)').attr('stroke-width', 2);
                     } else if (isTomorrowAction) {
-                        pillRect.attr('stroke', '#F57C00').attr('stroke-width', 2);
+                        pillRect.style('stroke', 'var(--sched-color-today)').attr('stroke-width', 2);
                     } else if (isThisWeekAction) {
-                        pillRect.attr('stroke', '#FFEB3B').attr('stroke-width', 2);
+                        pillRect.style('stroke', 'var(--sched-color-tomorrow)').attr('stroke-width', 2);
                     } else {
-                        pillRect.attr('stroke', '#ffffff').attr('stroke-width', 1.5);
+                        pillRect.style('stroke', 'var(--sched-color-default-border)').attr('stroke-width', 1.5);
                     }
                     calGroup.append('text')
                         .attr('x', btnX + pillW / 2)
@@ -2030,6 +2052,7 @@ const ChartRenderer = {
                         .attr('font-weight', 'bold')
                         .text(pillLabel);
                 } else {
+                    // Unscheduled action \u2014 show calendar icon on list-type pill colour.
                     const calPillW = 52;
                     btnX -= isCompleted ? 0 : calPillW;
                     calGroup.append('rect')
@@ -2038,7 +2061,7 @@ const ChartRenderer = {
                         .attr('width', calPillW)
                         .attr('height', 40)
                         .attr('rx', 8)
-                        .attr('fill', '#2196F3');
+                        .style('fill', 'var(--sched-color-list)');
                     calGroup.append('text')
                         .attr('x', btnX + calPillW / 2)
                         .attr('y', rowY + 33)

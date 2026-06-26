@@ -14,15 +14,16 @@ const UI = {
         return text.replace(/(https?:\/\/[^\s<>"']+)/g, '<a href="$1" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#1a73e8;text-decoration:underline;">$1</a>');
     },
 
-    // Returns inline CSS border + background string for schedule pills based on date proximity
+    // Returns inline CSS border + background string for schedule pills based on date proximity.
+    // Colours come from CSS custom properties set by themes.js — no hardcoded hex values here.
     getScheduleBorderStyle(dateStr, timeStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
-        if (ChartRenderer.isPast(date))     return 'background: #D32F2F; border: 2px solid #D32F2F;';
-        if (ChartRenderer.isToday(date))    return 'background: #F57C00; border: 2px solid #D32F2F; font-weight: 600;';
-        if (ChartRenderer.isTomorrow(date)) return 'background: #FFEB3B; border: 2px solid #F57C00; color: #000; font-weight: 600;';
-        if (ChartRenderer.isThisWeek(date)) return 'border: 2px solid #FFEB3B;';
-        return 'border: 1.5px solid #fff;';
+        if (ChartRenderer.isPast(date))     return 'background: var(--sched-color-past); border: 2px solid var(--sched-color-past);';
+        if (ChartRenderer.isToday(date))    return 'background: var(--sched-color-today); border: 2px solid var(--sched-color-past); font-weight: 600;';
+        if (ChartRenderer.isTomorrow(date)) return 'background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-today); color: #000; font-weight: 600;';
+        if (ChartRenderer.isThisWeek(date)) return 'border: 2px solid var(--sched-color-tomorrow);';
+        return 'border: 1.5px solid var(--sched-color-default-border);';
     },
 
     // Get the relevant date string for a spoke's schedule (single or repeating)
@@ -564,17 +565,21 @@ const UI = {
                     const timeStr = spokeSchedule.time ? schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                     const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                     const borderStyle = UI.getScheduleBorderStyle(spokeSchedule.date, spokeSchedule.time);
-                    spokeTypeButton = `<button style="background: #4CAF50; ${borderStyle}" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
+                    // base colour as fallback; getScheduleBorderStyle overrides it for past/today/tomorrow.
+                    spokeTypeButton = `<button style="background: var(--sched-color-base); ${borderStyle}" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
                 } else {
-                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Schedule">📅 Schedule</button>`;
+                    // No date set — use list colour to signal "needs scheduling".
+                    spokeTypeButton = `<button style="background: var(--sched-color-list);" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Schedule">📅 Schedule</button>`;
                 }
             } else if (spokeType === 'repeating') {
                 if (spokeRecurrence) {
                     const recurrenceText = this.formatRecurrenceDescriptionCompact(spokeRecurrence);
                     const recBorder = UI.getScheduleBorderStyle(ChartRenderer.getNextOccurrence(spokeRecurrence) || spokeRecurrence.startDate, spokeRecurrence.time);
-                    spokeTypeButton = `<button style="background: #4CAF50; ${recBorder}" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Edit recurrence">${recurrenceText}</button>`;
+                    // base colour as fallback; getScheduleBorderStyle overrides it for past/today/tomorrow.
+                    spokeTypeButton = `<button style="background: var(--sched-color-base); ${recBorder}" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Edit recurrence">${recurrenceText}</button>`;
                 } else {
-                    spokeTypeButton = `<button style="background: #4CAF50;" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">🔁 Set recurrence</button>`;
+                    // No recurrence set — use list colour to signal "needs configuration".
+                    spokeTypeButton = `<button style="background: var(--sched-color-list);" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Set recurrence">🔁 Set recurrence</button>`;
                 }
             } else if (spokeType === 'list') {
                 spokeTypeButton = `<button style="background:#4CAF50;" onclick="UI.showAddActionInput('${categoryId}', '${itemId}', ${idx})" title="Add action">+</button><button class="secondary" onclick="UI.showSpokeEditor('${categoryId}', '${itemId}', ${idx})" title="Manage actions"><img width="17" height="17" src="./assets/gear.svg"></button>`;
@@ -966,16 +971,20 @@ const UI = {
                                             const timeStr = spokeSchedule.time ? schedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                                             const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                                             const borderStyle = UI.getScheduleBorderStyle(spokeSchedule.date, spokeSchedule.time);
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${borderStyle}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
+                                            // base colour as fallback; getScheduleBorderStyle overrides for past/today/tomorrow.
+                                            spokeTypeBtn = `<button class="small" style="background: var(--sched-color-base); padding: 3px 17px; ${borderStyle}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Reschedule">${dateStr}${timeStr ? ' ' + timeStr : ''}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Schedule">📅</button>`;
+                                            // No date set — list colour signals "needs scheduling".
+                                            spokeTypeBtn = `<button class="small" style="background: var(--sched-color-list); padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Schedule">📅</button>`;
                                         }
                                     } else if (spokeType === 'repeating') {
                                         if (spokeRecurrence) {
                                             const recBorder = UI.getScheduleBorderStyle(ChartRenderer.getNextOccurrence(spokeRecurrence) || spokeRecurrence.startDate, spokeRecurrence.time);
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px; ${recBorder}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
+                                            // base colour as fallback; getScheduleBorderStyle overrides for past/today/tomorrow.
+                                            spokeTypeBtn = `<button class="small" style="background: var(--sched-color-base); padding: 3px 17px; ${recBorder}" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Edit recurrence">${UI.formatRecurrenceDescriptionCompact(spokeRecurrence)}</button>`;
                                         } else {
-                                            spokeTypeBtn = `<button class="small" style="background: #4CAF50; padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set recurrence">🔁</button>`;
+                                            // No recurrence set — list colour signals "needs configuration".
+                                            spokeTypeBtn = `<button class="small" style="background: var(--sched-color-list); padding: 3px 17px;" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Set recurrence">🔁</button>`;
                                         }
                                     } else if (spokeType === 'list') {
                                         spokeTypeBtn = `<button style="background:#4CAF50;" onclick="UI.showAddActionInput('${category.id}', '${item.id}', ${spokeIndex})" title="Add action">+</button><button class="secondary" onclick="UI.showSpokeEditor('${category.id}', '${item.id}', ${spokeIndex})" title="Manage actions"><img width="17" height="17" src="./assets/gear.svg"></button>`;
@@ -1025,10 +1034,10 @@ const UI = {
                                                     let buttonTitle = 'Add to calendar';
 
                                                     if (hasRecurrence) {
-                                                        // Repeating action - show recurrence on green button
+                                                        // Repeating action — base colour fallback; getScheduleBorderStyle overrides for urgency states.
                                                         scheduleDisplay = UI.formatRecurrenceDescriptionCompact(child.recurrence);
                                                         const recBorder = UI.getScheduleBorderStyle(ChartRenderer.getNextOccurrence(child.recurrence) || child.recurrence.startDate, child.recurrence.time);
-                                                        buttonStyle = 'background: #4CAF50; padding: 3px 17px; ' + recBorder;
+                                                        buttonStyle = 'background: var(--sched-color-base); padding: 3px 17px; ' + recBorder;
                                                         buttonTitle = 'Repeating event';
                                                     } else if (hasSchedule) {
                                                         if (child.scheduled.allDay) {
@@ -1040,8 +1049,9 @@ const UI = {
                                                             const dateStr = schedDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
                                                             scheduleDisplay = dateStr + ' ' + timeStr;
                                                         }
+                                                        // base colour fallback; getScheduleBorderStyle overrides for urgency states.
                                                         const actionBorder = UI.getScheduleBorderStyle(child.scheduled.date, child.scheduled.time);
-                                                        buttonStyle = 'background: #4CAF50; padding: 3px 17px; ' + actionBorder;
+                                                        buttonStyle = 'background: var(--sched-color-base); padding: 3px 17px; ' + actionBorder;
                                                         buttonTitle = 'Reschedule';
                                                     }
 

@@ -1,3 +1,15 @@
+/* Schedule pill theme tokens — defaults match the 'default' theme.
+   themes.js overwrites these at runtime via applyTheme(). */
+:root {
+    --sched-color-past:           #D32F2F;
+    --sched-color-today:          #F57C00;
+    --sched-color-tomorrow:       #FFEB3B;
+    --sched-color-tomorrow-text:  #000000;  /* contrast text inside tomorrow pill (black on yellow) */
+    --sched-color-base:           #4CAF50;
+    --sched-color-default-border: #fff;
+    --sched-color-list:           #2196F3;  /* list-type / unscheduled spoke indicator */
+}
+
 * {
     margin: 0;
     padding: 0;
