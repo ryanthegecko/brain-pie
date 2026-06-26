@@ -565,13 +565,13 @@ const ChartRenderer = {
                     const isPastEvent = scheduledDate && this.isPast(scheduledDate);
                     const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
                     if (isPastEvent || isTodayEvent) {
-                        rect.style('stroke', 'var(--sched-color-past)')
+                        rect.style('stroke', 'var(--sched-color-today-border)')
                             .attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
                         rect.style('stroke', 'var(--sched-color-today)')
                             .attr('stroke-width', 2);
                     } else if (isThisWeekEvent) {
-                        rect.style('stroke', 'var(--sched-color-tomorrow)')
+                        rect.style('stroke', 'var(--sched-color-week-border)')
                             .attr('stroke-width', 2);
                     } else {
                         rect.style('stroke', 'var(--sched-color-default-border)')
@@ -1608,11 +1608,11 @@ const ChartRenderer = {
                                 const isPastEvent = scheduledDate && this.isPast(scheduledDate);
                                 const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
                                 if (isPastEvent || isTodayEvent) {
-                                    rect.style('stroke', 'var(--sched-color-past)').attr('stroke-width', 1.5);
+                                    rect.style('stroke', 'var(--sched-color-today-border)').attr('stroke-width', 1.5);
                                 } else if (isTomorrowEvent) {
                                     rect.style('stroke', 'var(--sched-color-today)').attr('stroke-width', 1.5);
                                 } else if (isThisWeekEvent) {
-                                    rect.style('stroke', 'var(--sched-color-tomorrow)').attr('stroke-width', 1.5);
+                                    rect.style('stroke', 'var(--sched-color-week-border)').attr('stroke-width', 1.5);
                                 } else {
                                     rect.style('stroke', 'var(--sched-color-default-border)').attr('stroke-width', 1.5);
                                 }

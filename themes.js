@@ -7,8 +7,10 @@
  *   tomorrow      — due tomorrow (background)
  *   tomorrowText  — text colour inside a tomorrow pill (contrast varies: black on yellow, white on teal)
  *   week          — scheduled this week (2–7 days away); distinct from far-future base
+ *   weekBorder    — border colour on this-week pills
  *   base          — far-future scheduled item with no urgency signal (background)
  *   defaultBorder — default scheduled item border (the subtle ring on a base-coloured pill)
+ *   todayBorder   — border colour on today pills
  *   list          — list-type or unscheduled spoke indicator pill (blue — visually distinct from urgency states)
  *
  * Border convention: each state uses the next-more-urgent state's colour as its
@@ -23,9 +25,11 @@ const Themes = {
     default: {
         past:          '#D32F2F',  // red
         today:         '#F57C00',  // orange
+        todayBorder:   '#D32F2F',  // red — past colour as border
         tomorrow:      '#FFEB3B',  // yellow — light, needs dark text
         tomorrowText:  '#000000',  // black — readable on yellow
         week:          '#4CAF50',  // green — same as base; no visual change in this theme
+        weekBorder:    '#FFEB3B',  // yellow — tomorrow colour as border
         base:          '#4CAF50',  // green
         defaultBorder: '#fff',
         list:          '#2196F3',  // blue — list type / unscheduled spoke
@@ -36,9 +40,11 @@ const Themes = {
     colourblind: {
         past:          '#CC3311',  // vermillion — distinct from orange even without hue
         today:         '#EE7733',  // orange (warm, not red)
+        todayBorder:   '#CC3311',  // vermillion — past colour as border
         tomorrow:      '#009988',  // teal — unambiguous against orange; dark enough for white text
         tomorrowText:  '#ffffff',  // white — readable on dark teal
         week:          '#0077BB',  // blue — same as base; no visual change in this theme
+        weekBorder:    '#009988',  // teal — tomorrow colour as border
         base:          '#0077BB',  // blue — safe for all CVD types
         defaultBorder: '#aaa',
         list:          '#2196F3',  // blue — safe for CVD; distinct from urgency spectrum
@@ -58,9 +64,11 @@ const Themes = {
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         today:         '#388E3C',  // deeper green — "it's today, green means go"
+        todayBorder:   '#FFEB3B',  // yellow — warm signal on an otherwise calm green pill
         tomorrow:      '#FFEB3B',  // yellow — coming tomorrow; same as default
         tomorrowText:  '#000000',  // black — readable contrast on yellow
-        week:          '#EE7733',  // orange — this week; approaching but not imminent
+        week:          '#EE7733',  // orange — this week; approaching
+        weekBorder:    '#D32F2F',  // red — base colour as border; "getting serious"
         base:          '#D32F2F',  // red — far-future scheduled; attention required
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
@@ -80,9 +88,11 @@ function applyTheme(themeName) {
     const root = document.documentElement;
     root.style.setProperty('--sched-color-past',           theme.past);
     root.style.setProperty('--sched-color-today',          theme.today);
+    root.style.setProperty('--sched-color-today-border',   theme.todayBorder);
     root.style.setProperty('--sched-color-tomorrow',       theme.tomorrow);
     root.style.setProperty('--sched-color-tomorrow-text',  theme.tomorrowText);
     root.style.setProperty('--sched-color-week',           theme.week);
+    root.style.setProperty('--sched-color-week-border',    theme.weekBorder);
     root.style.setProperty('--sched-color-base',           theme.base);
     root.style.setProperty('--sched-color-default-border', theme.defaultBorder);
     root.style.setProperty('--sched-color-list',           theme.list);
