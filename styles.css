@@ -1864,6 +1864,7 @@ select:focus {
 .spoke-type-picker-icon {
     font-size: 24px;
     flex-shrink: 0;
+    color: black;
 }
 
 .spoke-type-picker-label {

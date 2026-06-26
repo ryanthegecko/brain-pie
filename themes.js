@@ -25,9 +25,9 @@ const Themes = {
     default: {
         past:          '#D32F2F',  // red
         pastBorder:    '#D32F2F',  // red — same as fill; no extra signal needed
-        today:         '#EF4444',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
-        todayBorder:   '#B91C1C',  // deeper red — was #D32F2F; contrast ring on coral red pill
-        tomorrow:      '#F59E0B',  // warm amber — was #FFEB3B yellow; more distinct from today
+        today:         '#EE7733',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
+        todayBorder:   '#D32F2F',  // deeper red — was #D32F2F; contrast ring on coral red pill
+        tomorrow:      '#FFEB3B',  // warm amber — was #FFEB3B yellow; more distinct from today
         tomorrowText:  '#000000',  // black — readable on amber
         week:          '#4CAF50',  // green — same as base; no visual change in this theme
         weekBorder:    '#FFEB3B',  // yellow — original tomorrow colour as border
@@ -50,7 +50,7 @@ const Themes = {
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         pastBorder:    '#4CAF50',  // green — same as fill; no alarm on past
-        today:         '#388E3C',  // deeper green — "it's today, green means go"
+        today:         '#4CAF50',  // green — "it's today, green means go"
         todayBorder:   '#FFEB3B',  // yellow — warm signal on an otherwise calm green pill
         tomorrow:      '#FFEB3B',  // yellow — coming tomorrow; same as default
         tomorrowText:  '#000000',  // black — readable contrast on yellow
