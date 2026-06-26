@@ -73,6 +73,20 @@ const Themes = {
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
     },
+    // Monochrome palette: urgency ramps from light grey (far future) through to black (today),
+    // then white for past — happened, gone, no weight.
+    monochrome: {
+        past:          '#FFFFFF',  // white — it's done; no weight
+        today:         '#111111',  // near-black — right now; maximum presence
+        todayBorder:   '#FFFFFF',  // white — contrast ring on black pill
+        tomorrow:      '#444444',  // dark grey — coming tomorrow
+        tomorrowText:  '#FFFFFF',  // white — readable on dark grey
+        week:          '#888888',  // mid grey — this week
+        weekBorder:    '#444444',  // dark grey — tomorrow colour as border
+        base:          '#BBBBBB',  // light grey — scheduled, not imminent
+        defaultBorder: '#888888',  // mid grey — subtle ring on light pill
+        list:          '#666666',  // neutral grey — list type / unscheduled spoke
+    },
 };
 
 // ── Change this to switch the active theme ─────────────────────────────────
