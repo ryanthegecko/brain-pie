@@ -36,22 +36,6 @@ const Themes = {
         list:          '#2196F3',  // blue — list type / unscheduled spoke
     },
 
-    // Colourblind-friendly palette (safe for deuteranopia / protanopia).
-    // Uses the Bang Wong / Paul Tol set: no red-green confusion.
-    colourblind: {
-        past:          '#CC3311',  // vermillion — distinct from orange even without hue
-        pastBorder:    '#CC3311',  // vermillion — same as fill
-        today:         '#EE7733',  // orange (warm, not red)
-        todayBorder:   '#CC3311',  // vermillion — past colour as border
-        tomorrow:      '#009988',  // teal — unambiguous against orange; dark enough for white text
-        tomorrowText:  '#ffffff',  // white — readable on dark teal
-        week:          '#0077BB',  // blue — same as base; no visual change in this theme
-        weekBorder:    '#009988',  // teal — tomorrow colour as border
-        base:          '#0077BB',  // blue — safe for all CVD types
-        defaultBorder: '#aaa',
-        list:          '#2196F3',  // blue — safe for CVD; distinct from urgency spectrum
-    },
-
     // Inverse urgency palette: red = scheduled / coming (attention), green = here / done (relax).
     //
     // Token → border role reminder (each state's border uses the next-more-urgent token):
@@ -75,6 +59,22 @@ const Themes = {
         base:          '#D32F2F',  // red — far-future scheduled; attention required
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
+    },
+
+    // Colourblind-friendly palette (safe for deuteranopia / protanopia).
+    // Uses the Bang Wong / Paul Tol set: no red-green confusion.
+    colourblind: {
+        past:          '#CC3311',  // vermillion — distinct from orange even without hue
+        pastBorder:    '#CC3311',  // vermillion — same as fill
+        today:         '#EE7733',  // orange (warm, not red)
+        todayBorder:   '#CC3311',  // vermillion — past colour as border
+        tomorrow:      '#009988',  // teal — unambiguous against orange; dark enough for white text
+        tomorrowText:  '#ffffff',  // white — readable on dark teal
+        week:          '#0077BB',  // blue — same as base; no visual change in this theme
+        weekBorder:    '#009988',  // teal — tomorrow colour as border
+        base:          '#0077BB',  // blue — safe for all CVD types
+        defaultBorder: '#aaa',
+        list:          '#2196F3',  // blue — safe for CVD; distinct from urgency spectrum
     },
     // Monochrome palette: urgency ramps from light grey (far future) through to black (today),
     // then white for past — happened, gone, no weight.
