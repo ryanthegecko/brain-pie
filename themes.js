@@ -21,16 +21,16 @@
  */
 
 const Themes = {
-    // Original Material-Design traffic-light palette
+    // Original Material-Design traffic-light palette (M2 update: wider today/tomorrow contrast)
     default: {
         past:          '#D32F2F',  // red
         pastBorder:    '#D32F2F',  // red — same as fill; no extra signal needed
-        today:         '#F57C00',  // orange
-        todayBorder:   '#D32F2F',  // red — past colour as border
-        tomorrow:      '#FFEB3B',  // yellow — light, needs dark text
-        tomorrowText:  '#000000',  // black — readable on yellow
+        today:         '#EF4444',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
+        todayBorder:   '#B91C1C',  // deeper red — was #D32F2F; contrast ring on coral red pill
+        tomorrow:      '#F59E0B',  // warm amber — was #FFEB3B yellow; more distinct from today
+        tomorrowText:  '#000000',  // black — readable on amber
         week:          '#4CAF50',  // green — same as base; no visual change in this theme
-        weekBorder:    '#FFEB3B',  // yellow — tomorrow colour as border
+        weekBorder:    '#FFEB3B',  // yellow — original tomorrow colour as border
         base:          '#4CAF50',  // green
         defaultBorder: '#fff',
         list:          '#2196F3',  // blue — list type / unscheduled spoke
