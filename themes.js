@@ -76,7 +76,7 @@ const Themes = {
 };
 
 // ── Change this to switch the active theme ─────────────────────────────────
-const ACTIVE_THEME = 'inverse';
+const ACTIVE_THEME = 'default';
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
