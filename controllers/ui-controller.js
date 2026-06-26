@@ -1935,6 +1935,7 @@ const UI = {
         const el = document.getElementById('schedule-key');
         if (!el) return;
         el.classList.remove('show-tooltip');
+        el.classList.remove('theme-panel-open'); // close panel before collapsing so it isn't orphaned
         el.classList.add('is-collapsed');
         localStorage.setItem('scheduleKeyCollapsed', 'true');
     },
@@ -1944,5 +1945,65 @@ const UI = {
         if (!el) return;
         el.classList.remove('is-collapsed');
         localStorage.setItem('scheduleKeyCollapsed', 'false');
+    },
+
+    // ── Theme picker ─────────────────────────────────────────
+
+    /**
+     * Apply a theme, persist it to meta (all storage backends), and refresh the panel.
+     * This is the write-path bridge described in brainpie-theme-persistence.md §3b.
+     * DataModel.saveMeta() routes to Firebase, local file, or localStorage automatically.
+     */
+    setTheme(themeName) {
+        DataModel.pieMeta.theme = themeName;
+        DataModel.saveMeta();
+        applyTheme(themeName);
+        UI.renderThemePanel();
+    },
+
+    /**
+     * Toggle the theme picker panel open/closed.
+     * Follows the same outside-click listener pattern as scheduleKeyClick().
+     * e.stopPropagation() prevents this click from triggering the tooltip's own
+     * outside-click handler, which would immediately close the panel again.
+     */
+    toggleThemePanel(e) {
+        e.stopPropagation();
+        const el = document.getElementById('schedule-key');
+        if (!el) return;
+        const opening = !el.classList.contains('theme-panel-open');
+        el.classList.toggle('theme-panel-open');
+        if (opening) {
+            UI.renderThemePanel();
+            // Dismiss panel when the user clicks outside the entire #schedule-key container.
+            // el.contains() covers both the legend and the panel, so clicks inside either
+            // area leave the panel open.
+            const close = (evt) => {
+                if (!el.contains(evt.target)) {
+                    el.classList.remove('theme-panel-open');
+                    document.removeEventListener('click', close);
+                }
+            };
+            document.addEventListener('click', close);
+        }
+    },
+
+    /**
+     * Populate (or refresh) the theme panel with one button per theme.
+     * Iterates Object.keys(Themes) so new themes are picked up automatically
+     * without touching this function. Full innerHTML rewrite on each call is
+     * intentional — there are only 5 buttons and it keeps state in one place.
+     */
+    renderThemePanel() {
+        const panel = document.getElementById('theme-panel');
+        if (!panel) return;
+        // Fall back to ACTIVE_THEME (from themes.js) if no theme has been persisted yet
+        const activeTheme = (DataModel.pieMeta && DataModel.pieMeta.theme) || ACTIVE_THEME;
+        panel.innerHTML = Object.keys(Themes).map(name => {
+            const isActive = name === activeTheme;
+            // stopPropagation on each button prevents the outside-click handler from
+            // firing immediately after a theme is selected and closing the panel.
+            return `<button class="theme-btn${isActive ? ' is-active' : ''}" onclick="UI.setTheme('${name}'); event.stopPropagation();">${name}</button>`;
+        }).join('');
     }
 };

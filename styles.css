@@ -3939,3 +3939,74 @@ select:focus {
 }
 
 .schedule-key-dismiss:hover { color: #fff; }
+
+/* ── Theme picker ──────────────────────────────────────────── */
+
+/* Override: tooltip now contains two buttons — flex row instead of block */
+.schedule-key.show-tooltip .schedule-key-tooltip {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+}
+
+/* "Theme" button inside the tooltip — mirrors dismiss button style */
+.schedule-key-theme-btn {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.schedule-key-theme-btn:hover { color: #fff; }
+
+/* Theme panel — hidden by default, shown via .theme-panel-open on #schedule-key.
+   Positioned to the right of the legend using the fixed #schedule-key as
+   the containing block (position: absolute, left: 100% + gap). */
+.theme-panel {
+    display: none;
+    position: absolute;
+    left: calc(100% + 8px);
+    bottom: 0;
+    background: rgba(30, 30, 30, 0.92);
+    backdrop-filter: blur(6px);
+    border-radius: 10px;
+    padding: 8px 10px;
+    min-width: 130px;
+    z-index: 501;
+}
+
+.schedule-key.theme-panel-open .theme-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Individual theme buttons inside the panel */
+.theme-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #ccc;
+    font-size: 11px;
+    padding: 4px 10px;
+    cursor: pointer;
+    text-align: left;
+    text-transform: capitalize;
+    width: 100%;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.theme-btn:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #fff;
+}
+
+/* Active theme button — visually distinguishes the current selection */
+.theme-btn.is-active {
+    font-weight: bold;
+    border-color: rgba(255, 255, 255, 0.7);
+    color: #fff;
+}
