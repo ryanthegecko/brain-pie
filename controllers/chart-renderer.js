@@ -500,7 +500,7 @@ const ChartRenderer = {
         const scheduledDate = this.getScheduledDate(spoke);
         const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
         const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
-        const iconSize = 16;
+        const iconSize = 18;
 
         // Get name text bounding box after brief delay
         setTimeout(() => {
