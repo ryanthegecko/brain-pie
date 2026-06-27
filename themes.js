@@ -2,16 +2,18 @@
  * Schedule pill colour themes.
  *
  * Each theme defines eight colour tokens used by schedule urgency pills:
- *   past          — overdue items (background + border)
- *   today         — due today (background)
- *   tomorrow      — due tomorrow (background)
- *   tomorrowText  — text colour inside a tomorrow pill (contrast varies: black on yellow, white on teal)
- *   week          — scheduled this week (2–7 days away); distinct from far-future base
- *   weekBorder    — border colour on this-week pills
- *   base          — far-future scheduled item with no urgency signal (background)
- *   defaultBorder — default scheduled item border (the subtle ring on a base-coloured pill)
- *   todayBorder   — border colour on today pills
- *   list          — list-type or unscheduled spoke indicator pill (blue — visually distinct from urgency states)
+ *   past           — overdue items (background + border)
+ *   pastBorder     — border colour on past pills
+ *   today          — due today (background)
+ *   todayBorder    — border colour on today pills
+ *   tomorrow       — due tomorrow (background)
+ *   tomorrowBorder — border colour on tomorrow pills
+ *   tomorrowText   — text colour inside a tomorrow pill (contrast varies: black on yellow, white on teal)
+ *   week           — scheduled this week (2–7 days away); distinct from far-future base
+ *   weekBorder     — border colour on this-week pills
+ *   base           — far-future scheduled item with no urgency signal (background)
+ *   defaultBorder  — default scheduled item border (the subtle ring on a base-coloured pill)
+ *   list           — list-type or unscheduled spoke indicator pill (blue — visually distinct from urgency states)
  *
  * Border convention: each state uses the next-more-urgent state's colour as its
  * border, so the gradient reads: base → week → tomorrow → today → past.
@@ -25,10 +27,11 @@ const Themes = {
     default: {
         past:          '#D32F2F',  // red
         pastBorder:    '#D32F2F',  // red — same as fill; no extra signal needed
-        today:         '#EE7733',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
-        todayBorder:   '#D32F2F',  // deeper red — was #D32F2F; contrast ring on coral red pill
-        tomorrow:      '#FFEB3B',  // warm amber — was #FFEB3B yellow; more distinct from today
-        tomorrowText:  '#000000',  // black — readable on amber
+        today:          '#EE7733',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
+        todayBorder:    '#D32F2F',  // deeper red — was #D32F2F; contrast ring on coral red pill
+        tomorrow:       '#FFEB3B',  // warm amber — was #FFEB3B yellow; more distinct from today
+        tomorrowBorder: '#EE7733',  // today colour as border — urgency gradient
+        tomorrowText:   '#000000',  // black — readable on amber
         week:          '#4CAF50',  // green — same as base; no visual change in this theme
         weekBorder:    '#FFEB3B',  // yellow — original tomorrow colour as border
         base:          '#4CAF50',  // green
@@ -50,10 +53,11 @@ const Themes = {
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         pastBorder:    '#4CAF50',  // green — same as fill; no alarm on past
-        today:         '#4CAF50',  // green — "it's today, green means go"
-        todayBorder:   '#FFEB3B',  // yellow — warm signal on an otherwise calm green pill
-        tomorrow:      '#FFEB3B',  // yellow — coming tomorrow; same as default
-        tomorrowText:  '#000000',  // black — readable contrast on yellow
+        today:          '#4CAF50',  // green — "it's today, green means go"
+        todayBorder:    '#FFEB3B',  // yellow — warm signal on an otherwise calm green pill
+        tomorrow:       '#FFEB3B',  // yellow — coming tomorrow; same as default
+        tomorrowBorder: '#4CAF50',  // today colour as border
+        tomorrowText:   '#000000',  // black — readable contrast on yellow
         week:          '#EE7733',  // orange — this week; approaching
         weekBorder:    '#D32F2F',  // red — base colour as border; "getting serious"
         base:          '#D32F2F',  // red — far-future scheduled; attention required
@@ -66,10 +70,11 @@ const Themes = {
     colourblind: {
         past:          '#CC3311',  // vermillion — distinct from orange even without hue
         pastBorder:    '#CC3311',  // vermillion — same as fill
-        today:         '#EE7733',  // orange (warm, not red)
-        todayBorder:   '#CC3311',  // vermillion — past colour as border
-        tomorrow:      '#009988',  // teal — unambiguous against orange; dark enough for white text
-        tomorrowText:  '#ffffff',  // white — readable on dark teal
+        today:          '#EE7733',  // orange (warm, not red)
+        todayBorder:    '#CC3311',  // vermillion — past colour as border
+        tomorrow:       '#009988',  // teal — unambiguous against orange; dark enough for white text
+        tomorrowBorder: '#EE7733',  // today colour as border
+        tomorrowText:   '#ffffff',  // white — readable on dark teal
         week:          '#0077BB',  // blue — same as base; no visual change in this theme
         weekBorder:    '#009988',  // teal — tomorrow colour as border
         base:          '#0077BB',  // blue — safe for all CVD types
@@ -81,10 +86,11 @@ const Themes = {
     monochrome: {
         past:          '#FFFFFF',  // white — it's done; no weight
         pastBorder:    '#111111',  // black — visible ring on white pill
-        today:         '#111111',  // near-black — right now; maximum presence
-        todayBorder:   '#FFFFFF',  // white — contrast ring on black pill
-        tomorrow:      '#444444',  // dark grey — coming tomorrow
-        tomorrowText:  '#FFFFFF',  // white — readable on dark grey
+        today:          '#111111',  // near-black — right now; maximum presence
+        todayBorder:    '#FFFFFF',  // white — contrast ring on black pill
+        tomorrow:       '#444444',  // dark grey — coming tomorrow
+        tomorrowBorder: '#111111',  // today colour as border
+        tomorrowText:   '#FFFFFF',  // white — readable on dark grey
         week:          '#888888',  // mid grey — this week
         weekBorder:    '#444444',  // dark grey — tomorrow colour as border
         base:          '#BBBBBB',  // light grey — scheduled, not imminent
@@ -96,10 +102,11 @@ const Themes = {
     'monochrome-inverse': {
         past:          '#111111',  // near-black — done; heavy, settled
         pastBorder:    '#444444',  // dark grey — subtle ring on near-black pill
-        today:         '#FFFFFF',  // white — right now; open, present
-        todayBorder:   '#444444',  // dark grey — visible ring on white pill
-        tomorrow:      '#888888',  // mid grey — coming tomorrow
-        tomorrowText:  '#111111',  // dark — readable on mid grey
+        today:          '#FFFFFF',  // white — right now; open, present
+        todayBorder:    '#444444',  // dark grey — visible ring on white pill
+        tomorrow:       '#888888',  // mid grey — coming tomorrow
+        tomorrowBorder: '#FFFFFF',  // today colour as border
+        tomorrowText:   '#111111',  // dark — readable on mid grey
         week:          '#BBBBBB',  // light grey — this week
         weekBorder:    '#888888',  // mid grey — contrast on light pill
         base:          '#444444',  // dark grey — scheduled, not imminent
@@ -123,8 +130,9 @@ function applyTheme(themeName) {
     root.style.setProperty('--sched-color-past-border',    theme.pastBorder);
     root.style.setProperty('--sched-color-today',          theme.today);
     root.style.setProperty('--sched-color-today-border',   theme.todayBorder);
-    root.style.setProperty('--sched-color-tomorrow',       theme.tomorrow);
-    root.style.setProperty('--sched-color-tomorrow-text',  theme.tomorrowText);
+    root.style.setProperty('--sched-color-tomorrow',        theme.tomorrow);
+    root.style.setProperty('--sched-color-tomorrow-border', theme.tomorrowBorder);
+    root.style.setProperty('--sched-color-tomorrow-text',   theme.tomorrowText);
     root.style.setProperty('--sched-color-week',           theme.week);
     root.style.setProperty('--sched-color-week-border',    theme.weekBorder);
     root.style.setProperty('--sched-color-base',           theme.base);

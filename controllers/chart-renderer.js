@@ -572,7 +572,7 @@ const ChartRenderer = {
                         rect.style('stroke', 'var(--sched-color-today-border)')
                             .attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
-                        rect.style('stroke', 'var(--sched-color-today)')
+                        rect.style('stroke', 'var(--sched-color-tomorrow-border)')
                             .attr('stroke-width', 2);
                     } else if (isThisWeekEvent) {
                         rect.style('stroke', 'var(--sched-color-week-border)')
@@ -748,7 +748,7 @@ const ChartRenderer = {
             this.svg.selectAll('*').remove();
             this.svg.append('text')
                 .attr('text-anchor', 'middle')
-                .attr('fill', '#999')
+                .style('fill', 'var(--color-text-muted)')
                 .attr('font-size', '16px')
                 .text('No priorities set \u2014 use \u2605 to add items');
             return;
@@ -785,7 +785,7 @@ const ChartRenderer = {
         if (totalItems === 0) {
             this.svg.append('text')
                 .attr('text-anchor', 'middle')
-                .attr('fill', '#999')
+                .style('fill', 'var(--color-text-muted)')
                 .attr('font-size', '16px')
                 .text('Add items to see your brain pie chart');
             return;
@@ -1218,7 +1218,7 @@ const ChartRenderer = {
 
             backBtn.append('circle')
                 .attr('r', 18)
-                .attr('fill', '#666')
+                .style('fill', 'var(--color-text-secondary)')
                 .attr('opacity', 0.8);
 
             backBtn.append('text')
@@ -1251,7 +1251,7 @@ const ChartRenderer = {
                 .attr('x', this.width / 2)
                 .attr('y', this.height / 2)
                 .attr('text-anchor', 'middle')
-                .attr('fill', '#999')
+                .style('fill', 'var(--color-text-muted)')
                 .attr('font-size', '18px')
                 .text('Add items to see your brain tree');
             return;
@@ -1618,7 +1618,7 @@ const ChartRenderer = {
                                 } else if (isTodayEvent) {
                                     rect.style('stroke', 'var(--sched-color-today-border)').attr('stroke-width', 1.5);
                                 } else if (isTomorrowEvent) {
-                                    rect.style('stroke', 'var(--sched-color-today)').attr('stroke-width', 1.5);
+                                    rect.style('stroke', 'var(--sched-color-tomorrow-border)').attr('stroke-width', 1.5);
                                 } else if (isThisWeekEvent) {
                                     rect.style('stroke', 'var(--sched-color-week-border)').attr('stroke-width', 1.5);
                                 } else {
@@ -1646,7 +1646,7 @@ const ChartRenderer = {
 
             backBtn.append('circle')
                 .attr('r', 14)
-                .attr('fill', '#666')
+                .style('fill', 'var(--color-text-secondary)')
                 .attr('opacity', 0.8);
 
             backBtn.append('text')
@@ -1777,8 +1777,8 @@ const ChartRenderer = {
             .attr('width', cardWidth)
             .attr('height', cardHeight)
             .attr('rx', 16)
-            .attr('fill', '#ffffff')
-            .attr('stroke', '#ddd')
+            .style('fill', 'var(--color-svg-popup-bg)')
+            .style('stroke', 'var(--color-svg-popup-border)')
             .attr('stroke-width', 2);
 
         // Card header — spoke star + name + close button
@@ -1790,13 +1790,13 @@ const ChartRenderer = {
                 event.stopPropagation();
                 const ref = { type: 'spoke', categoryId, itemId, spokeIndex };
                 UI.addToPriorities(ref);
-                headerStarGroup.select('text').attr('fill', UI.isPrioritised(ref) ? '#FFD700' : '#ccc');
+                headerStarGroup.select('text').style('fill', UI.isPrioritised(ref) ? '#FFD700' : 'var(--color-border-subtle)');
             });
         headerStarGroup.append('text')
             .attr('x', 10).attr('y', 24)
             .attr('text-anchor', 'middle')
             .attr('font-size', '28px')
-            .attr('fill', isSpokePrioritised ? '#FFD700' : '#ccc')
+            .style('fill', isSpokePrioritised ? '#FFD700' : 'var(--color-border-subtle)')
             .text('\u2605');
 
         branchGroup.append('text')
@@ -1804,7 +1804,7 @@ const ChartRenderer = {
             .attr('y', cardY + 44)
             .attr('font-size', '26px')
             .attr('font-weight', 'bold')
-            .attr('fill', '#333')
+            .style('fill', 'var(--color-text-primary)')
             .text(spokeName);
 
         // Close button
@@ -1882,13 +1882,13 @@ const ChartRenderer = {
                     event.stopPropagation();
                     const ref = { type: 'action', categoryId, itemId, spokeIndex, childIndex: idx };
                     UI.addToPriorities(ref);
-                    starGroup.select('text').attr('fill', UI.isPrioritised(ref) ? '#FFD700' : '#ccc');
+                    starGroup.select('text').style('fill', UI.isPrioritised(ref) ? '#FFD700' : 'var(--color-border-subtle)');
                 });
             starGroup.append('text')
                 .attr('x', 12).attr('y', 28)
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '28px')
-                .attr('fill', isPrioritised ? '#FFD700' : '#ccc')
+                .style('fill', isPrioritised ? '#FFD700' : 'var(--color-border-subtle)')
                 .text('\u2605');
             cursorX += 36;
 
@@ -1906,8 +1906,8 @@ const ChartRenderer = {
                         .find(c => c.id === categoryId)?.items
                         .find(i => i.id === itemId)?.subItems[spokeIndex]?.children[idx]?.completed || false;
                     checkGroup.select('rect')
-                        .attr('fill', nowCompleted ? '#4CAF50' : '#fff')
-                        .attr('stroke', nowCompleted ? '#4CAF50' : '#ccc');
+                        .style('fill', nowCompleted ? '#4CAF50' : 'var(--color-svg-popup-bg)')
+                        .style('stroke', nowCompleted ? '#4CAF50' : 'var(--color-border-subtle)');
                     if (nowCompleted) {
                         checkGroup.append('text')
                             .attr('class', 'check-mark')
@@ -1924,7 +1924,7 @@ const ChartRenderer = {
                     }
                     // Update title style
                     rowGroup.select('.action-title')
-                        .style('color', nowCompleted ? '#999' : '#333')
+                        .style('color', nowCompleted ? 'var(--color-text-muted)' : 'var(--color-text-primary)')
                         .style('text-decoration', nowCompleted ? 'line-through' : 'none');
                     // Toggle calendar pill visibility
                     rowGroup.select('.cal-group')
@@ -1936,8 +1936,8 @@ const ChartRenderer = {
                 .attr('width', checkSize)
                 .attr('height', checkSize)
                 .attr('rx', 4)
-                .attr('fill', isCompleted ? '#4CAF50' : '#fff')
-                .attr('stroke', isCompleted ? '#4CAF50' : '#ccc')
+                .style('fill', isCompleted ? '#4CAF50' : 'var(--color-svg-popup-bg)')
+                .style('stroke', isCompleted ? '#4CAF50' : 'var(--color-border-subtle)')
                 .attr('stroke-width', 2);
             if (isCompleted) {
                 checkGroup.append('text')
@@ -1964,7 +1964,7 @@ const ChartRenderer = {
             const titleDiv = titleFo.append('xhtml:div')
                 .attr('class', 'action-title')
                 .style('font-size', '22px')
-                .style('color', isCompleted ? '#999' : '#333')
+                .style('color', isCompleted ? 'var(--color-text-muted)' : 'var(--color-text-primary)')
                 .style('text-decoration', isCompleted ? 'line-through' : 'none')
                 .style('line-height', (rowHeight - 12) + 'px')
                 .style('white-space', 'nowrap')
@@ -2050,7 +2050,7 @@ const ChartRenderer = {
                     } else if (isTodayAction) {
                         pillRect.style('stroke', 'var(--sched-color-today-border)').attr('stroke-width', 2);
                     } else if (isTomorrowAction) {
-                        pillRect.style('stroke', 'var(--sched-color-today)').attr('stroke-width', 2);
+                        pillRect.style('stroke', 'var(--sched-color-tomorrow-border)').attr('stroke-width', 2);
                     } else if (isThisWeekAction) {
                         pillRect.style('stroke', 'var(--sched-color-tomorrow)').attr('stroke-width', 2);
                     } else {

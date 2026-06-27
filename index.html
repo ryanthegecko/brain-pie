@@ -225,7 +225,7 @@
 
                     <!-- Slices in Category List -->
                     <div id="slices-in-category" style="margin-top: 20px; display: none;">
-                        <h4 style="color: #666; margin-bottom: 10px;">Slices in this Category:</h4>
+                        <h4 class="slices-in-category-label">Slices in this Category:</h4>
                         <ul id="category-slices-list" class="category-slices-list">
                             <!-- Dynamically populated -->
                         </ul>
@@ -250,7 +250,7 @@
                                 <option value="">Select a slice...</option>
                             </select>
                         </div>
-                        <span id="tab2-category-name" style="color: #666; font-size: 14px;"></span>
+                        <span id="tab2-category-name" class="tab2-category-label"></span>
                     </div>
                 </div>
 
@@ -596,13 +596,13 @@
                     <li>In the same Library, search for and enable <strong>Google Tasks API</strong>.</li>
                     <li><strong>APIs &amp; Services → OAuth consent screen</strong> — add the Calendar and Tasks scopes, then add your Google account as a test user.</li>
                 </ol>
-                <p style="color: #888; font-size: 13px;">Note: Calendar is a sensitive scope — users will see a permission prompt when first enabling calendar sync. The OAuth consent screen can stay in Testing mode for personal or small-team use.</p>
-                <p style="color: #888; font-size: 13px;">Calendar sync also works without Firebase — users can sign in to Google via Settings → Calendar Sync independently.</p>
+                <p style="color: var(--color-text-muted); font-size: 13px;">Note: Calendar is a sensitive scope — users will see a permission prompt when first enabling calendar sync. The OAuth consent screen can stay in Testing mode for personal or small-team use.</p>
+                <p style="color: var(--color-text-muted); font-size: 13px;">Calendar sync also works without Firebase — users can sign in to Google via Settings → Calendar Sync independently.</p>
 
                 <h3>The "Unverified App" Warning</h3>
                 <p>When signing in with Google for the first time, you may see a warning that the app is unverified. This is normal for a new Firebase project — it's Google flagging that your project's OAuth consent screen hasn't been formally reviewed.</p>
                 <p><strong>It is safe to proceed.</strong> Since this is your own Firebase project, click <strong>Advanced → Go to [project name] (unsafe)</strong> to continue. You'll only see this once per browser.</p>
-                <p style="color: #888; font-size: 13px;">If you want to remove the warning permanently, you can submit your OAuth consent screen for Google verification — though this is a lengthy process and not required for personal or small-team use.</p>
+                <p style="color: var(--color-text-muted); font-size: 13px;">If you want to remove the warning permanently, you can submit your OAuth consent screen for Google verification — though this is a lengthy process and not required for personal or small-team use.</p>
             </div>
 
             <!-- Page 8: Import / Export -->
@@ -680,7 +680,7 @@
             <p style="margin-top: 20px; font-size: 12px; color: #666;">This tool is provided "as is" without warranties of any kind. Use at your own risk.</p>
             
             <button onclick="UI.closeDisclaimer(); UI.openDocs();" style="margin-top: 20px; width: 100%;">Full Documentation →</button>
-            <button onclick="UI.closeDisclaimer()" style="margin-top: 8px; width: 100%; background: #eee; color: #333;">Got it!</button>
+            <button onclick="UI.closeDisclaimer()" class="btn-neutral" style="margin-top: 8px; width: 100%;">Got it!</button>
         </div>
     </div>
 
@@ -722,7 +722,7 @@
 
             <p style="margin-top: 20px; font-size: 12px; color: #666;">This tool is provided "as is" without warranties of any kind.</p>
 
-            <button onclick="UI.closePrivacy()" style="margin-top: 16px; width: 100%; background: #eee; color: #333;">Close</button>
+            <button onclick="UI.closePrivacy()" class="btn-neutral" style="margin-top: 16px; width: 100%;">Close</button>
         </div>
     </div>
 
@@ -758,7 +758,7 @@
             </div>
             <div class="settings-section">
                 <h3>Calendar Provider</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Choose which calendar to use when creating events from actions</p>
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 15px;">Choose which calendar to use when creating events from actions</p>
                 
                 <label class="radio-option">
                     <input type="radio" name="calendar-provider" value="google" checked onchange="UI.saveCalendarProvider('google')">
@@ -774,7 +774,7 @@
             <!-- Calendar Sync (standalone, without Firebase) -->
             <div class="settings-section" id="calendar-sync-section">
                 <h3>Calendar Sync</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 15px;">
                     Sign in with Google to enable 2-way calendar sync (create, update, delete events)
                 </p>
 
@@ -801,7 +801,7 @@
             <!-- ============================================================ -->
             <div class="settings-section" id="working-mode-section">
                 <h3>Working mode</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 15px;">
                     Where Brain Pie stores your data while you work
                 </p>
 
@@ -810,7 +810,7 @@
 
                     <!-- Browser not supported: hide toggle, show note -->
                     <div id="local-file-unsupported" style="display: none;">
-                        <p style="color: #999; font-size: 13px; margin-bottom: 12px;">
+                        <p style="color: var(--color-text-muted); font-size: 13px; margin-bottom: 12px;">
                             Saving to a local file requires Chrome or Edge.
                         </p>
                     </div>
@@ -820,7 +820,7 @@
                         <button class="tertiary" onclick="UI.enableLocalFileSync()">
                             Save to a local file
                         </button>
-                        <p style="color: #999; font-size: 12px; margin-top: 6px; margin-bottom: 0;">
+                        <p style="color: var(--color-text-muted); font-size: 12px; margin-top: 6px; margin-bottom: 0;">
                             Currently using browser storage
                         </p>
                     </div>
@@ -856,7 +856,7 @@
             <!-- ============================================================ -->
             <div class="settings-section" id="cloud-backup-section">
                 <h3>Cloud backup</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 15px;">
                     Back up to Firebase on demand, or switch to live sync
                 </p>
 
@@ -906,7 +906,7 @@
                     <!-- Signed-in user info -->
                     <div id="cloud-backup-user" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                         <img id="cloud-backup-user-photo" style="width: 28px; height: 28px; border-radius: 50%; display:none;" src="" alt="" />
-                        <span id="cloud-backup-user-name" style="font-size: 13px; color: #555;"></span>
+                        <span id="cloud-backup-user-name" class="firebase-user-label"></span>
                     </div>
 
                     <!-- Status line: last backup time -->
@@ -933,7 +933,7 @@
                         <div class="input-group">
                             <label for="cloud-share-url">Share this URL with other devices or team:</label>
                             <input type="text" id="cloud-share-url" readonly
-                                   style="font-size: 11px; background: #f5f5f5; font-family: monospace;" />
+                                   class="share-url-input" style="font-size: 11px;" />
                         </div>
                         <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
                             <button class="small secondary" onclick="UI.copyShareURL()">
@@ -976,7 +976,7 @@
                         <div class="input-group">
                             <label for="cloud-share-url-live">Share this URL with other devices or team:</label>
                             <input type="text" id="cloud-share-url-live" readonly
-                                   style="font-size: 11px; background: #f5f5f5; font-family: monospace;" />
+                                   class="share-url-input" style="font-size: 11px;" />
                         </div>
                         <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
                             <button class="small secondary" onclick="UI.copyShareURL('live')">
@@ -998,7 +998,7 @@
             </div>
 
             <h3>Data</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 15px;">
                     Back up and import
                 </p>
             <div class="settings-section button-section">
@@ -1009,7 +1009,7 @@
                 </button>
             </div>
             <h3>Pro</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                <p style="color: var(--color-text-secondary); font-size: 14px; margin-bottom: 15px;">
                     Advanced imports and transformations for power users
                 </p>
             <div class="settings-section button-section">
@@ -1032,7 +1032,7 @@
 
             <button onclick="UI.closeSettings()" style="margin-top: 30px; width: 100%;">Done</button>
 
-            <div style="margin-top: 20px; text-align: center; color: #999; font-size: 12px;">
+            <div class="settings-version">
                 Version 0.6
             </div>
         </div>
@@ -1045,10 +1045,10 @@
             <button class="menu-close" onclick="UI.closeDateTimePicker()">✕</button>
             <h2 id="datetime-picker-title">Schedule Action</h2>
             
-            <div id="action-details" style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <div id="action-details" class="scheduler-action-details">
                 <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Action:</div>
-                <div id="action-name" style="font-size: 18px; font-weight: bold; color: #333;"></div>
-                <div id="action-context" style="font-size: 12px; color: #999; margin-top: 5px;"></div>
+                <div id="action-name" class="scheduler-action-name"></div>
+                <div id="action-context" class="scheduler-action-context"></div>
             </div>
             
             <div class="datetime-section">
@@ -1116,21 +1116,21 @@
             </div>
 
             <div class="datetime-section">
-                <label for="event-location">Location <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <label for="event-location">Location <span style="color: var(--color-text-muted); font-weight: normal;">(optional)</span></label>
                 <input type="text" id="event-location" placeholder="Address, Google Maps link, or meeting room" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
             </div>
 
             <div class="datetime-section">
-                <label for="event-notes">Notes <span style="color: #999; font-weight: normal;">(optional)</span></label>
+                <label for="event-notes">Notes <span style="color: var(--color-text-muted); font-weight: normal;">(optional)</span></label>
                 <textarea id="event-notes" placeholder="Phone numbers, URLs, or any details for the calendar event" rows="3" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
             </div>
 
             <div class="datetime-section">
-                <label for="event-invitees">Invitees <span style="color: #999; font-weight: normal;">(optional, comma-separated emails)</span></label>
+                <label for="event-invitees">Invitees <span style="color: var(--color-text-muted); font-weight: normal;">(optional, comma-separated emails)</span></label>
                 <input type="text" id="event-invitees" placeholder="email@example.com, another@example.com" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
             </div>
 
-            <div id="reschedule-reminder" style="display: none; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px; margin-top: 15px; font-size: 13px; color: #856404;">
+            <div id="reschedule-reminder" class="reschedule-warning" style="display: none;">
                 ⚠️ Remember to manually delete the old calendar entry if you no longer need it.
             </div>
 
@@ -1151,9 +1151,9 @@
             <button class="menu-close" onclick="UI.closeActionTypePicker()">✕</button>
             <h2>Action Type</h2>
 
-            <div id="action-type-name" style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+            <div id="action-type-name" class="type-picker-name-bg">
                 <div style="font-size: 14px; color: #666;">Adding action:</div>
-                <div id="action-type-action-name" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+                <div id="action-type-action-name" class="scheduler-action-name"></div>
             </div>
 
             <div class="action-type-options">
@@ -1377,7 +1377,7 @@
             <button class="menu-close" onclick="UI.closeExportPreview()">✕</button>
 
             <h2>Export Data</h2>
-            <p style="color: #666; margin-bottom: 15px;">
+            <p style="color: var(--color-text-secondary); margin-bottom: 15px;">
                 Select which items to include in the export file.
             </p>
 
@@ -1427,7 +1427,7 @@
             <!-- Step 1: Select -->
             <div class="import-step-content active" id="import-step-1">
                 <h2>Select Items to Import</h2>
-                <p style="color: #666; margin-bottom: 15px;">
+                <p style="color: var(--color-text-secondary); margin-bottom: 15px;">
                     Choose which items to import. Items marked with 🔗 will merge with existing data.
                 </p>
 
@@ -1735,7 +1735,7 @@
 
                 <!-- Notes field (all spoke types) -->
                 <div style="margin-top:16px;">
-                    <label for="se-spoke-notes">Notes <span style="color:#999;font-weight:normal;">(optional)</span></label>
+                    <label for="se-spoke-notes">Notes <span style="color:var(--color-text-muted);font-weight:normal;">(optional)</span></label>
                     <textarea id="se-spoke-notes" rows="3" placeholder="Context, reminders, or details about this spoke" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;resize:vertical;margin-top:6px;box-sizing:border-box;"></textarea>
                 </div>
 
@@ -1796,15 +1796,15 @@
                         </select>
                     </div>
                     <div class="datetime-section">
-                        <label for="se-event-location">Location <span style="color:#999;font-weight:normal;">(optional)</span></label>
+                        <label for="se-event-location">Location <span style="color:var(--color-text-muted);font-weight:normal;">(optional)</span></label>
                         <input type="text" id="se-event-location" placeholder="Address or meeting room" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
                     </div>
                     <div class="datetime-section">
-                        <label for="se-event-notes">Notes <span style="color:#999;font-weight:normal;">(optional)</span></label>
+                        <label for="se-event-notes">Notes <span style="color:var(--color-text-muted);font-weight:normal;">(optional)</span></label>
                         <textarea id="se-event-notes" rows="3" placeholder="Details for the calendar event" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
                     </div>
                     <div class="datetime-section">
-                        <label for="se-event-invitees">Invitees <span style="color:#999;font-weight:normal;">(optional, comma-separated)</span></label>
+                        <label for="se-event-invitees">Invitees <span style="color:var(--color-text-muted);font-weight:normal;">(optional, comma-separated)</span></label>
                         <input type="text" id="se-event-invitees" placeholder="email@example.com" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
                     </div>
                     <button onclick="UI.saveSpokeEditorSchedule()" style="margin-top:15px;width:100%;background:#4285F4;">
@@ -1912,7 +1912,7 @@
 
                 <!-- Disabled message for Static / List -->
                 <div id="spoke-editor-schedule-disabled" style="display:none;">
-                    <p id="spoke-editor-schedule-disabled-text" style="color:#999;font-style:italic;text-align:center;padding:40px 20px;"></p>
+                    <p id="spoke-editor-schedule-disabled-text" style="color:var(--color-text-muted);font-style:italic;text-align:center;padding:40px 20px;"></p>
                 </div>
             </div>
 
@@ -1959,7 +1959,7 @@
             <div class="key-section-label">SCHEDULE</div>
             <div class="key-row"><span class="key-pill" style="background:var(--sched-color-base)"></span>Scheduled</div>
             <div class="key-row"><span class="key-pill" style="background:var(--sched-color-week);outline:2px solid var(--sched-color-week-border)"></span>This week</div>
-            <div class="key-row"><span class="key-pill" style="background:var(--sched-color-tomorrow);outline:2px solid var(--sched-color-today)"></span>Tomorrow</div>
+            <div class="key-row"><span class="key-pill" style="background:var(--sched-color-tomorrow);outline:2px solid var(--sched-color-tomorrow-border)"></span>Tomorrow</div>
             <div class="key-row"><span class="key-pill" style="background:var(--sched-color-today);outline:2px solid var(--sched-color-today-border)"></span>Today</div>
             <div class="key-row"><span class="key-pill" style="background:var(--sched-color-past);outline:2px solid var(--sched-color-past-border)"></span>Past</div>
             <div class="key-section-divider"></div>
