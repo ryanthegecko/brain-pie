@@ -4,7 +4,7 @@ A visual organiser for everything on your plate.
 
 ## What it is
 
-Brain Pie is a free, privacy-first web app that structures your thoughts, projects, and life areas into an interactive pie chart. It runs entirely in the browser — no account, no server, no setup. You open it and start building.
+Brain Pie is a free, privacy-first web app that structures your thoughts, projects, and life areas into an interactive pie chart. It runs entirely in the browser — no account, no setup. Your data never touches our servers. You open it and start building.
 
 The hierarchy goes four layers deep: **Categories** sit at the centre, **Slices** radiate outward, each Slice holds **Spokes**, and each Spoke can carry **Actions** beneath it. It sounds abstract until you see it; then it's immediately obvious.
 

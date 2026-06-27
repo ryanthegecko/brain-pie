@@ -91,8 +91,11 @@ const License = {
         return valid;
     },
 
-    // Developer bypass — run License.activateDev() once in the browser console
     activateDev() {
+        if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            console.warn('License.activateDev() is only available on localhost.');
+            return;
+        }
         localStorage.setItem('brainPie_pro', 'true');
         this._active = true;
         console.log('Dev pro unlocked. Reloading…');
