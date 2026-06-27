@@ -2020,7 +2020,10 @@
     <div id="swatch-picker-overlay" class="swatch-picker-overlay" onclick="UI.closeSwatchPicker()">
         <div class="swatch-picker-panel" onclick="event.stopPropagation()">
             <div class="swatch-picker-header">
-                <span>Choose a colour</span>
+                <div class="swatch-tabs">
+                    <button type="button" class="swatch-tab active" id="swatch-tab-classic" onclick="UI._switchSwatchTab('classic')">Classic</button>
+                    <button type="button" class="swatch-tab" id="swatch-tab-vibrant" onclick="UI._switchSwatchTab('vibrant')">Vibrant</button>
+                </div>
                 <button type="button" class="swatch-picker-close" onclick="UI.closeSwatchPicker()">✕</button>
             </div>
             <div class="swatch-grid" id="swatch-grid"></div>

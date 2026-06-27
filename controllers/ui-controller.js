@@ -59,10 +59,71 @@ const SWATCH_PALETTE = [
     '#000000', '#ffffff',
 ];
 
+const SWATCH_PALETTE_VIBRANT = [
+    // Neon Red
+    '#ff0000', '#ff1a1a', '#ff073a', '#ff004d', '#e60026',
+    '#ff2d2d', '#ff2052', '#cc0000', '#d50000', '#ff5050',
+    // Hot Pink & Rose
+    '#ff0080', '#ff0066', '#ff0055', '#ff1493', '#ff007f',
+    '#fe019a', '#ff00aa', '#e91e8c', '#d81b60', '#ff69b4',
+    '#ff3c78', '#ff2d78',
+    // Electric Magenta
+    '#ff00ff', '#ee00ff', '#ff00ee', '#ff00dd', '#f20089',
+    '#d400ff', '#c724b1', '#ff3cf2',
+    // Purple & Violet
+    '#bf00ff', '#aa00ff', '#9900ff', '#8800ff', '#dd00ff',
+    '#cc00ff', '#9b00e8', '#b100e8', '#7209b7', '#a800a3',
+    '#ba00e0', '#9d00cc',
+    // Ultra Violet / Deep Indigo
+    '#7700ff', '#6600ff', '#5500ff', '#4400ff', '#3300ff',
+    '#560bad', '#480ca8', '#3a0ca3', '#6a0dad',
+    // Electric Blue
+    '#0000ff', '#0022ff', '#0044ff', '#0066ff', '#2962ff',
+    '#1500ff', '#0040ff', '#006aff', '#1a00ff',
+    // Sky Electric
+    '#0088ff', '#0099ff', '#00aaff', '#00bbff', '#0091ea',
+    '#00b0ff', '#01cdfe', '#4d79ff',
+    // Neon Cyan
+    '#00ccff', '#00ddff', '#00eeff', '#00ffff', '#12f7ff',
+    '#00e5ff', '#18ffff', '#07e4ff',
+    // Electric Teal & Mint
+    '#00ffee', '#00ffdd', '#00ffcc', '#00ffbb', '#00ffaa',
+    '#05ffa1', '#1de9b6', '#0ff0fc',
+    // Neon Green
+    '#00ff00', '#11ff00', '#22ff00', '#39ff14', '#00ff44',
+    '#00ff55', '#01ff70', '#00e676', '#76ff03', '#00ff88',
+    // Lime & Yellow-Green
+    '#66ff00', '#77ff00', '#88ff00', '#99ff00', '#aaff00',
+    '#bbff00', '#c6ff00', '#7fff00',
+    // Acid Yellow
+    '#ccff00', '#ddff00', '#eeff00', '#ffff00', '#ffee00',
+    '#fcee0a', '#ffd600',
+    // Electric Amber & Gold
+    '#ffdd00', '#ffcc00', '#ffbb00', '#ffaa00', '#ffd700',
+    '#ffbf00', '#ffc200',
+    // Neon Orange
+    '#ff9900', '#ff8800', '#ff7700', '#ff6600', '#ff5500',
+    '#ff6d00', '#ff6b00', '#ff4500',
+    // Vaporwave / Signature
+    '#ff71ce', '#b967ff', '#fffb96', '#ff1177', '#00ffe5',
+    '#ff77aa', '#ff2d55', '#ff9f0a',
+    // Deep Jewels
+    '#990000', '#660033', '#330000', '#550099', '#000099',
+    '#003399', '#006600', '#005500', '#cc6600', '#006666',
+    '#003333', '#440044',
+    // Greys (13, light → dark)
+    '#f5f5f5', '#eeeeee', '#c8c8c8', '#bdbdbd', '#a0a0a0',
+    '#909090', '#808080', '#555555', '#4a4a4a', '#424242',
+    '#303030', '#1e1e1e', '#0a0a0a',
+    // Black & White
+    '#000000', '#ffffff',
+];
+
 const UI = {
     draggedElement: null,
     draggedData: null,
     _swatchTargetId: null,
+    _swatchActiveTab: 'classic',
 
     // Menu tab state
     currentMenuTab: 1,
@@ -1607,19 +1668,32 @@ const UI = {
 
     openSwatchPicker(inputId) {
         this._swatchTargetId = inputId;
-        const grid = document.getElementById('swatch-grid');
-        if (!grid.hasChildNodes()) {
-            SWATCH_PALETTE.forEach(hex => {
-                const el = document.createElement('button');
-                el.className = 'swatch-item';
-                el.style.background = hex;
-                el.title = hex;
-                el.setAttribute('type', 'button');
-                el.onclick = () => this._applySwatchColor(hex);
-                grid.appendChild(el);
-            });
-        }
+        const palette = this._swatchActiveTab === 'vibrant' ? SWATCH_PALETTE_VIBRANT : SWATCH_PALETTE;
+        this._populateSwatchGrid(palette);
         document.getElementById('swatch-picker-overlay').classList.add('active');
+    },
+
+    _populateSwatchGrid(palette) {
+        const grid = document.getElementById('swatch-grid');
+        grid.innerHTML = '';
+        palette.forEach(hex => {
+            const el = document.createElement('button');
+            el.className = 'swatch-item';
+            el.style.background = hex;
+            el.title = hex;
+            el.setAttribute('type', 'button');
+            el.onclick = () => this._applySwatchColor(hex);
+            grid.appendChild(el);
+        });
+    },
+
+    _switchSwatchTab(tab) {
+        this._swatchActiveTab = tab;
+        document.querySelectorAll('.swatch-tab').forEach(btn => btn.classList.remove('active'));
+        const tabEl = document.getElementById('swatch-tab-' + tab);
+        if (tabEl) tabEl.classList.add('active');
+        const palette = tab === 'vibrant' ? SWATCH_PALETTE_VIBRANT : SWATCH_PALETTE;
+        this._populateSwatchGrid(palette);
     },
 
     closeSwatchPicker() {

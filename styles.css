@@ -4098,8 +4098,31 @@ select:focus {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    font-weight: 600;
-    font-size: 15px;
+}
+
+.swatch-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.swatch-tab {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    transition: background 0.15s, color 0.15s;
+}
+
+.swatch-tab.active {
+    background: var(--color-surface-alt);
+    color: var(--color-text-primary);
+}
+
+.swatch-tab:hover:not(.active) {
     color: var(--color-text-primary);
 }
 
