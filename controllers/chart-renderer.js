@@ -1077,19 +1077,31 @@ const ChartRenderer = {
                     // Calculate rotation angle (in degrees) to make text radial
                     let rotation = (midAngle * 180 / Math.PI) - 90;
 
-                    // Flip text if it would be upside down
-                    if (rotation > 90 && rotation < 270) {
-                        rotation += 180;
-                    }
+                    // Track flip: flipped slices are "past 6 o'clock" — star goes after name
+                    // so it stays innermost regardless of which half of the pie the slice is in.
+                    const isFlipped = rotation > 90 && rotation < 270;
+                    if (isFlipped) rotation += 180;
 
                     const textColor = this.isColorDark(d.data.color) ? '#ffffff' : '#333333';
+                    const isPriority = UI.isPrioritised({ type: 'slice', categoryId: catData.data.id, itemId: d.data.id });
 
-                    group.append('text')
+                    const textEl = group.append('text')
                         .attr('class', 'item-label')
                         .style('fill', textColor)
                         .attr('transform', `translate(${x}, ${y}) rotate(${rotation})`)
-                        .attr('text-anchor', 'middle')
-                        .text(d.data.name);
+                        .attr('text-anchor', 'middle');
+
+                    if (isPriority) {
+                        if (isFlipped) {
+                            textEl.append('tspan').text(d.data.name);
+                            textEl.append('tspan').style('fill', '#FFD700').text(' ★');
+                        } else {
+                            textEl.append('tspan').style('fill', '#FFD700').text('★ ');
+                            textEl.append('tspan').text(d.data.name);
+                        }
+                    } else {
+                        textEl.text(d.data.name);
+                    }
                 }
             });
 
