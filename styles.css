@@ -947,6 +947,7 @@ textarea {
 }
 
 .sub-item-label {
+    fill: var(--color-text-primary);
     font-size: 17px;
     letter-spacing: -0.4px;
 
