@@ -119,6 +119,150 @@ const SWATCH_PALETTE_VIBRANT = [
     '#000000', '#ffffff',
 ];
 
+const SWATCH_PALETTE_PASTEL = [
+    // Blush & Baby Pink
+    '#ffd7d7', '#ffb3b3', '#ffc0cb', '#ffb6c1', '#f4acb7',
+    '#e8a0bf', '#f8c8d0', '#fadadd', '#ffb3c6', '#f9c8d0',
+    // Rose & Dusty Pink
+    '#e8b4b8', '#dba0a8', '#d49098', '#c88090', '#d8a0b0',
+    '#e0b0c0', '#c8a0b0', '#c07080',
+    // Peach & Apricot
+    '#ffd5b8', '#ffbe9f', '#ffaa80', '#ffc9a8', '#f5c5a3',
+    '#fdb99b', '#ffcba4', '#f0b8a0', '#e8b090', '#fac0a0',
+    // Butter & Lemon
+    '#fffbd4', '#fff5b7', '#fef9c3', '#fef08a', '#fffde7',
+    '#fff9c4', '#ffecb3', '#fef3e2', '#fff8dc', '#fdfacd',
+    // Mint & Seafoam
+    '#c8f7c5', '#a8e6cf', '#b5ead7', '#c7f2a4', '#b2f7b2',
+    '#9ee89e', '#abebc6', '#d4edda', '#b8f0d8', '#c0f0e0',
+    // Sage & Pistachio
+    '#c8dfc0', '#b8d0b0', '#a8c0a0', '#c0d8b8', '#d0e8c8',
+    '#b8cdb0', '#c4d8bc', '#b0c8a8',
+    // Baby Blue & Powder
+    '#b3d9ff', '#87ceeb', '#87cefa', '#add8e6', '#b0c4de',
+    '#cce5ff', '#d4ecf7', '#dbeeff', '#c5dff8', '#b8d8f8',
+    // Periwinkle
+    '#ccccff', '#c4c4ff', '#b0b0ff', '#bbbbff', '#c8d0f8',
+    '#d0d8ff', '#b8c4f8', '#c0caff', '#c8cef8',
+    // Lavender & Lilac
+    '#e6d5f7', '#d5b8f0', '#c8a0e8', '#dda0dd', '#e6b0f0',
+    '#f0d0f0', '#e8cff5', '#d8a8e8', '#e0b8f0', '#cab8e8',
+    '#e8d0f8', '#d0b8e8',
+    // Wisteria & Mauve
+    '#e8b4d0', '#e0a8c8', '#d4a0c0', '#c890b8', '#e8c0d8',
+    '#f0c8e0', '#d8b0cc', '#c8a0bc',
+    // Warm Cream & Vanilla
+    '#fff8f0', '#fef5e7', '#fef9ed', '#fdf0d5', '#fcebd5',
+    '#fff3e0', '#fde8c8', '#f5f0e8',
+    // Greys (13, light → dark)
+    '#f5f5f5', '#eeeeee', '#c8c8c8', '#bdbdbd', '#a0a0a0',
+    '#909090', '#808080', '#555555', '#4a4a4a', '#424242',
+    '#303030', '#1e1e1e', '#0a0a0a',
+    // Black & White
+    '#000000', '#ffffff',
+];
+
+const SWATCH_PALETTE_EARTH = [
+    // Terracotta & Adobe
+    '#c1440e', '#bf5934', '#b85c38', '#a0522d', '#e07b39',
+    '#d2691e', '#cd853f', '#c8714a', '#d4806a', '#e07a5f',
+    '#c66b4a', '#b35c40', '#a04030', '#cb5a38',
+    // Rust & Burnt Red
+    '#8b2020', '#9b3030', '#a52020', '#922b21', '#b03535',
+    '#a04000', '#8b3535', '#b8411b', '#963020',
+    // Sand & Wheat
+    '#f5deb3', '#f0d090', '#e8c97a', '#ddb870', '#d4a858',
+    '#c8973a', '#f2d490', '#f5e6c8', '#ede0c4', '#e8d5a3',
+    '#d9b88a', '#c8a87a', '#e0c888',
+    // Ochre & Mustard
+    '#d4a017', '#c8960c', '#b8860b', '#ad7d0a', '#cfb53b',
+    '#c5a028', '#b8911e', '#a07828', '#8b6914', '#c09010',
+    // Olive & Sage
+    '#808000', '#6b8e23', '#556b2f', '#7f9a57', '#8fa36a',
+    '#9cae78', '#768a5a', '#6a7c50', '#5c6e44', '#a0a060',
+    '#8b8c44', '#9a9850', '#b0af66', '#a8a868',
+    // Moss & Deep Green
+    '#4a5c3a', '#3d5038', '#2e4030', '#3b4a2e', '#4f6238',
+    '#5c7040', '#658050', '#5a6e48', '#3a4828',
+    // Walnut & Warm Brown
+    '#6b4226', '#7a4a2a', '#8b5a2b', '#7a3b18', '#6a3010',
+    '#9a5a30', '#8a4e28', '#7b4020', '#604020',
+    // Caramel & Chocolate
+    '#a07040', '#906040', '#805030', '#704028', '#603020',
+    '#b08048', '#c09050', '#9a7040',
+    // Dusty Blue & Denim
+    '#4a6fa5', '#3a5f8a', '#4682b4', '#5b7fa6', '#6a8eb0',
+    '#3d6080', '#2c5070', '#4e7aaa',
+    // Dusty Rose
+    '#c4a0a0', '#b89090', '#a87878', '#988888', '#b49898',
+    '#c8b0b0', '#9a7878', '#886868', '#a88888',
+    // Taupe & Warm Grey
+    '#8b8070', '#9a9080', '#7a7060', '#a09080', '#b0a090',
+    '#c0b0a0', '#6a6058', '#787068', '#907868',
+    // Linen & Cream
+    '#faf0e6', '#f5e8d5', '#f0e0c8', '#e8d8b8', '#e0d0a8',
+    '#f5f0e8', '#ede8d8', '#f8f0e0',
+    // Greys (13, light → dark)
+    '#f5f5f5', '#eeeeee', '#c8c8c8', '#bdbdbd', '#a0a0a0',
+    '#909090', '#808080', '#555555', '#4a4a4a', '#424242',
+    '#303030', '#1e1e1e', '#0a0a0a',
+    // Black & White
+    '#000000', '#ffffff',
+];
+
+const SWATCH_PALETTE_OCEAN = [
+    // Deep Abyss
+    '#0a1628', '#0d2137', '#0f2a46', '#0e1d30', '#0a1f38',
+    '#162540', '#1a2f4a', '#112233', '#0c1e35',
+    // Navy & Midnight
+    '#001f5b', '#002366', '#00308f', '#003399', '#0a2e6e',
+    '#1a3460', '#13274f', '#1c3a6e', '#0d2860',
+    // Royal & Cobalt
+    '#0047ab', '#003ea8', '#0044cc', '#1a44aa', '#2060b0',
+    '#2255aa', '#1f5ea0', '#0054a6', '#0a52a0', '#1050a8',
+    // Azure & True Blue
+    '#007fba', '#0080c0', '#0088cc', '#0099cc', '#108ab8',
+    '#1299cc', '#1890c0', '#1a8cc4', '#2090c8',
+    // Bright Aqua
+    '#00b4cc', '#00bcd4', '#00c4d8', '#04cfe8', '#0ab8d8',
+    '#20c0d4', '#00bbe0', '#18c8dc',
+    // Turquoise
+    '#00ced1', '#48d1cc', '#40e0d0', '#20d8d4', '#10d0c8',
+    '#00c8c0', '#20ccc0', '#38d0c8',
+    // Teal
+    '#008080', '#009090', '#00a0a0', '#009898', '#157a77',
+    '#128880', '#1a8a88', '#006e6e', '#007878', '#109090',
+    // Seafoam & Pale Aqua
+    '#98e0d8', '#a8e8e8', '#b2e0e0', '#b8f0ec', '#80d8d0',
+    '#90d8d0', '#a0e0d8', '#b0e8e0', '#c8f8f4', '#c0f0ec',
+    // Tropical Coral
+    '#ff6b6b', '#ff7070', '#ff5c5c', '#f06060', '#e85858',
+    '#ff8066', '#f07060', '#e86050',
+    // Warm Coral & Salmon
+    '#fa8072', '#ff8888', '#f08070', '#ff9980', '#f08888',
+    '#ff9090', '#e87878', '#f09080',
+    // Sea Glass
+    '#a8d8d0', '#88b8b0', '#b8e0d8', '#c8e8e0', '#78b0a8',
+    '#88c0b8', '#68a8a0', '#98c8c0',
+    // Sandy Beach
+    '#f5e6c8', '#f0dab8', '#e8d0a8', '#ddc898', '#f0e8d0',
+    '#eedec8', '#e8d8b8', '#e0d0c0',
+    // Greys (13, light → dark)
+    '#f5f5f5', '#eeeeee', '#c8c8c8', '#bdbdbd', '#a0a0a0',
+    '#909090', '#808080', '#555555', '#4a4a4a', '#424242',
+    '#303030', '#1e1e1e', '#0a0a0a',
+    // Black & White
+    '#000000', '#ffffff',
+];
+
+const SWATCH_PALETTES = {
+    classic: SWATCH_PALETTE,
+    vibrant: SWATCH_PALETTE_VIBRANT,
+    pastel: SWATCH_PALETTE_PASTEL,
+    earth: SWATCH_PALETTE_EARTH,
+    ocean: SWATCH_PALETTE_OCEAN,
+};
+
 const UI = {
     draggedElement: null,
     draggedData: null,
@@ -1668,8 +1812,7 @@ const UI = {
 
     openSwatchPicker(inputId) {
         this._swatchTargetId = inputId;
-        const palette = this._swatchActiveTab === 'vibrant' ? SWATCH_PALETTE_VIBRANT : SWATCH_PALETTE;
-        this._populateSwatchGrid(palette);
+        this._populateSwatchGrid(SWATCH_PALETTES[this._swatchActiveTab] || SWATCH_PALETTE);
         document.getElementById('swatch-picker-overlay').classList.add('active');
     },
 
@@ -1692,8 +1835,7 @@ const UI = {
         document.querySelectorAll('.swatch-tab').forEach(btn => btn.classList.remove('active'));
         const tabEl = document.getElementById('swatch-tab-' + tab);
         if (tabEl) tabEl.classList.add('active');
-        const palette = tab === 'vibrant' ? SWATCH_PALETTE_VIBRANT : SWATCH_PALETTE;
-        this._populateSwatchGrid(palette);
+        this._populateSwatchGrid(SWATCH_PALETTES[tab] || SWATCH_PALETTE);
     },
 
     closeSwatchPicker() {
