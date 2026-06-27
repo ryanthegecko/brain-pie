@@ -1807,7 +1807,8 @@ const UI = {
     },
     
     getRandomColor() {
-        return SWATCH_PALETTE[Math.floor(Math.random() * SWATCH_PALETTE.length)];
+        const palette = SWATCH_PALETTES[this._swatchActiveTab] || SWATCH_PALETTE;
+        return palette[Math.floor(Math.random() * palette.length)];
     },
 
     openSwatchPicker(inputId) {
