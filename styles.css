@@ -11,6 +11,7 @@
     --sched-color-week-border:    #FFEB3B;  /* this-week pill border */
     --sched-color-today-border:   #B91C1C;  /* today pill border */
     --sched-color-base:           #4CAF50;
+    --sched-color-base-text:      #ffffff;  /* text inside base (far-future) pill */
     --sched-color-default-border: #fff;
     --sched-color-list:           #2196F3;  /* list-type / unscheduled spoke indicator */
 }

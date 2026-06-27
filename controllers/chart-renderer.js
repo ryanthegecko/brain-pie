@@ -498,8 +498,11 @@ const ChartRenderer = {
         // since addSchedulePill returns early above when there's no icon or text to render).
         const pillColor = this.getSchedulePillColor(spoke) || 'var(--sched-color-base)';
         const scheduledDate = this.getScheduledDate(spoke);
+        const isPastEvent = scheduledDate && this.isPast(scheduledDate);
         const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
         const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
+        const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
+        const isBaseEvent = scheduledDate && !isPastEvent && !isTodayEvent && !isTomorrowEvent && !isThisWeekEvent;
         const iconSize = 18;
 
         // Get name text bounding box after brief delay
@@ -541,10 +544,13 @@ const ChartRenderer = {
                 // Render pill with text (if there's text beyond just the icon)
                 if (pillText) {
                     if (!icon) cursorX += isRightSide ? 4 : -4;  // extra gap when no icon precedes pill
-                    // Text colour: tomorrow pill needs contrast text (token); all others use white.
+                    // Text colour: tomorrow and base pills use per-theme tokens; all others white.
+                    const pillTextColor = isTomorrowEvent ? 'var(--sched-color-tomorrow-text)'
+                                        : isBaseEvent     ? 'var(--sched-color-base-text)'
+                                        : '#ffffff';
                     const pillTextEl = pillGroup.append('text')
                         .attr('font-size', fontSize + 'px')
-                        .style('fill', isTomorrowEvent ? 'var(--sched-color-tomorrow-text)' : '#ffffff')
+                        .style('fill', pillTextColor)
                         .attr('font-weight', (isTodayEvent || isTomorrowEvent) ? '600' : 'normal')
                         .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .attr('x', cursorX)
@@ -564,8 +570,6 @@ const ChartRenderer = {
 
                     // Borders follow the urgency gradient: each state uses the next-more-urgent colour.
                     // .style('stroke') is used (not .attr) so CSS custom properties resolve correctly.
-                    const isPastEvent = scheduledDate && this.isPast(scheduledDate);
-                    const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
                     if (isPastEvent) {
                         rect.style('stroke', 'var(--sched-color-past-border)')
                             .attr('stroke-width', 2);
@@ -1467,8 +1471,11 @@ const ChartRenderer = {
                     const pillText = this.getSchedulePillText(subItem);
                     const pillColor = this.getSchedulePillColor(subItem);
                     const scheduledDate = this.getScheduledDate(subItem);
+                    const isPastTreeEvent = scheduledDate && this.isPast(scheduledDate);
                     const isTodayEvent = scheduledDate && this.isToday(scheduledDate);
                     const isTomorrowEvent = scheduledDate && this.isTomorrow(scheduledDate);
+                    const isThisWeekTreeEvent = scheduledDate && this.isThisWeek(scheduledDate);
+                    const isBaseEvent = scheduledDate && !isPastTreeEvent && !isTodayEvent && !isTomorrowEvent && !isThisWeekTreeEvent;
                     const treeSpokeRef = { type: 'spoke', categoryId, itemId, spokeIndex };
                     const isTreePriority = UI.isPrioritised(treeSpokeRef);
 
@@ -1592,12 +1599,15 @@ const ChartRenderer = {
                                 const pillPadX = 5;
                                 const pillPadY = 2;
 
-                                // Text colour: tomorrow needs contrast text (token); all others use white.
+                                // Text colour: tomorrow and base pills use per-theme tokens; all others white.
+                                const treeePillTextColor = isTomorrowEvent ? 'var(--sched-color-tomorrow-text)'
+                                                         : isBaseEvent     ? 'var(--sched-color-base-text)'
+                                                         : '#ffffff';
                                 const pillTextEl = spokeGroup.append('text')
                                     .attr('x', pillX + pillPadX)
                                     .attr('y', lastLineY)
                                     .attr('font-size', '8px')
-                                    .style('fill', isTomorrowEvent ? 'var(--sched-color-tomorrow-text)' : '#ffffff')
+                                    .style('fill', treeePillTextColor)
                                     .attr('font-weight', (isTodayEvent || isTomorrowEvent) ? '600' : 'bold')
                                     .text(pillText);
 

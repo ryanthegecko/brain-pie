@@ -35,6 +35,7 @@ const Themes = {
         week:          '#4CAF50',  // green — same as base; no visual change in this theme
         weekBorder:    '#FFEB3B',  // yellow — original tomorrow colour as border
         base:          '#4CAF50',  // green
+        baseText:      '#ffffff',  // white — readable on green
         defaultBorder: '#fff',
         list:          '#2196F3',  // blue — list type / unscheduled spoke
     },
@@ -61,6 +62,7 @@ const Themes = {
         week:          '#EE7733',  // orange — this week; approaching
         weekBorder:    '#D32F2F',  // red — base colour as border; "getting serious"
         base:          '#D32F2F',  // red — far-future scheduled; attention required
+        baseText:      '#ffffff',  // white — readable on red
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
     },
@@ -78,6 +80,7 @@ const Themes = {
         week:          '#0077BB',  // blue — same as base; no visual change in this theme
         weekBorder:    '#009988',  // teal — tomorrow colour as border
         base:          '#0077BB',  // blue — safe for all CVD types
+        baseText:      '#ffffff',  // white — readable on blue
         defaultBorder: '#aaa',
         list:          '#2196F3',  // blue — safe for CVD; distinct from urgency spectrum
     },
@@ -94,6 +97,7 @@ const Themes = {
         week:          '#888888',  // mid grey — this week
         weekBorder:    '#444444',  // dark grey — tomorrow colour as border
         base:          '#BBBBBB',  // light grey — scheduled, not imminent
+        baseText:      '#111111',  // black — needed for contrast on light grey
         defaultBorder: '#888888',  // mid grey — subtle ring on light pill
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
     },
@@ -106,10 +110,11 @@ const Themes = {
         todayBorder:    '#444444',  // dark grey — visible ring on white pill
         tomorrow:       '#888888',  // mid grey — coming tomorrow
         tomorrowBorder: '#FFFFFF',  // today colour as border
-        tomorrowText:   '#111111',  // dark — readable on mid grey
+        tomorrowText:   '#FFFFFF',  // white — readable on mid grey
         week:          '#BBBBBB',  // light grey — this week
         weekBorder:    '#888888',  // mid grey — contrast on light pill
         base:          '#444444',  // dark grey — scheduled, not imminent
+        baseText:      '#ffffff',  // white — readable on dark grey
         defaultBorder: '#888888',  // mid grey — ring on dark grey base pill
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
     },
@@ -136,6 +141,7 @@ function applyTheme(themeName) {
     root.style.setProperty('--sched-color-week',           theme.week);
     root.style.setProperty('--sched-color-week-border',    theme.weekBorder);
     root.style.setProperty('--sched-color-base',           theme.base);
+    root.style.setProperty('--sched-color-base-text',      theme.baseText);
     root.style.setProperty('--sched-color-default-border', theme.defaultBorder);
     root.style.setProperty('--sched-color-list',           theme.list);
 }
