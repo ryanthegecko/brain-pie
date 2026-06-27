@@ -78,19 +78,19 @@ const Themes = {
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         pastBorder:    '#4CAF50',  // green — same as fill; no alarm on past
-        pastText:      '#FFFFFF',  // black — readable on green (matches todayText; same fill)
-        today:          '#FFEB3B',  // green — "it's today, green means go"
-        todayBorder:    '#4CAF50',  // yellow — warm signal on an otherwise calm green pill
-        todayText:      '#000000',  // black — readable on green
-        tomorrow:       '#EE7733',  // yellow — coming tomorrow; same as default
+        pastText:      '#FFFFFF',  // white — readable on green
+        today:          '#FFEB3B',  // yellow — it's today; calmer than approaching urgency
+        todayBorder:    '#4CAF50',  // green — past colour as border; today shares the calm signal
+        todayText:      '#000000',  // black — readable on yellow
+        tomorrow:       '#EE7733',  // orange — coming tomorrow; urgency building
         tomorrowBorder: '#FFEB3B',  // today colour as border
-        tomorrowText:   '#ffffff',  // black — readable contrast on yellow
-        week:          '#D32F2F',  // orange — this week; approaching
-        weekBorder:    '#EE7733',  // red — base colour as border; "getting serious"
-        weekText:      '#ffffff',  // white — readable on orange
+        tomorrowText:   '#ffffff',  // white — readable on orange
+        week:          '#D32F2F',  // red — this week; approaching maximum urgency
+        weekBorder:    '#EE7733',  // orange — tomorrow colour as border
+        weekText:      '#ffffff',  // white — readable on red
         base:          '#D32F2F',  // red — far-future scheduled; attention required
         baseText:      '#ffffff',  // white — readable on red
-        defaultBorder: '#D32F2F',     // neutral ring on far-future base pills
+        defaultBorder: '#D32F2F',  // red — same as fill; base pills have no extra signal
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
     },
 
@@ -116,21 +116,21 @@ const Themes = {
     },
     // Monochrome palette: urgency ramps from white (far future) through greys to black (past).
     monochrome: {
-        past:          '#000000',  // Black
-        pastBorder:    '#000000',  // black — visible ring on white pill
-        pastText:      '#FFFFFF',  // White — readable on black
-        today:          '#333333',  // near-black — right now; maximum presence
-        todayBorder:    '#000000',  // Black — contrast ring on black pill
-        todayText:      '#ffffff',  // white — readable on near-black
-        tomorrow:       '#AAAAAA',  // dark grey — coming tomorrow
-        tomorrowBorder: '#000000',  // today colour as border
-        tomorrowText:   '#000000',  // white — readable on dark grey
-        week:          '#FFFFFF',  // mid grey — this week
-        weekBorder:    '#666666',  // dark grey — tomorrow colour as border
+        past:          '#000000',  // black — maximum weight
+        pastBorder:    '#000000',  // black — same as fill; no extra signal
+        pastText:      '#FFFFFF',  // white — readable on black
+        today:          '#333333',  // dark grey — right now; maximum presence
+        todayBorder:    '#000000',  // black — contrast ring on dark grey pill
+        todayText:      '#ffffff',  // white — readable on dark grey
+        tomorrow:       '#AAAAAA',  // light grey — coming tomorrow
+        tomorrowBorder: '#000000',  // black — past colour bleeds through as border signal
+        tomorrowText:   '#000000',  // black — readable on light grey
+        week:          '#FFFFFF',  // white — this week; lightest urgency
+        weekBorder:    '#666666',  // mid grey — contrast ring on white pill
         weekText:      '#000000',  // black — readable on white
-        base:          '#FFFFFF',  // White — scheduled, not imminent
-        baseText:      '#000000',  // black — needed for contrast on light grey
-        defaultBorder: '#FFFFFF',  // mid grey — subtle ring on light pill
+        base:          '#FFFFFF',  // white — scheduled, not imminent
+        baseText:      '#000000',  // black — readable on white
+        defaultBorder: '#FFFFFF',  // white — same as fill; base pills blend in
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
     },
 
@@ -153,22 +153,22 @@ const Themes = {
         defaultBorder: '#FFFFFF',  // mid grey — ring on dark grey base pill
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
     }, */
-     'monochrome-inverse': {
-        past:          '#FFFFFF',  // White — happened, gone, no weight
-        pastBorder:    '#FFFFFF',  // Black — all black pill
-        pastText:      '#000000',  // white — readable on near-black
-        today:          '#AAAAAA',  // white — right now; open, present
-        todayBorder:    '#FFFFFF',  // dark grey — visible ring on white pill
-        todayText:      '#000000',  // white — readable on black
-        tomorrow:       '#333333',  // mid grey — coming tomorrow
+    'monochrome-inverse': {
+        past:          '#FFFFFF',  // white — happened, gone, no weight
+        pastBorder:    '#FFFFFF',  // white — same as fill; no alarm on past
+        pastText:      '#000000',  // black — readable on white
+        today:          '#AAAAAA',  // mid grey — today; calmer than approaching states
+        todayBorder:    '#FFFFFF',  // white — past colour as border; today shares the calm zone
+        todayText:      '#000000',  // black — readable on mid grey
+        tomorrow:       '#333333',  // dark grey — coming tomorrow
         tomorrowBorder: '#AAAAAA',  // today colour as border
-        tomorrowText:   '#FFFFFF',  // white — readable on mid grey
-        week:          '#000000',  // light grey — this week
-        weekBorder:    '#333333',  // mid grey — contrast on light pill
-        weekText:      '#FFFFFF',  // black — readable on light grey
-        base:          '#000000',  // dark grey — scheduled, not imminent
-        baseText:      '#FFFFFF',  // white — readable on dark grey
-        defaultBorder: '#000000',  // mid grey — ring on dark grey base pill
+        tomorrowText:   '#FFFFFF',  // white — readable on dark grey
+        week:          '#000000',  // black — this week; most urgent approaching state
+        weekBorder:    '#333333',  // dark grey — contrast ring on black pill
+        weekText:      '#FFFFFF',  // white — readable on black
+        base:          '#000000',  // black — far future; attention required
+        baseText:      '#FFFFFF',  // white — readable on black
+        defaultBorder: '#000000',  // black — same as fill; no extra signal on base pills
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
     },
 };
