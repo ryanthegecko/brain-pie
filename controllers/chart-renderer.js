@@ -544,9 +544,10 @@ const ChartRenderer = {
                 // Render pill with text (if there's text beyond just the icon)
                 if (pillText) {
                     if (!icon) cursorX += isRightSide ? 4 : -4;  // extra gap when no icon precedes pill
-                    // Text colour: tomorrow and base pills use per-theme tokens; all others white.
+                    // Text colour: past/tomorrow/base pills use per-theme tokens; all others white.
                     const pillTextColor = isTomorrowEvent ? 'var(--sched-color-tomorrow-text)'
                                         : isBaseEvent     ? 'var(--sched-color-base-text)'
+                                        : isPastEvent     ? 'var(--sched-color-past-text)'
                                         : '#ffffff';
                     const pillTextEl = pillGroup.append('text')
                         .attr('font-size', fontSize + 'px')
@@ -1599,9 +1600,10 @@ const ChartRenderer = {
                                 const pillPadX = 5;
                                 const pillPadY = 2;
 
-                                // Text colour: tomorrow and base pills use per-theme tokens; all others white.
-                                const treeePillTextColor = isTomorrowEvent ? 'var(--sched-color-tomorrow-text)'
-                                                         : isBaseEvent     ? 'var(--sched-color-base-text)'
+                                // Text colour: past/tomorrow/base pills use per-theme tokens; all others white.
+                                const treeePillTextColor = isTomorrowEvent  ? 'var(--sched-color-tomorrow-text)'
+                                                         : isBaseEvent      ? 'var(--sched-color-base-text)'
+                                                         : isPastTreeEvent  ? 'var(--sched-color-past-text)'
                                                          : '#ffffff';
                                 const pillTextEl = spokeGroup.append('text')
                                     .attr('x', pillX + pillPadX)

@@ -27,6 +27,7 @@ const Themes = {
     default: {
         past:          '#D32F2F',  // red
         pastBorder:    '#D32F2F',  // red — same as fill; no extra signal needed
+        pastText:      '#ffffff',  // white — readable on red
         today:          '#EE7733',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
         todayBorder:    '#D32F2F',  // deeper red — was #D32F2F; contrast ring on coral red pill
         tomorrow:       '#FFEB3B',  // warm amber — was #FFEB3B yellow; more distinct from today
@@ -54,6 +55,7 @@ const Themes = {
     inverse: {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         pastBorder:    '#4CAF50',  // green — same as fill; no alarm on past
+        pastText:      '#ffffff',  // white — readable on green
         today:          '#4CAF50',  // green — "it's today, green means go"
         todayBorder:    '#FFEB3B',  // yellow — warm signal on an otherwise calm green pill
         tomorrow:       '#FFEB3B',  // yellow — coming tomorrow; same as default
@@ -72,6 +74,7 @@ const Themes = {
     colourblind: {
         past:          '#CC3311',  // vermillion — distinct from orange even without hue
         pastBorder:    '#CC3311',  // vermillion — same as fill
+        pastText:      '#ffffff',  // white — readable on vermillion
         today:          '#EE7733',  // orange (warm, not red)
         todayBorder:    '#CC3311',  // vermillion — past colour as border
         tomorrow:       '#009988',  // teal — unambiguous against orange; dark enough for white text
@@ -89,6 +92,7 @@ const Themes = {
     monochrome: {
         past:          '#FFFFFF',  // white — it's done; no weight
         pastBorder:    '#111111',  // black — visible ring on white pill
+        pastText:      '#111111',  // black — needed for contrast on white pill
         today:          '#111111',  // near-black — right now; maximum presence
         todayBorder:    '#FFFFFF',  // white — contrast ring on black pill
         tomorrow:       '#444444',  // dark grey — coming tomorrow
@@ -106,6 +110,7 @@ const Themes = {
     'monochrome-inverse': {
         past:          '#111111',  // near-black — done; heavy, settled
         pastBorder:    '#444444',  // dark grey — subtle ring on near-black pill
+        pastText:      '#ffffff',  // white — readable on near-black
         today:          '#FFFFFF',  // white — right now; open, present
         todayBorder:    '#444444',  // dark grey — visible ring on white pill
         tomorrow:       '#888888',  // mid grey — coming tomorrow
@@ -133,6 +138,7 @@ function applyTheme(themeName) {
     const root = document.documentElement;
     root.style.setProperty('--sched-color-past',           theme.past);
     root.style.setProperty('--sched-color-past-border',    theme.pastBorder);
+    root.style.setProperty('--sched-color-past-text',      theme.pastText);
     root.style.setProperty('--sched-color-today',          theme.today);
     root.style.setProperty('--sched-color-today-border',   theme.todayBorder);
     root.style.setProperty('--sched-color-tomorrow',        theme.tomorrow);

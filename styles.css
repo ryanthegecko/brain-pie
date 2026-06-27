@@ -3,6 +3,7 @@
 :root {
     --sched-color-past:           #D32F2F;
     --sched-color-past-border:    #D32F2F;  /* past pill border; matches fill by default */
+    --sched-color-past-text:      #ffffff;  /* text inside past pill */
     --sched-color-today:          #EF4444;
     --sched-color-tomorrow:        #F59E0B;
     --sched-color-tomorrow-border: #EE7733;  /* tomorrow pill border */
