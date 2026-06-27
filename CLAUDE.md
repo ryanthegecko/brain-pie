@@ -1,7 +1,7 @@
 # Brain Pie - Project Documentation
 
 **Last Updated:** June 2026
-**Current Version:** v0.21
+**Current Version:** v0.22
 
 ## Overview
 Brain Pie is a visual mind organization tool that uses a 4-layer pie chart system to help users organize thoughts, tasks, and actions. It's a completely client-side web application with no backend, ensuring privacy and offline functionality.
@@ -389,6 +389,41 @@ The solution is **virtual canvas rendering with viewBox scaling** — the same t
 3. **Text overflow** on small slices not handled gracefully
 
 ## Changelog
+
+### v0.22 (June 2026)
+Dark mode, schedule pill theme tokens, and theme persistence fix:
+
+**Dark Mode:**
+- Full CSS-token-based dark mode with 16 semantic `--color-*` tokens covering surfaces, text, borders, interactive states, state tints, and SVG-specific colours
+- Light / Dark / Auto toggle in Settings → Appearance (radio buttons) and a quick-cycle icon button (◑/☀/☽) in the top bar — both stay in sync
+- Flicker-prevention inline script in `<head>` reads saved preference before first paint
+- `prefers-color-scheme` live listener updates Auto mode without reload
+- Targeted D3 `.attr()` → `.style('fill/stroke', 'var(...)')` conversions in `chart-renderer.js` so SVG elements respond to CSS custom properties
+- `index.html` inline styles replaced with classes or `var()` references
+- 31 justified hardcoded hex values preserved: brand/action colours, star gold, overlay backdrops, white-on-colour text, schedule key panel (already dark-themed)
+
+**Schedule Key UI:**
+- Dismiss button changed to × (U+2715); Theme button changed to gear icon
+- Visual divider between dismiss and theme controls
+- SCHEDULE and TYPE section labels added to key
+- ↻ (Repeating) and ☑ (Checklist) type rows added below pill rows
+
+**Schedule Pill Theme Tokens:**
+- `tomorrowBorder` — independent border token for tomorrow pills across all 5 themes and all 3 render paths
+- `pastBorder` — independent border token; monochrome past pill gets black (`#111111`) border on white fill
+- `baseText` — pill text colour for far-future (base) pills; black in monochrome (light grey fill), white elsewhere
+- `pastText` — pill text colour for past pills; black in monochrome (white fill), white elsewhere
+- `--sched-color-past-border` CSS fallback added
+
+**Dark Mode Spoke Rendering:**
+- `.sub-item-label` now has `fill: var(--color-text-primary)` — spoke text was SVG-default black, invisible on dark background
+- Pie chart type icons (↻ ☑) get `fill: var(--color-text-primary)`; treemap icons use `sliceTextColor` (contrast-calculated per tile)
+
+**Theme Persistence Fix:**
+- `FirebaseAdapter.saveMeta()` transaction was silently dropping `theme` from every meta write — fixed to preserve local theme (with remote fallback)
+- `subscribeToMetaUpdates` rebuilt `pieMeta` without `theme` when remote meta arrived from an older client — fixed to carry `prevTheme` forward
+
+---
 
 ### v0.20 (March 2026)
 Tombstone system bug fixes, active pie persistence across refresh, and priority listener robustness:
