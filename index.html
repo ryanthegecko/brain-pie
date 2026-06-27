@@ -181,7 +181,14 @@
                         </div>
                         <div class="input-group">
                             <label for="new-category-color">Color</label>
-                            <input type="color" id="new-category-color" value="#4CAF50">
+                            <div class="color-input-row">
+                                <input type="color" id="new-category-color" value="#4CAF50">
+                                <button type="button" class="swatch-picker-btn" onclick="UI.openSwatchPicker('new-category-color')" title="Choose from palette">
+                                    <span class="swatch-dot" style="background:#e91e63"></span>
+                                    <span class="swatch-dot" style="background:#2196f3"></span>
+                                    <span class="swatch-dot" style="background:#ff9800"></span>
+                                </button>
+                            </div>
                         </div>
                         <div class="input-group" style="justify-content: flex-end;">
                             <label>&nbsp;</label>
@@ -215,7 +222,14 @@
                         </div>
                         <div class="input-group">
                             <label for="item-color">Color</label>
-                            <input type="color" id="item-color" value="#4CAF50">
+                            <div class="color-input-row">
+                                <input type="color" id="item-color" value="#4CAF50">
+                                <button type="button" class="swatch-picker-btn" onclick="UI.openSwatchPicker('item-color')" title="Choose from palette">
+                                    <span class="swatch-dot" style="background:#e91e63"></span>
+                                    <span class="swatch-dot" style="background:#2196f3"></span>
+                                    <span class="swatch-dot" style="background:#ff9800"></span>
+                                </button>
+                            </div>
                         </div>
                         <div class="input-group" style="justify-content: flex-end;">
                             <label>&nbsp;</label>
@@ -302,7 +316,7 @@
             <!-- Page 1: Overview -->
             <div class="docs-page active" id="docs-page-1">
                 <h3>What is Brain Pie?</h3>
-                <p>Brain Pie is a visual mind organisation tool that uses a 4-layer pie chart to help you organise thoughts, tasks, and actions. Everything stays in your browser by default — no accounts, no servers, no tracking.</p>
+                <p>Brain Pie is a visual mind organisation tool that uses a 4-layer pie chart to help you organise thoughts, tasks, and actions. Everything stays in your browser by default — no accounts, no cookies, no tracking.</p>
 
                 <h3>The 4-Layer Hierarchy</h3>
                 <ul>
@@ -321,7 +335,7 @@
                 </ul>
 
                 <h3>Privacy First</h3>
-                <p>Your data never leaves your device unless you choose. By default everything is stored in your browser's localStorage — no accounts, no servers, no tracking. If you'd like more control, you can save to a local file on your computer, or connect your own Firebase project for cloud backup or live sync across devices. See the <strong>Storage</strong> page for the full breakdown.</p>
+                <p>Your data never leaves your device unless you choose. By default everything is stored in your browser's localStorage — no accounts, no cookies, no tracking. If you'd like more control, you can save to a local file on your computer, or connect your own Firebase project for cloud backup or live sync across devices. See the <strong>Storage</strong> page for the full breakdown.</p>
             </div>
 
             <!-- Page 2: Getting Started -->
@@ -2001,5 +2015,16 @@
     <script src="managers/tutorial-manager.js"></script>
     <script src="example-data.js"></script>
     <script src="app.js"></script>
+
+    <!-- Swatch colour picker overlay -->
+    <div id="swatch-picker-overlay" class="swatch-picker-overlay" onclick="UI.closeSwatchPicker()">
+        <div class="swatch-picker-panel" onclick="event.stopPropagation()">
+            <div class="swatch-picker-header">
+                <span>Choose a colour</span>
+                <button type="button" class="swatch-picker-close" onclick="UI.closeSwatchPicker()">✕</button>
+            </div>
+            <div class="swatch-grid" id="swatch-grid"></div>
+        </div>
+    </div>
 </body>
 </html>

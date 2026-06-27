@@ -2201,6 +2201,7 @@ select:focus {
 .category-slices-list li .slice-name {
     flex: 1;
     font-weight: 500;
+    color: var(--color-text-primary);
 }
 
 .category-slices-list li .slice-percentage {
@@ -4031,6 +4032,115 @@ select:focus {
     font-weight: 600;
 }
 
+/* ── Swatch colour picker ─────────────────────────────────────── */
+.color-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.swatch-picker-btn {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+
+.swatch-picker-btn:hover {
+    background: var(--color-surface-alt);
+}
+
+.swatch-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--color-bg);
+    margin-left: -5px;
+    flex-shrink: 0;
+}
+
+.swatch-dot:first-child {
+    margin-left: 0;
+}
+
+.swatch-picker-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.swatch-picker-overlay.active {
+    display: flex;
+}
+
+.swatch-picker-panel {
+    background: var(--color-surface);
+    border-radius: 14px;
+    padding: 24px;
+    width: min(680px, calc(100vw - 40px));
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.swatch-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--color-text-primary);
+}
+
+.swatch-picker-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: 18px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.swatch-picker-close:hover {
+    color: var(--color-text-primary);
+    background: var(--color-surface-alt);
+}
+
+.swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+    gap: 8px;
+}
+
+.swatch-item {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.12s, border-color 0.12s;
+}
+
+.swatch-item:hover {
+    transform: scale(1.25);
+    border-color: var(--color-text-primary);
+}
+
+/* ─────────────────────────────────────────────────────────────── */
 .docs-footer {
     display: flex;
     justify-content: space-between;

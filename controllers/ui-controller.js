@@ -1,6 +1,60 @@
+const SWATCH_PALETTE = [
+    // Reds
+    '#ef5350', '#f44336', '#e53935', '#d32f2f', '#c62828', '#b71c1c',
+    '#ff5252', '#ff1744', '#d50000', '#e74c3c',
+    // Pink
+    '#f48fb1', '#f06292', '#ec407a', '#e91e63', '#d81b60', '#c2185b', '#ad1457', '#880e4f',
+    '#ff4081', '#f50057', '#c51162',
+    // Purple
+    '#ce93d8', '#ba68c8', '#ab47bc', '#9c27b0', '#8e24aa', '#7b1fa2', '#6a1b9a', '#4a148c',
+    '#e040fb', '#aa00ff', '#8e44ad',
+    // Deep Purple
+    '#b39ddb', '#9575cd', '#7e57c2', '#673ab7', '#5e35b1', '#512da8', '#4527a0', '#311b92',
+    '#7c4dff', '#651fff', '#6200ea',
+    // Indigo
+    '#9fa8da', '#7986cb', '#5c6bc0', '#3f51b5', '#3949ab', '#303f9f', '#283593', '#1a237e',
+    '#536dfe', '#3d5afe', '#304ffe',
+    // Blue
+    '#64b5f6', '#42a5f5', '#2196f3', '#1e88e5', '#1976d2', '#1565c0', '#0d47a1',
+    '#448aff', '#2979ff', '#2962ff', '#2980b9', '#1a5276',
+    // Light Blue
+    '#4fc3f7', '#29b6f6', '#03a9f4', '#039be5', '#0277bd', '#40c4ff', '#0091ea',
+    // Cyan
+    '#4dd0e1', '#26c6da', '#00bcd4', '#00acc1', '#0097a7', '#00838f', '#006064',
+    '#00e5ff', '#00b8d4', '#20c8e9', '#00b7db',
+    // Teal
+    '#4db6ac', '#26a69a', '#009688', '#00897b', '#00796b', '#00695c', '#004d40',
+    '#1de9b6', '#00bfa5', '#17a589', '#117a65',
+    // Green
+    '#81c784', '#66bb6a', '#4caf50', '#43a047', '#388e3c', '#2e7d32', '#1b5e20',
+    '#69f0ae', '#00c853', '#238500',
+    // Light Green
+    '#9ccc65', '#8bc34a', '#7cb342', '#689f38', '#558b2f', '#33691e', '#76ff03', '#64dd17',
+    // Lime
+    '#d4e157', '#cddc39', '#c0ca33', '#afb42b', '#9e9d24', '#827717', '#aeea00',
+    // Yellow
+    '#ffeb3b', '#fdd835', '#fbc02d', '#f9a825', '#f57f17', '#ffd600',
+    // Amber
+    '#ffca28', '#ffc107', '#ffb300', '#ffa000', '#ff8f00', '#ff6f00', '#ffab00', '#d6ba00',
+    // Orange
+    '#ffa726', '#ff9800', '#fb8c00', '#f57c00', '#ef6c00', '#e65100',
+    '#ffab40', '#ff9100', '#ff6d00',
+    // Deep Orange
+    '#ff8a65', '#ff7043', '#ff5722', '#f4511e', '#e64a19', '#d84315', '#bf360c',
+    '#ff3d00', '#dd2c00', '#ff4b0f',
+    // Brown
+    '#a1887f', '#8d6e63', '#795548', '#6d4c41', '#5d4037', '#4e342e', '#3e2723',
+    // Blue Grey / Slate
+    '#78909c', '#607d8b', '#546e7a', '#455a64', '#37474f', '#263238',
+    '#728088', '#364149', '#2e86c1',
+    // Custom
+    '#a800a3', '#1c00a8', '#aa1ff4', '#9093e9', '#00d1c3',
+];
+
 const UI = {
     draggedElement: null,
     draggedData: null,
+    _swatchTargetId: null,
 
     // Menu tab state
     currentMenuTab: 1,
@@ -1540,8 +1594,38 @@ const UI = {
     },
     
     getRandomColor() {
-        const colors = ['#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0', '#00BCD4', '#FFEB3B', '#FF5722', '#795548', '#607D8B'];
-        return colors[Math.floor(Math.random() * colors.length)];
+        return SWATCH_PALETTE[Math.floor(Math.random() * SWATCH_PALETTE.length)];
+    },
+
+    openSwatchPicker(inputId) {
+        this._swatchTargetId = inputId;
+        const grid = document.getElementById('swatch-grid');
+        if (!grid.hasChildNodes()) {
+            SWATCH_PALETTE.forEach(hex => {
+                const el = document.createElement('button');
+                el.className = 'swatch-item';
+                el.style.background = hex;
+                el.title = hex;
+                el.setAttribute('type', 'button');
+                el.onclick = () => this._applySwatchColor(hex);
+                grid.appendChild(el);
+            });
+        }
+        document.getElementById('swatch-picker-overlay').classList.add('active');
+    },
+
+    closeSwatchPicker() {
+        document.getElementById('swatch-picker-overlay').classList.remove('active');
+    },
+
+    _applySwatchColor(hex) {
+        const input = document.getElementById(this._swatchTargetId);
+        if (input) {
+            input.value = hex;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        this.closeSwatchPicker();
     },
 
     showDisclaimer() {
