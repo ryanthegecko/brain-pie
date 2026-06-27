@@ -527,6 +527,7 @@ const ChartRenderer = {
                         .attr('text-anchor', isRightSide ? 'start' : 'end')
                         .attr('x', cursorX)
                         .attr('y', textY)
+                        .style('fill', 'var(--color-text-primary)')
                         .text(icon);
 
                     const iconBbox = iconEl.node().getBBox();
@@ -1576,6 +1577,7 @@ const ChartRenderer = {
                             .attr('x', afterTextX)
                             .attr('y', lastLineY)
                             .attr('font-size', '12px')
+                            .attr('fill', sliceTextColor)
                             .text(icon);
                         afterTextX += 16;
                     } else if (pillText) {
