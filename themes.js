@@ -27,14 +27,14 @@
 const Themes = {
     // Original Material-Design traffic-light palette (M2 update: wider today/tomorrow contrast)
     default: {
-        past:          '#D32F2F',  // red
-        pastBorder:    '#D32F2F',  // red — same as fill; no extra signal needed
+        past:          '#f05252',  // red
+        pastBorder:    '#f05252',  // red — same as fill; no extra signal needed
         pastText:      '#ffffff',  // white — readable on red
-        today:          '#EE7733',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
-        todayBorder:    '#D32F2F',  // deeper red — was #D32F2F; contrast ring on coral red pill
+        today:          '#F57C00',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
+        todayBorder:    '#f05252',  // deeper red — was #f05252; contrast ring on coral red pill
         todayText:      '#FFFFFF',  // white — readable on coral red
         tomorrow:       '#FFEB3B',  // warm amber — was #FFEB3B yellow; more distinct from today
-        tomorrowBorder: '#EE7733',  // today colour as border — urgency gradient
+        tomorrowBorder: '#F57C00',  // today colour as border — urgency gradient
         tomorrowText:   '#000000',  // black — readable on amber
         week:          '#4CAF50',  // green — same as base; no visual change in this theme
         weekBorder:    '#FFEB3B',  // yellow — original tomorrow colour as border
@@ -66,10 +66,10 @@ const Themes = {
         tomorrow:       '#FFEB3B',  // yellow — coming tomorrow; same as default
         tomorrowBorder: '#4CAF50',  // today colour as border
         tomorrowText:   '#000000',  // black — readable contrast on yellow
-        week:          '#EE7733',  // orange — this week; approaching
-        weekBorder:    '#D32F2F',  // red — base colour as border; "getting serious"
+        week:          '#F57C00',  // orange — this week; approaching
+        weekBorder:    '#f05252',  // red — base colour as border; "getting serious"
         weekText:      '#ffffff',  // white — readable on orange
-        base:          '#D32F2F',  // red — far-future scheduled; attention required
+        base:          '#f05252',  // red — far-future scheduled; attention required
         baseText:      '#ffffff',  // white — readable on red
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
@@ -82,15 +82,15 @@ const Themes = {
         today:          '#FFEB3B',  // yellow — it's today; calmer than approaching urgency
         todayBorder:    '#4CAF50',  // green — past colour as border; today shares the calm signal
         todayText:      '#000000',  // black — readable on yellow
-        tomorrow:       '#EE7733',  // orange — coming tomorrow; urgency building
+        tomorrow:       '#F57C00',  // orange — coming tomorrow; urgency building
         tomorrowBorder: '#FFEB3B',  // today colour as border
         tomorrowText:   '#ffffff',  // white — readable on orange
-        week:          '#D32F2F',  // red — this week; approaching maximum urgency
-        weekBorder:    '#EE7733',  // orange — tomorrow colour as border
+        week:          '#f05252',  // red — this week; approaching maximum urgency
+        weekBorder:    '#F57C00',  // orange — tomorrow colour as border
         weekText:      '#ffffff',  // white — readable on red
-        base:          '#D32F2F',  // red — far-future scheduled; attention required
+        base:          '#f05252',  // red — far-future scheduled; attention required
         baseText:      '#ffffff',  // white — readable on red
-        defaultBorder: '#D32F2F',  // red — same as fill; base pills have no extra signal
+        defaultBorder: '#f05252',  // red — same as fill; base pills have no extra signal
         list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
     },
 
@@ -100,11 +100,11 @@ const Themes = {
         past:          '#CC3311',  // vermillion — distinct from orange even without hue
         pastBorder:    '#CC3311',  // vermillion — same as fill
         pastText:      '#ffffff',  // white — readable on vermillion
-        today:          '#EE7733',  // orange (warm, not red)
+        today:          '#F57C00',  // orange (warm, not red)
         todayBorder:    '#CC3311',  // vermillion — past colour as border
         todayText:      '#ffffff',  // white — readable on orange
         tomorrow:       '#009988',  // teal — unambiguous against orange; dark enough for white text
-        tomorrowBorder: '#EE7733',  // today colour as border
+        tomorrowBorder: '#F57C00',  // today colour as border
         tomorrowText:   '#ffffff',  // white — readable on dark teal
         week:          '#0077BB',  // blue — same as base; no visual change in this theme
         weekBorder:    '#009988',  // teal — tomorrow colour as border
@@ -122,7 +122,7 @@ const Themes = {
         today:          '#333333',  // dark grey — right now; maximum presence
         todayBorder:    '#000000',  // black — contrast ring on dark grey pill
         todayText:      '#ffffff',  // white — readable on dark grey
-        tomorrow:       '#AAAAAA',  // light grey — coming tomorrow
+        tomorrow:       '#CCCCCC',  // light grey — coming tomorrow
         tomorrowBorder: '#000000',  // black — past colour bleeds through as border signal
         tomorrowText:   '#000000',  // black — readable on light grey
         week:          '#FFFFFF',  // white — this week; lightest urgency
@@ -140,9 +140,9 @@ const Themes = {
         pastBorder:    '#FFFFFF',  // Black — all black pill
         pastText:      '#000000',  // white — readable on near-black
         today:          '#FFFFFF',  // white — right now; open, present
-        todayBorder:    '#AAAAAA',  // dark grey — visible ring on white pill
+        todayBorder:    '#CCCCCC',  // dark grey — visible ring on white pill
         todayText:      '#000000',  // white — readable on black
-        tomorrow:       '#AAAAAA',  // mid grey — coming tomorrow
+        tomorrow:       '#CCCCCC',  // mid grey — coming tomorrow
         tomorrowBorder: '#000000',  // today colour as border
         tomorrowText:   '#000000',  // white — readable on mid grey
         week:          '#333333',  // light grey — this week
@@ -157,11 +157,11 @@ const Themes = {
         past:          '#FFFFFF',  // white — happened, gone, no weight
         pastBorder:    '#FFFFFF',  // white — same as fill; no alarm on past
         pastText:      '#000000',  // black — readable on white
-        today:          '#AAAAAA',  // mid grey — today; calmer than approaching states
+        today:          '#CCCCCC',  // mid grey — today; calmer than approaching states
         todayBorder:    '#FFFFFF',  // white — past colour as border; today shares the calm zone
         todayText:      '#000000',  // black — readable on mid grey
         tomorrow:       '#333333',  // dark grey — coming tomorrow
-        tomorrowBorder: '#AAAAAA',  // today colour as border
+        tomorrowBorder: '#CCCCCC',  // today colour as border
         tomorrowText:   '#FFFFFF',  // white — readable on dark grey
         week:          '#000000',  // black — this week; most urgent approaching state
         weekBorder:    '#333333',  // dark grey — contrast ring on black pill

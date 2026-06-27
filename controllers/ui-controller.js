@@ -19,10 +19,10 @@ const UI = {
     getScheduleBorderStyle(dateStr, timeStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
-        if (ChartRenderer.isPast(date))     return 'background: var(--sched-color-past); border: 2px solid var(--sched-color-past);';
-        if (ChartRenderer.isToday(date))    return 'background: var(--sched-color-today); border: 2px solid var(--sched-color-today-border); font-weight: 600;';
-        if (ChartRenderer.isTomorrow(date)) return 'background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-today); color: #000; font-weight: 600;';
-        if (ChartRenderer.isThisWeek(date)) return 'background: var(--sched-color-week); border: 2px solid var(--sched-color-week-border);';
+        if (ChartRenderer.isPast(date))     return 'background: var(--sched-color-past); border: 2px solid var(--sched-color-past); color: var(--sched-color-past-text);';
+        if (ChartRenderer.isToday(date))    return 'background: var(--sched-color-today); border: 2px solid var(--sched-color-today-border); color: var(--sched-color-today-text); font-weight: 600;';
+        if (ChartRenderer.isTomorrow(date)) return 'background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-tomorrow-border); color: var(--sched-color-tomorrow-text); font-weight: 600;';
+        if (ChartRenderer.isThisWeek(date)) return 'background: var(--sched-color-week); border: 2px solid var(--sched-color-week-border); color: var(--sched-color-week-text);';
         return 'border: 1.5px solid var(--sched-color-default-border);';
     },
 
@@ -929,12 +929,25 @@ const UI = {
                                 <button class="priority-star-btn ${UI.isPrioritised({type:'slice', categoryId:category.id, itemId:item.id}) ? 'active' : ''}"
                                     onclick="event.stopPropagation(); UI.addToPriorities({type:'slice', categoryId:'${category.id}', itemId:'${item.id}'})"
                                     title="Add to priorities" style="flex-shrink:0;margin-top:-4px;">&#9733;</button>
-                                <h3 contenteditable="true"
-                                    onblur="App.updateItemName('${category.id}', '${item.id}', this.textContent)"
-                                    style="flex: 1; outline: none; padding: 2px; border-radius: 3px;"
-                                    onfocus="this.style.background='var(--color-hover)'"
-                                    onblur="this.style.background='transparent'"
-                                >${item.name}</h3>
+                                <div>
+                                    <h3 contenteditable="true"
+                                        onblur="App.updateItemName('${category.id}', '${item.id}', this.textContent)"
+                                        style="flex: 1; outline: none; padding: 2px; border-radius: 3px;"
+                                        onfocus="this.style.background='var(--color-hover)'"
+                                        onblur="this.style.background='transparent'"
+                                    >${item.name}</h3>
+                                    <div class="item-percentage" style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="number" 
+                                            name="categoryPercentage"
+                                            value="${item.percentage.toFixed(1)}" 
+                                            min="0" 
+                                            max="100" 
+                                            step="0.1"
+                                            style="width: 47px; padding: 0 4px 4px 0; border: 1px solid var(--color-border-subtle); border-radius: 4px;padding-inline: 1px"
+                                            onchange="App.updateItemPercentage('${category.id}', '${item.id}', parseFloat(this.value))">
+                                        <span>%</span>
+                                    </div>
+                                </div>
                                 <input type="color"
                                        value="${item.color}"
                                        title="Change color"
@@ -944,17 +957,6 @@ const UI = {
                                 <button class="warn" style="margin-left: 5px;" onclick="App.removeItem('${category.id}', '${item.id}')">
                                     <img width="15" height="15" src="./assets/trash.svg" />
                                 </button>
-                            </div>
-                            <div class="item-percentage" style="display: flex; align-items: center; gap: 8px;">
-                                <input type="number" 
-                                    name="categoryPercentage"
-                                       value="${item.percentage.toFixed(1)}" 
-                                       min="0" 
-                                       max="100" 
-                                       step="0.1"
-                                       style="width: 47px; padding: 0 4px 4px 0; border: 1px solid var(--color-border-subtle); border-radius: 4px;padding-inline: 1px"
-                                       onchange="App.updateItemPercentage('${category.id}', '${item.id}', parseFloat(this.value))">
-                                <span>%</span>
                             </div>
                             ${item.subItems && item.subItems.length > 0
                                 ? `<ul
