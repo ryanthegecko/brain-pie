@@ -354,6 +354,7 @@ const App = {
         // Restore prioritiser window state (open/closed + position)
         UI.restorePrioritiserState();
         UI.initScheduleKey();
+        UI.initColorScheme();
 
         if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
             setTimeout(() => TutorialManager.start(), 500);

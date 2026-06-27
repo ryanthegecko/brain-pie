@@ -149,7 +149,7 @@ h2 {
     border-color: #4CAF50;
 }
 .pie-tab:hover:not(.active) {
-    background: #e8e8e8;
+    background: var(--color-hover-strong);
 }
 .pie-tab-add {
     background: transparent;
@@ -2280,7 +2280,7 @@ select:focus {
 }
 
 .tab2-spoke-item .spoke-actions-count.clickable:hover {
-    background: #e3f2fd;
+    background: var(--color-tint-blue);
 }
 
 .tab2-spoke-item .spoke-scheduled {
@@ -2599,7 +2599,7 @@ select:focus {
     flex: 1;
     padding: 4px 8px;
     font-size: 13px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-subtle);
     border-radius: 4px;
 }
 
@@ -2651,7 +2651,7 @@ select:focus {
 
 .cal-import-event-detail {
     font-size: 12px;
-    color: #888;
+    color: var(--color-text-muted);
     margin-top: 2px;
 }
 
@@ -2691,7 +2691,7 @@ select:focus {
 
 .cal-import-review-type {
     font-size: 12px;
-    color: #888;
+    color: var(--color-text-muted);
     margin-bottom: 6px;
 }
 
@@ -2700,13 +2700,13 @@ select:focus {
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #666;
+    color: var(--color-text-secondary);
 }
 
 .cal-import-review-target select {
     padding: 3px 6px;
     font-size: 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-subtle);
     border-radius: 4px;
 }
 
@@ -2727,7 +2727,7 @@ select:focus {
 
 .tasks-import-post-options label {
     font-size: 13px;
-    color: #666;
+    color: var(--color-text-secondary);
     cursor: pointer;
 }
 
@@ -2742,11 +2742,11 @@ select:focus {
 }
 
 .task-parsed-spoke {
-    color: #333;
+    color: var(--color-text-primary);
 }
 
 .task-parsed-arrow {
-    color: #999;
+    color: var(--color-text-muted);
     margin: 0 4px;
 }
 
@@ -3111,7 +3111,7 @@ select:focus {
 .import-empty-message {
     text-align: center;
     padding: 30px;
-    color: #999;
+    color: var(--color-text-muted);
     font-style: italic;
 }
 
@@ -3276,7 +3276,7 @@ select:focus {
 }
 
 .transform-tree-item.selected {
-    background: #e8f5e9;
+    background: var(--color-tint-green);
     border-left: 3px solid #4CAF50;
 }
 
@@ -3296,7 +3296,7 @@ select:focus {
 
 .transform-tree-item .tree-badge {
     font-size: 12px;
-    color: #999;
+    color: var(--color-text-muted);
     margin-left: 8px;
     flex-shrink: 0;
 }
@@ -3370,10 +3370,10 @@ select:focus {
 .transform-target-selector select {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-subtle);
     border-radius: 6px;
     font-size: 14px;
-    background: white;
+    background: var(--color-surface-input);
 }
 
 .transform-preview {
@@ -3403,7 +3403,7 @@ select:focus {
 .preview-node {
     padding: 4px 0;
     font-size: 13px;
-    color: #333;
+    color: var(--color-text-primary);
 }
 
 .preview-node.depth-0 { padding-left: 0; }
@@ -3881,7 +3881,7 @@ select:focus {
     border: none;
     cursor: pointer;
     font-size: 22px;
-    color: #ccc;
+    color: var(--color-border-subtle);
     padding: 2px 4px;
     line-height: 1.2;
     transition: color 0.15s;

@@ -732,6 +732,10 @@ const UI = {
         this.loadCalendarSyncState();
         this.loadCloudSyncState();
         this.updateCalendarImportButton();
+        // Sync colour-scheme radio to saved preference
+        const pref = localStorage.getItem('brainpie-color-scheme') || 'auto';
+        const radio = document.querySelector(`input[name="color-scheme"][value="${pref}"]`);
+        if (radio) radio.checked = true;
     },
     
     closeSettings() {
@@ -879,7 +883,7 @@ const UI = {
             card.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 if (this.draggedData && this.draggedData.type === 'item') {
-                    card.style.background = '#e8f5e9';
+                    card.style.background = 'var(--color-tint-green)';
                 }
             });
             
@@ -921,20 +925,20 @@ const UI = {
                             ondrop="UI.handleItemDrop(event)"
                              >
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 0px;">
-                                <span class="item-drag-handle" style="font-size: 16px; color: #999; cursor: move; padding: 2px 4px; margin-top: 2px;">⋮⋮</span>
+                                <span class="item-drag-handle" style="font-size: 16px; color: var(--color-text-muted); cursor: move; padding: 2px 4px; margin-top: 2px;">⋮⋮</span>
                                 <button class="priority-star-btn ${UI.isPrioritised({type:'slice', categoryId:category.id, itemId:item.id}) ? 'active' : ''}"
                                     onclick="event.stopPropagation(); UI.addToPriorities({type:'slice', categoryId:'${category.id}', itemId:'${item.id}'})"
                                     title="Add to priorities" style="flex-shrink:0;margin-top:-4px;">&#9733;</button>
                                 <h3 contenteditable="true"
                                     onblur="App.updateItemName('${category.id}', '${item.id}', this.textContent)"
                                     style="flex: 1; outline: none; padding: 2px; border-radius: 3px;"
-                                    onfocus="this.style.background='#f0f0f0'"
+                                    onfocus="this.style.background='var(--color-hover)'"
                                     onblur="this.style.background='transparent'"
                                 >${item.name}</h3>
                                 <input type="color"
                                        value="${item.color}"
                                        title="Change color"
-                                       style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;"
+                                       style="width: 50px; height: 50px; border: 2px solid var(--color-border-subtle); border-radius: 4px; cursor: pointer;"
                                        onchange="App.updateItemColor('${category.id}', '${item.id}', this.value)">
                                 <button style="background: #4CAF50; margin-left: 5px;" onclick="UI.showAddSpokeInput('${category.id}', '${item.id}')" title="Add spoke">+ <span class="btn-label">Spoke</span></button>
                                 <button class="warn" style="margin-left: 5px;" onclick="App.removeItem('${category.id}', '${item.id}')">
@@ -948,7 +952,7 @@ const UI = {
                                        min="0" 
                                        max="100" 
                                        step="0.1"
-                                       style="width: 47px; padding: 0 4px 4px 0; border: 1px solid #ddd; border-radius: 4px;padding-inline: 1px"
+                                       style="width: 47px; padding: 0 4px 4px 0; border: 1px solid var(--color-border-subtle); border-radius: 4px;padding-inline: 1px"
                                        onchange="App.updateItemPercentage('${category.id}', '${item.id}', parseFloat(this.value))">
                                 <span>%</span>
                             </div>
@@ -1009,7 +1013,7 @@ const UI = {
                                                 title="Add to priorities" style="flex-shrink:0;">&#9733;</button>
                                             <span class="sub-item-text" contenteditable="true"
                                                 style="flex: 1; min-width: 0; word-break: break-word; white-space: normal; padding-right: 4px; outline: none; border-radius: 3px;"
-                                                onfocus="this.style.background='#f0f0f0'"
+                                                onfocus="this.style.background='var(--color-hover)'"
                                                 onblur="this.style.background='transparent'; if(!UI.draggedData) App.renameSpoke('${category.id}', '${item.id}', ${spokeIndex}, this.textContent)"
                                                 onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
                                             >${subText}</span>
@@ -1116,12 +1120,12 @@ const UI = {
             card.innerHTML = `
                 <div class="category-header">
                     <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-                        <span class="category-drag-handle" style="font-size: 20px; color: #999; cursor: move; padding: 4px;">⋮⋮</span>
+                        <span class="category-drag-handle" style="font-size: 20px; color: var(--color-text-muted); cursor: move; padding: 4px;">⋮⋮</span>
                         <div style="flex: 1;">
                             <h2 contenteditable="true"
                                 onblur="App.updateCategoryName('${category.id}', this.textContent)"
                                 style="outline: none; padding: 2px; border-radius: 3px; cursor: text;"
-                                onfocus="this.style.background='#f0f0f0'"
+                                onfocus="this.style.background='var(--color-hover)'"
                                 onblur="this.style.background='transparent'; App.updateCategoryName('${category.id}', this.textContent)"
                             >${category.name}</h2>
                             <div 
@@ -1133,7 +1137,7 @@ const UI = {
                                        min="0"
                                        max="100"
                                        step="0.1"
-                                       style="width: 54px; padding: 6px; border: 1px solid #ddd; border-radius: 4px;padding-inline: 1px"
+                                       style="width: 54px; padding: 6px; border: 1px solid var(--color-border-subtle); border-radius: 4px;padding-inline: 1px"
                                        onchange="App.updateCategoryPercentage('${category.id}', parseFloat(this.value))">
                                 <span class="auto-percentage">%</span>
                             </div>
@@ -1141,7 +1145,7 @@ const UI = {
                         <input type="color"
                                value="${category.color}"
                                title="Change category color"
-                               style="width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 6px; cursor: pointer;"
+                               style="width: 50px; height: 50px; border: 2px solid var(--color-border-subtle); border-radius: 6px; cursor: pointer;"
                                onchange="App.updateCategoryColor('${category.id}', this.value)">
                     </div>
                     <button style="margin-left: 5px;" onclick="UI.showMenuForCategory('${category.id}')">+ <span class="btn-label">Slice</span></button>
@@ -2005,5 +2009,68 @@ const UI = {
             // firing immediately after a theme is selected and closing the panel.
             return `<button class="theme-btn${isActive ? ' is-active' : ''}" onclick="UI.setTheme('${name}'); event.stopPropagation();">${name}</button>`;
         }).join('');
-    }
+    },
+
+    // ==========================================
+    // Colour scheme (dark / light / auto)
+    // ==========================================
+
+    /**
+     * Apply a colour scheme preference to the document.
+     * Sets data-theme on <html>, persists to localStorage, and syncs the icon.
+     * @param {'light'|'dark'|'auto'} preference
+     */
+    applyColorScheme(preference) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = preference === 'dark' || (preference === 'auto' && prefersDark);
+        document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+        localStorage.setItem('brainpie-color-scheme', preference);
+        this.updateThemeToggleIcon(preference);
+    },
+
+    /**
+     * Called by Settings panel radio buttons.
+     * Applies the scheme and keeps the top-bar icon in sync.
+     */
+    setColorScheme(value) {
+        this.applyColorScheme(value);
+        // Sync radio in Settings panel (in case called from JS rather than the radio itself)
+        const radio = document.querySelector(`input[name="color-scheme"][value="${value}"]`);
+        if (radio) radio.checked = true;
+    },
+
+    /**
+     * Cycle light → dark → auto → light.
+     * Wired to the top-bar quick-toggle button.
+     */
+    cycleColorScheme() {
+        const current = localStorage.getItem('brainpie-color-scheme') || 'auto';
+        const next = current === 'light' ? 'dark' : current === 'dark' ? 'auto' : 'light';
+        this.setColorScheme(next);
+    },
+
+    /**
+     * Update all .theme-toggle-icon elements to reflect the current preference.
+     * ☀ = light, ☽ = dark, ◑ = auto
+     */
+    updateThemeToggleIcon(preference) {
+        const icon = preference === 'light' ? '☀' : preference === 'dark' ? '☽' : '◑';
+        document.querySelectorAll('.theme-toggle-icon').forEach(el => el.textContent = icon);
+    },
+
+    /**
+     * Read saved colour-scheme preference and apply it.
+     * Called once on DOMContentLoaded so the icon matches the saved state.
+     */
+    initColorScheme() {
+        const pref = localStorage.getItem('brainpie-color-scheme') || 'auto';
+        // Theme is already applied by the flicker-prevention inline script;
+        // we just need to update the icon and the Settings radio.
+        this.updateThemeToggleIcon(pref);
+        // Wire up live system preference change for Auto mode
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            const current = localStorage.getItem('brainpie-color-scheme') || 'auto';
+            if (current === 'auto') this.applyColorScheme('auto');
+        });
+    },
 };
