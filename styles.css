@@ -5,11 +5,13 @@
     --sched-color-past-border:    #D32F2F;  /* past pill border; matches fill by default */
     --sched-color-past-text:      #ffffff;  /* text inside past pill */
     --sched-color-today:          #EF4444;
+    --sched-color-today-text:     #ffffff;  /* text inside today pill */
     --sched-color-tomorrow:        #F59E0B;
     --sched-color-tomorrow-border: #EE7733;  /* tomorrow pill border */
     --sched-color-tomorrow-text:   #000000;  /* contrast text inside tomorrow pill (black on amber) */
     --sched-color-week:           #4CAF50;  /* this-week pill fill; matches default base */
     --sched-color-week-border:    #FFEB3B;  /* this-week pill border */
+    --sched-color-week-text:      #ffffff;  /* text inside this-week pill */
     --sched-color-today-border:   #B91C1C;  /* today pill border */
     --sched-color-base:           #4CAF50;
     --sched-color-base-text:      #ffffff;  /* text inside base (far-future) pill */
@@ -26,7 +28,7 @@
     --color-surface-alt:      #f5f5f5;
     --color-surface-input:    #ffffff;
     /* Text */
-    --color-text-primary:     #333333;
+    --color-text-primary:     #111111;
     --color-text-secondary:   #666666;
     --color-text-muted:       #999999;
     /* Border */
@@ -48,11 +50,11 @@
 [data-theme="dark"] {
     /* Surface */
     --color-bg:               #111111;
-    --color-surface:          #1c1c1c;
+    --color-surface:          #000000;
     --color-surface-alt:      #242424;
     --color-surface-input:    #1e1e1e;
     /* Text */
-    --color-text-primary:     #e4e4e4;
+    --color-text-primary:     #eeeeee;
     --color-text-secondary:   #a0a0a0;
     --color-text-muted:       #666666;
     /* Border */
@@ -66,7 +68,7 @@
     --color-tint-blue:        #0a1929;
     --color-tint-warn:        #281808;
     /* SVG-specific */
-    --color-svg-popup-bg:     #1c1c1c;
+    --color-svg-popup-bg:     #000000;
     --color-svg-popup-border: #383838;
 }
 
