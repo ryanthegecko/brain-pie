@@ -498,7 +498,7 @@
                 <p>No action needed to use this mode. It's the default.</p>
 
                 <h3>Local File Mode</h3>
-                <p>If you want your data in a proper file you can back up, move, or open on another machine, local file mode saves your pie to a <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;">.json</code> file of your choosing. Every change is written automatically as you work, and you can also write to the file yourself, or with 
+                <p>If you want your data in a proper file you can back up, move, or open on another machine, local file mode saves your pie to a <code class="docs-inline-code">.json</code> file of your choosing. Every change is written automatically as you work, and you can also write to the file yourself, or with 
                     other tools.</p>
                 <ul>
                     <li><strong>How to enable:</strong> go to <strong>Settings → Working mode → Save to a local file</strong>, then pick where you'd like to save it.</li>
@@ -542,7 +542,7 @@
 
                 <h3>Database Rules</h3>
                 <p>By default the database is locked. Replace the rules with the following to allow authenticated users to read and write:</p>
-                <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;">{
+                <pre class="docs-pre">{
                     "rules": {
                         ".read": "auth != null  && (auth.token.email === 'your.username@gmail.com')",
                         ".write": "auth != null  && (auth.token.email === 'your.username@gmail.com')"
@@ -569,8 +569,8 @@
                 <p>By default, all users on the same Firebase project share the same set of pies — changes made by one person are visible to everyone. This is <strong>shared mode</strong> and is ideal for teams or households collaborating on the same data.</p>
                 <p>It's also possible to run multiple separate accounts on the same database, this is <strong>personal mode</strong>, each Google account gets its own isolated set of pies in the same Firebase project. Changes are private to each user.</p>
                 <p>Priority lists are always personal regardless of mode.</p>
-                <p>To enable personal mode, add <code style="background:#f5f5f5;padding:2px 5px;border-radius:3px;">"mode": "personal"</code> to your Firebase config JSON before pasting it into Brain Pie:</p>
-                <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;">{
+                <p>To enable personal mode, add <code class="docs-inline-code">"mode": "personal"</code> to your Firebase config JSON before pasting it into Brain Pie:</p>
+                <pre class="docs-pre">{
                     "apiKey": "...",
                     "authDomain": "...",
                     "databaseURL": "...",
@@ -579,7 +579,7 @@
                     }
                 </pre>
                 <p>The shareable config URL also encodes this setting, so other devices that connect via your URL will use the same mode automatically.</p>
-                <p style="color:#888;font-size:13px;"><strong>Note:</strong> If you connect with the wrong mode, the app will find no data and create a fresh empty pie. To fix it, go to Settings → Cloud Sync, disconnect, update the config to include the correct mode, and reconnect.</p>
+                <p style="color:var(--color-text-muted);font-size:13px;"><strong>Note:</strong> If you connect with the wrong mode, the app will find no data and create a fresh empty pie. To fix it, go to Settings → Cloud Sync, disconnect, update the config to include the correct mode, and reconnect.</p>
 
                 <h3>Real-Time Sync</h3>
                 <p>Changes sync instantly across all connected devices. The sync indicator in the UI shows connection status.</p>
@@ -677,7 +677,7 @@
             <p style="margin-top: 20px;"><strong>Your Responsibility:</strong></p>
             <p>You are solely responsible for any data you enter into this application. Do not enter sensitive, confidential, or personal information that you would not want stored locally on your device. We are not liable for any loss, misuse, or exposure of data.</p>
             
-            <p style="margin-top: 20px; font-size: 12px; color: #666;">This tool is provided "as is" without warranties of any kind. Use at your own risk.</p>
+            <p style="margin-top: 20px; font-size: 12px; color: var(--color-text-secondary);">This tool is provided "as is" without warranties of any kind. Use at your own risk.</p>
             
             <button onclick="UI.closeDisclaimer(); UI.openDocs();" style="margin-top: 20px; width: 100%;">Full Documentation →</button>
             <button onclick="UI.closeDisclaimer()" class="btn-neutral" style="margin-top: 8px; width: 100%;">Got it!</button>
@@ -688,7 +688,7 @@
     <div class="disclaimer-overlay" id="privacy-overlay" onclick="UI.closePrivacy()">
         <div class="disclaimer-content" onclick="event.stopPropagation()" style="max-height: 85vh; overflow-y: auto;">
             <h2>Privacy Policy</h2>
-            <p style="font-size: 12px; color: #888; margin-bottom: 16px;">Last updated: June 2026</p>
+            <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: 16px;">Last updated: June 2026</p>
 
             <p><strong>Brain Pie is built to be private by default.</strong> Your data stays on your device unless you explicitly enable local file mode or cloud sync.</p>
 
@@ -720,7 +720,7 @@
             <p style="margin-top: 16px;"><strong>Contact</strong></p>
             <p>Questions about this policy? Contact: <a href="mailto:ryanthegecko@gmail.com" style="color: #4caf50;">ryanthegecko@gmail.com</a></p>
 
-            <p style="margin-top: 20px; font-size: 12px; color: #666;">This tool is provided "as is" without warranties of any kind.</p>
+            <p style="margin-top: 20px; font-size: 12px; color: var(--color-text-secondary);">This tool is provided "as is" without warranties of any kind.</p>
 
             <button onclick="UI.closePrivacy()" class="btn-neutral" style="margin-top: 16px; width: 100%;">Close</button>
         </div>
@@ -1046,14 +1046,14 @@
             <h2 id="datetime-picker-title">Schedule Action</h2>
             
             <div id="action-details" class="scheduler-action-details">
-                <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Action:</div>
+                <div style="font-size: 14px; color: var(--color-text-secondary); margin-bottom: 5px;">Action:</div>
                 <div id="action-name" class="scheduler-action-name"></div>
                 <div id="action-context" class="scheduler-action-context"></div>
             </div>
             
             <div class="datetime-section">
                 <label for="event-date">Date</label>
-                <input type="date" id="event-date" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                <input type="date" id="event-date" style="width: 100%; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px;">
             </div>
 
             <div class="datetime-section">
@@ -1066,7 +1066,7 @@
             <div class="datetime-section" id="time-section">
                 <label>Time</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <select id="event-hour" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                    <select id="event-hour" style="flex: 1; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; cursor: pointer;">
                         <option value="00">00</option>
                         <option value="01">01</option>
                         <option value="02">02</option>
@@ -1093,7 +1093,7 @@
                         <option value="23">23</option>
                     </select>
                     <span style="font-size: 18px; font-weight: bold;">:</span>
-                    <select id="event-minute" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                    <select id="event-minute" style="flex: 1; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; cursor: pointer;">
                         <option value="00" selected>00</option>
                         <option value="15">15</option>
                         <option value="30">30</option>
@@ -1104,7 +1104,7 @@
             
             <div class="datetime-section" id="duration-section">
                 <label for="event-duration">Duration</label>
-                <select id="event-duration" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                <select id="event-duration" style="width: 100%; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; cursor: pointer;">
                     <option value="15">15 minutes</option>
                     <option value="30">30 minutes</option>
                     <option value="60" selected>1 hour</option>
@@ -1117,17 +1117,17 @@
 
             <div class="datetime-section">
                 <label for="event-location">Location <span style="color: var(--color-text-muted); font-weight: normal;">(optional)</span></label>
-                <input type="text" id="event-location" placeholder="Address, Google Maps link, or meeting room" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                <input type="text" id="event-location" placeholder="Address, Google Maps link, or meeting room" style="width: 100%; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px;">
             </div>
 
             <div class="datetime-section">
                 <label for="event-notes">Notes <span style="color: var(--color-text-muted); font-weight: normal;">(optional)</span></label>
-                <textarea id="event-notes" placeholder="Phone numbers, URLs, or any details for the calendar event" rows="3" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
+                <textarea id="event-notes" placeholder="Phone numbers, URLs, or any details for the calendar event" rows="3" style="width: 100%; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
             </div>
 
             <div class="datetime-section">
                 <label for="event-invitees">Invitees <span style="color: var(--color-text-muted); font-weight: normal;">(optional, comma-separated emails)</span></label>
-                <input type="text" id="event-invitees" placeholder="email@example.com, another@example.com" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                <input type="text" id="event-invitees" placeholder="email@example.com, another@example.com" style="width: 100%; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px;">
             </div>
 
             <div id="reschedule-reminder" class="reschedule-warning" style="display: none;">
@@ -1152,7 +1152,7 @@
             <h2>Action Type</h2>
 
             <div id="action-type-name" class="type-picker-name-bg">
-                <div style="font-size: 14px; color: #666;">Adding action:</div>
+                <div style="font-size: 14px; color: var(--color-text-secondary);">Adding action:</div>
                 <div id="action-type-action-name" class="scheduler-action-name"></div>
             </div>
 
@@ -1188,16 +1188,16 @@
             <div class="recurrence-section">
                 <label for="recurrence-start-date">Starting from</label>
                 <input type="date" id="recurrence-start-date"
-                       style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                       style="width: 100%; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px;">
             </div>
 
             <div class="recurrence-section">
                 <label>Repeat every</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <input type="number" id="recurrence-interval" value="1" min="1" max="99"
-                           style="width: 60px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; text-align: center;">
+                           style="width: 60px; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; text-align: center;">
                     <select id="recurrence-frequency" onchange="UI.updateRecurrenceOptions()"
-                            style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                            style="flex: 1; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px;">
                         <option value="DAILY">Day(s)</option>
                         <option value="WEEKLY" selected>Week(s)</option>
                         <option value="MONTHLY">Month(s)</option>
@@ -1213,7 +1213,7 @@
                 </label>
                 <div id="recurrence-time-picker" style="display: none; margin-top: 10px;flex-wrap: wrap">
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="recurrence-hour" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                        <select id="recurrence-hour" style="flex: 1; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; cursor: pointer;">
                             <option value="00">00</option>
                             <option value="01">01</option>
                             <option value="02">02</option>
@@ -1240,7 +1240,7 @@
                             <option value="23">23</option>
                         </select>
                         <span style="font-size: 18px; font-weight: bold;">:</span>
-                        <select id="recurrence-minute" style="flex: 1; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                        <select id="recurrence-minute" style="flex: 1; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; cursor: pointer;">
                             <option value="00" selected>00</option>
                             <option value="15">15</option>
                             <option value="30">30</option>
@@ -1248,8 +1248,8 @@
                         </select>
                     </div>
                     <div style="margin-top: 10px;">
-                        <label style="font-size: 13px; color: #666;">Duration</label>
-                        <select id="recurrence-duration" style="width: 100%; margin-top: 5px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; cursor: pointer;">
+                        <label style="font-size: 13px; color: var(--color-text-secondary);">Duration</label>
+                        <select id="recurrence-duration" style="width: 100%; margin-top: 5px; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px; cursor: pointer;">
                             <option value="15">15 minutes</option>
                             <option value="30">30 minutes</option>
                             <option value="60" selected>1 hour</option>
@@ -1300,7 +1300,7 @@
             <!-- Monthly options: day of month -->
             <div class="recurrence-section" id="recurrence-monthly-options" style="display: none;">
                 <label>On day</label>
-                <select id="recurrence-monthday" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                <select id="recurrence-monthday" style="width: 100%; padding: 10px; border: 2px solid var(--color-border); border-radius: 6px; font-size: 14px;">
                     <option value="1">1st</option>
                     <option value="2">2nd</option>
                     <option value="3">3rd</option>
@@ -1346,7 +1346,7 @@
                         <input type="radio" name="recurrence-end" value="date" onchange="UI.updateRecurrenceEndOptions()">
                         <span>On date</span>
                     </label>
-                    <input type="date" id="recurrence-end-date" style="margin-left: 24px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; display: none;">
+                    <input type="date" id="recurrence-end-date" style="margin-left: 24px; padding: 8px; border: 2px solid var(--color-border); border-radius: 6px; display: none;">
 
                     <label class="radio-option">
                         <input type="radio" name="recurrence-end" value="count" onchange="UI.updateRecurrenceEndOptions()">
@@ -1354,7 +1354,7 @@
                     </label>
                     <div id="recurrence-count-input" style="display: none; margin-left: 24px;">
                         <input type="number" id="recurrence-count" value="10" min="1" max="999"
-                               style="width: 60px; padding: 8px; border: 2px solid #e0e0e0; border-radius: 6px; text-align: center;">
+                               style="width: 60px; padding: 8px; border: 2px solid var(--color-border); border-radius: 6px; text-align: center;">
                         <span style="margin-left: 8px;">occurrences</span>
                     </div>
                 </div>
@@ -1515,7 +1515,7 @@
                     </div>
                 </div>
 
-                <div id="cal-import-loading" style="display:none; text-align:center; padding:20px; color:#666;">
+                <div id="cal-import-loading" style="display:none; text-align:center; padding:20px; color:var(--color-text-secondary);">
                     Loading events...
                 </div>
 
@@ -1523,7 +1523,7 @@
                     <div class="import-selection-controls">
                         <button class="small secondary" onclick="UI.calImportSelectAll()">Select All</button>
                         <button class="small secondary" onclick="UI.calImportDeselectAll()">Deselect All</button>
-                        <span id="cal-import-count" style="color:#666; font-size:13px;"></span>
+                        <span id="cal-import-count" style="color:var(--color-text-secondary); font-size:13px;"></span>
                     </div>
                 </div>
 
@@ -1578,7 +1578,7 @@
                     <label class="radio-option" style="margin-right:16px;"><input type="checkbox" id="tasks-import-completed" onchange="UI.fetchGoogleTasks()"><span>Include completed tasks</span></label>
                 </div>
 
-                <div id="tasks-import-loading" style="display:none; text-align:center; padding:20px; color:#666;">
+                <div id="tasks-import-loading" style="display:none; text-align:center; padding:20px; color:var(--color-text-secondary);">
                     Loading tasks...
                 </div>
 
@@ -1591,7 +1591,7 @@
                     <div class="import-selection-controls">
                         <button class="small secondary" onclick="UI.tasksImportSelectAll()">Select All</button>
                         <button class="small secondary" onclick="UI.tasksImportDeselectAll()">Deselect All</button>
-                        <span id="tasks-import-count" style="color:#666; font-size:13px;"></span>
+                        <span id="tasks-import-count" style="color:var(--color-text-secondary); font-size:13px;"></span>
                     </div>
                 </div>
 
@@ -1649,7 +1649,7 @@
             <!-- Step 1: Select -->
             <div class="transform-step-content active" id="transform-step-1">
                 <h2>Select Item to Transform</h2>
-                <p style="color:#666; font-size:14px; margin-bottom:15px;">Choose a category, slice, or spoke to promote or demote in the hierarchy.</p>
+                <p style="color:var(--color-text-secondary); font-size:14px; margin-bottom:15px;">Choose a category, slice, or spoke to promote or demote in the hierarchy.</p>
                 <div id="transform-source-tree" class="transform-source-tree"></div>
                 <div class="import-actions">
                     <button class="secondary" onclick="UI.closeTransform()">Cancel</button>
@@ -1736,7 +1736,7 @@
                 <!-- Notes field (all spoke types) -->
                 <div style="margin-top:16px;">
                     <label for="se-spoke-notes">Notes <span style="color:var(--color-text-muted);font-weight:normal;">(optional)</span></label>
-                    <textarea id="se-spoke-notes" rows="3" placeholder="Context, reminders, or details about this spoke" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;resize:vertical;margin-top:6px;box-sizing:border-box;"></textarea>
+                    <textarea id="se-spoke-notes" rows="3" placeholder="Context, reminders, or details about this spoke" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;resize:vertical;margin-top:6px;box-sizing:border-box;"></textarea>
                 </div>
 
                 <!-- List-type action list -->
@@ -1758,7 +1758,7 @@
                 <div id="spoke-editor-single-fields" style="display:none;">
                     <div class="datetime-section">
                         <label for="se-event-date">Date</label>
-                        <input type="date" id="se-event-date" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                        <input type="date" id="se-event-date" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;">
                     </div>
                     <div class="datetime-section">
                         <label class="allday-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
@@ -1769,7 +1769,7 @@
                     <div class="datetime-section" id="se-time-section">
                         <label>Time</label>
                         <div style="display:flex;gap:10px;align-items:center;">
-                            <select id="se-event-hour" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                            <select id="se-event-hour" style="flex:1;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;cursor:pointer;">
                                 <option value="00">00</option><option value="01">01</option><option value="02">02</option>
                                 <option value="03">03</option><option value="04">04</option><option value="05">05</option>
                                 <option value="06">06</option><option value="07">07</option><option value="08">08</option>
@@ -1780,7 +1780,7 @@
                                 <option value="21">21</option><option value="22">22</option><option value="23">23</option>
                             </select>
                             <span style="font-size:18px;font-weight:bold;">:</span>
-                            <select id="se-event-minute" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                            <select id="se-event-minute" style="flex:1;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;cursor:pointer;">
                                 <option value="00" selected>00</option><option value="15">15</option>
                                 <option value="30">30</option><option value="45">45</option>
                             </select>
@@ -1788,7 +1788,7 @@
                     </div>
                     <div class="datetime-section" id="se-duration-section">
                         <label for="se-event-duration">Duration</label>
-                        <select id="se-event-duration" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                        <select id="se-event-duration" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;cursor:pointer;">
                             <option value="15">15 minutes</option><option value="30">30 minutes</option>
                             <option value="60" selected>1 hour</option><option value="90">1.5 hours</option>
                             <option value="120">2 hours</option><option value="180">3 hours</option>
@@ -1797,15 +1797,15 @@
                     </div>
                     <div class="datetime-section">
                         <label for="se-event-location">Location <span style="color:var(--color-text-muted);font-weight:normal;">(optional)</span></label>
-                        <input type="text" id="se-event-location" placeholder="Address or meeting room" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                        <input type="text" id="se-event-location" placeholder="Address or meeting room" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;">
                     </div>
                     <div class="datetime-section">
                         <label for="se-event-notes">Notes <span style="color:var(--color-text-muted);font-weight:normal;">(optional)</span></label>
-                        <textarea id="se-event-notes" rows="3" placeholder="Details for the calendar event" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
+                        <textarea id="se-event-notes" rows="3" placeholder="Details for the calendar event" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;resize:vertical;"></textarea>
                     </div>
                     <div class="datetime-section">
                         <label for="se-event-invitees">Invitees <span style="color:var(--color-text-muted);font-weight:normal;">(optional, comma-separated)</span></label>
-                        <input type="text" id="se-event-invitees" placeholder="email@example.com" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                        <input type="text" id="se-event-invitees" placeholder="email@example.com" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;">
                     </div>
                     <button onclick="UI.saveSpokeEditorSchedule()" style="margin-top:15px;width:100%;background:#4285F4;">
                         📅 Add to Calendar
@@ -1816,13 +1816,13 @@
                 <div id="spoke-editor-repeating-fields" style="display:none;">
                     <div class="recurrence-section">
                         <label for="se-recurrence-start-date">Starting from</label>
-                        <input type="date" id="se-recurrence-start-date" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                        <input type="date" id="se-recurrence-start-date" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;">
                     </div>
                     <div class="recurrence-section">
                         <label>Repeat every</label>
                         <div style="display:flex;gap:10px;align-items:center;">
-                            <input type="number" id="se-recurrence-interval" value="1" min="1" max="99" style="width:60px;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;text-align:center;">
-                            <select id="se-recurrence-frequency" onchange="UI.updateSpokeEditorRecurrenceOptions()" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                            <input type="number" id="se-recurrence-interval" value="1" min="1" max="99" style="width:60px;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;text-align:center;">
+                            <select id="se-recurrence-frequency" onchange="UI.updateSpokeEditorRecurrenceOptions()" style="flex:1;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;">
                                 <option value="DAILY">Day(s)</option>
                                 <option value="WEEKLY" selected>Week(s)</option>
                                 <option value="MONTHLY">Month(s)</option>
@@ -1837,7 +1837,7 @@
                         </label>
                         <div id="se-recurrence-time-picker" style="display:none;margin-top:10px;flex-wrap:wrap;">
                             <div style="display:flex;gap:10px;align-items:center;">
-                                <select id="se-recurrence-hour" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                <select id="se-recurrence-hour" style="flex:1;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;cursor:pointer;">
                                     <option value="00">00</option><option value="01">01</option><option value="02">02</option>
                                     <option value="03">03</option><option value="04">04</option><option value="05">05</option>
                                     <option value="06">06</option><option value="07">07</option><option value="08">08</option>
@@ -1848,14 +1848,14 @@
                                     <option value="21">21</option><option value="22">22</option><option value="23">23</option>
                                 </select>
                                 <span style="font-size:18px;font-weight:bold;">:</span>
-                                <select id="se-recurrence-minute" style="flex:1;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                <select id="se-recurrence-minute" style="flex:1;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;cursor:pointer;">
                                     <option value="00" selected>00</option><option value="15">15</option>
                                     <option value="30">30</option><option value="45">45</option>
                                 </select>
                             </div>
                             <div style="margin-top:10px;">
-                                <label style="font-size:13px;color:#666;">Duration</label>
-                                <select id="se-recurrence-duration" style="width:100%;margin-top:5px;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;cursor:pointer;">
+                                <label style="font-size:13px;color:var(--color-text-secondary);">Duration</label>
+                                <select id="se-recurrence-duration" style="width:100%;margin-top:5px;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;cursor:pointer;">
                                     <option value="15">15 minutes</option><option value="30">30 minutes</option>
                                     <option value="60" selected>1 hour</option><option value="90">1.5 hours</option>
                                     <option value="120">2 hours</option><option value="180">3 hours</option>
@@ -1878,7 +1878,7 @@
                     </div>
                     <div class="recurrence-section" id="se-recurrence-monthly-options" style="display:none;">
                         <label>On day</label>
-                        <select id="se-recurrence-monthday" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;">
+                        <select id="se-recurrence-monthday" style="width:100%;padding:10px;border:2px solid var(--color-border);border-radius:6px;font-size:14px;">
                             <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
                             <option value="4">4th</option><option value="5">5th</option><option value="6">6th</option>
                             <option value="7">7th</option><option value="8">8th</option><option value="9">9th</option>
@@ -1897,10 +1897,10 @@
                         <div class="recurrence-end-options">
                             <label class="radio-option"><input type="radio" name="se-recurrence-end" value="never" checked onchange="UI.updateSpokeEditorRecurrenceEndOptions()"><span>Never</span></label>
                             <label class="radio-option"><input type="radio" name="se-recurrence-end" value="date" onchange="UI.updateSpokeEditorRecurrenceEndOptions()"><span>On date</span></label>
-                            <input type="date" id="se-recurrence-end-date" style="margin-left:24px;padding:8px;border:2px solid #e0e0e0;border-radius:6px;display:none;">
+                            <input type="date" id="se-recurrence-end-date" style="margin-left:24px;padding:8px;border:2px solid var(--color-border);border-radius:6px;display:none;">
                             <label class="radio-option"><input type="radio" name="se-recurrence-end" value="count" onchange="UI.updateSpokeEditorRecurrenceEndOptions()"><span>After</span></label>
                             <div id="se-recurrence-count-input" style="display:none;margin-left:24px;">
-                                <input type="number" id="se-recurrence-count" value="10" min="1" max="999" style="width:60px;padding:8px;border:2px solid #e0e0e0;border-radius:6px;text-align:center;">
+                                <input type="number" id="se-recurrence-count" value="10" min="1" max="999" style="width:60px;padding:8px;border:2px solid var(--color-border);border-radius:6px;text-align:center;">
                                 <span style="margin-left:8px;">occurrences</span>
                             </div>
                         </div>
