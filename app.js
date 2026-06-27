@@ -281,6 +281,9 @@ const App = {
 
                 // Preserve local activePieId (not synced via Firebase)
                 const currentActive = DataModel.getActivePieId();
+                // Capture theme before overwriting pieMeta — remote may not carry it
+                // if it was written by an older client that didn't persist theme.
+                const prevTheme = DataModel.pieMeta && DataModel.pieMeta.theme;
 
                 // Use remote meta as source of truth (it came from Firebase)
                 DataModel.pieMeta = {
@@ -290,11 +293,13 @@ const App = {
                     tombstonedPieIds: remoteTombstoned
                 };
 
-                // Apply remote theme if present — allows a cross-device theme change
-                // to propagate to all connected sessions without a reload.
+                // Apply remote theme if present (cross-device sync); otherwise keep
+                // the locally-active theme so a page reload doesn't reset it.
                 if (remoteMeta.theme) {
                     DataModel.pieMeta.theme = remoteMeta.theme;
                     applyTheme(remoteMeta.theme);
+                } else if (prevTheme) {
+                    DataModel.pieMeta.theme = prevTheme;
                 }
 
                 // Save locally

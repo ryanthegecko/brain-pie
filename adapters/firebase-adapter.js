@@ -495,6 +495,9 @@ const FirebaseAdapter = {
                     pieIds: mergedIds,
                     pieNames: { ...(currentMeta.pieNames || {}), ...(meta.pieNames || {}) },
                     tombstonedPieIds: meta.tombstonedPieIds || [],
+                    // Local theme wins; fall back to remote theme if local doesn't have one.
+                    // Without this, theme was silently dropped on every saveMeta() call.
+                    ...(meta.theme ? { theme: meta.theme } : currentMeta.theme ? { theme: currentMeta.theme } : {}),
                 };
             });
             Debug.log('Firebase: saved meta at', path);
