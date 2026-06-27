@@ -476,6 +476,31 @@ const SWATCH_PALETTE_NORDIC = [
     '#000000', '#ffffff',
 ];
 
+const SWATCH_PALETTE_SPECTRUM = [
+    // Ultra Light (S=100% L=90%)
+    '#ffcccc', '#ffe0cc', '#fff5cc', '#f5ffcc', '#e0ffcc', '#ccffcc', '#ccffe0', '#ccfff5', '#ccf5ff', '#cce0ff', '#ccccff', '#e0ccff', '#f5ccff', '#ffccf5', '#ffcce0',
+    // Light (S=100% L=76%)
+    '#ff8585', '#ffb685', '#ffe785', '#e7ff85', '#b6ff85', '#85ff85', '#85ffb6', '#85ffe7', '#85e7ff', '#85b6ff', '#8585ff', '#b685ff', '#e785ff', '#ff85e7', '#ff85b6',
+    // Medium Light (S=100% L=62%)
+    '#ff3d3d', '#ff8b3d', '#ffd83d', '#d8ff3d', '#8bff3d', '#3dff3d', '#3dff8b', '#3dffd8', '#3dd8ff', '#3d8bff', '#3d3dff', '#8b3dff', '#d83dff', '#ff3dd8', '#ff3d8b',
+    // Pure (S=100% L=50%)
+    '#ff0000', '#ff6600', '#ffcc00', '#ccff00', '#66ff00', '#00ff00', '#00ff66', '#00ffcc', '#00ccff', '#0066ff', '#0000ff', '#6600ff', '#cc00ff', '#ff00cc', '#ff0066',
+    // Medium Dark (S=100% L=40%)
+    '#cc0000', '#cc5200', '#cca300', '#a3cc00', '#52cc00', '#00cc00', '#00cc52', '#00cca3', '#00a3cc', '#0052cc', '#0000cc', '#5200cc', '#a300cc', '#cc00a3', '#cc0052',
+    // Dark (S=100% L=30%)
+    '#990000', '#993d00', '#997a00', '#7a9900', '#3d9900', '#009900', '#00993d', '#00997a', '#007a99', '#003d99', '#000099', '#3d0099', '#7a0099', '#99007a', '#99003d',
+    // Deep (S=100% L=20%)
+    '#660000', '#662900', '#665200', '#526600', '#296600', '#006600', '#006629', '#006652', '#005266', '#002966', '#000066', '#290066', '#520066', '#660052', '#660029',
+    // Ultra Deep (S=100% L=11%)
+    '#380000', '#381600', '#382d00', '#2d3800', '#163800', '#003800', '#003816', '#00382d', '#002d38', '#001638', '#000038', '#160038', '#2d0038', '#38002d', '#380016',
+    // Greys (13, light → dark)
+    '#f5f5f5', '#eeeeee', '#c8c8c8', '#bdbdbd', '#a0a0a0',
+    '#909090', '#808080', '#555555', '#4a4a4a', '#424242',
+    '#303030', '#1e1e1e', '#0a0a0a',
+    // Black & White
+    '#000000', '#ffffff',
+];
+
 const SWATCH_PALETTES = {
     classic: SWATCH_PALETTE,
     vibrant: SWATCH_PALETTE_VIBRANT,
@@ -487,6 +512,7 @@ const SWATCH_PALETTES = {
     skin: SWATCH_PALETTE_SKIN,
     metal: SWATCH_PALETTE_METAL,
     nordic: SWATCH_PALETTE_NORDIC,
+    spectrum: SWATCH_PALETTE_SPECTRUM,
 };
 
 const UI = {
