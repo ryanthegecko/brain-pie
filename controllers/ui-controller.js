@@ -503,6 +503,7 @@ const SWATCH_PALETTE_SPECTRUM = [
 
 const SWATCH_PALETTES = {
     classic: SWATCH_PALETTE,
+    spectrum: SWATCH_PALETTE_SPECTRUM,
     vibrant: SWATCH_PALETTE_VIBRANT,
     pastel: SWATCH_PALETTE_PASTEL,
     earth: SWATCH_PALETTE_EARTH,
@@ -512,7 +513,6 @@ const SWATCH_PALETTES = {
     skin: SWATCH_PALETTE_SKIN,
     metal: SWATCH_PALETTE_METAL,
     nordic: SWATCH_PALETTE_NORDIC,
-    spectrum: SWATCH_PALETTE_SPECTRUM,
 };
 
 const UI = {
