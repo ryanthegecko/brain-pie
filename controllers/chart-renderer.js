@@ -1079,7 +1079,9 @@ const ChartRenderer = {
             // Item labels - RADIAL TEXT along the wedge angle
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
-                const t = 0.3; // 0 = start edge, 1 = end edge, 0.5 = centre
+                const centreAngle = (d.startAngle + d.endAngle) / 2;
+                const sliceOnRight = Math.cos(centreAngle - Math.PI / 2) >= 0;
+                const t = sliceOnRight ? 0.6 : 0.4; // mirror: right pushes toward trailing edge
                 let midAngle = d.startAngle + t * (d.endAngle - d.startAngle);
                 const labelRadius = this.innerRadius / 1.35;
 
