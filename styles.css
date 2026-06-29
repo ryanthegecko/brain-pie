@@ -344,7 +344,10 @@ h2 {
     width: 100%;
     max-width: 80vw;
     overflow: hidden;
-    
+    &.tree-view {
+        margin-top: 75px;
+        height: 90vh;
+    }
     &.pie-view {
         transform: scale(1.1);
          @media (min-height: 1024px) and (max-aspect-ratio: 169/100){

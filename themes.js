@@ -119,7 +119,7 @@ const Themes = {
         past:          '#000000',  // black — maximum weight
         pastBorder:    '#000000',  // black — same as fill; no extra signal
         pastText:      '#FFFFFF',  // white — readable on black
-        today:          '#333333',  // dark grey — right now; maximum presence
+        today:          '#808080',  // dark grey — right now; maximum presence
         todayBorder:    '#000000',  // black — contrast ring on dark grey pill
         todayText:      '#ffffff',  // white — readable on dark grey
         tomorrow:       '#CCCCCC',  // light grey — coming tomorrow
@@ -145,7 +145,7 @@ const Themes = {
         tomorrow:       '#CCCCCC',  // mid grey — coming tomorrow
         tomorrowBorder: '#000000',  // today colour as border
         tomorrowText:   '#000000',  // white — readable on mid grey
-        week:          '#333333',  // light grey — this week
+        week:          '#808080',  // light grey — this week
         weekBorder:    '#000000',  // mid grey — contrast on light pill
         weekText:      '#FFFFFF',  // black — readable on light grey
         base:          '#000000',  // dark grey — scheduled, not imminent
@@ -160,11 +160,11 @@ const Themes = {
         today:          '#CCCCCC',  // mid grey — today; calmer than approaching states
         todayBorder:    '#FFFFFF',  // white — past colour as border; today shares the calm zone
         todayText:      '#000000',  // black — readable on mid grey
-        tomorrow:       '#333333',  // dark grey — coming tomorrow
+        tomorrow:       '#808080',  // dark grey — coming tomorrow
         tomorrowBorder: '#CCCCCC',  // today colour as border
         tomorrowText:   '#FFFFFF',  // white — readable on dark grey
         week:          '#000000',  // black — this week; most urgent approaching state
-        weekBorder:    '#333333',  // dark grey — contrast ring on black pill
+        weekBorder:    '#808080',  // dark grey — contrast ring on black pill
         weekText:      '#FFFFFF',  // white — readable on black
         base:          '#000000',  // black — far future; attention required
         baseText:      '#FFFFFF',  // white — readable on black
@@ -191,27 +191,7 @@ const Themes = {
         baseText:       '#FFFFFF',  // white
         defaultBorder:  '#5C6BC0',  // same as fill
         list:           '#2196F3',  // blue — indicator / checklist pill
-    },
-
-    // Dusk inverse: crimson (needs planning) → orange → pink → purple → indigo (done).
-    'dusk-inverse': {
-        past:           '#5C6BC0',  // indigo — done, at rest
-        pastBorder:     '#5C6BC0',  // same as fill
-        pastText:       '#FFFFFF',  // white
-        today:           '#7B1FA2',  // purple — today; calming down
-        todayBorder:     '#5C6BC0',  // past colour as border
-        todayText:       '#FFFFFF',  // white
-        tomorrow:        '#D81B60',  // deep pink — urgency building
-        tomorrowBorder:  '#7B1FA2',  // today colour as border
-        tomorrowText:    '#FFFFFF',  // white
-        week:           '#E65100',  // burnt orange — this week; serious
-        weekBorder:     '#D81B60',  // tomorrow colour as border
-        weekText:       '#FFFFFF',  // white
-        base:           '#B71C1C',  // deep crimson — far future; needs attention
-        baseText:       '#FFFFFF',  // white
-        defaultBorder:  '#B71C1C',  // same as fill
-        list:           '#2196F3',  // blue — indicator / checklist pill
-    },
+    }
 };
 
 // ── User theme generator ──────────────────────────────────────────────────────
@@ -233,7 +213,7 @@ function _contrastText(hex) {
 }
 
 function generateUserTheme(calm, urgent) {
-    const [base, week, tomorrow, today, past] = [0, 0.25, 0.5, 0.75, 1].map(t => _lerpHex(calm, urgent, t));
+    const [base, week, tomorrow, today, past] = [0, 0.2, 0.55, 0.8, 1].map(t => _lerpHex(calm, urgent, t));
     return {
         past,          pastBorder: past,        pastText: _contrastText(past),
         today,         todayBorder: past,        todayText: _contrastText(today),
