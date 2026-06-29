@@ -4426,7 +4426,7 @@ select:focus {
 /* ── Schedule key: light mode overrides ────────────────────── */
 [data-theme="light"] .schedule-key-legend {
     background: rgba(255, 255, 255, 0.92);
-    border: 1px solid #999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 [data-theme="light"] .schedule-key-collapsed {
     border-color: rgba(0, 0, 0, 0.18);
