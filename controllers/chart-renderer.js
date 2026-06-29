@@ -304,7 +304,7 @@ const ChartRenderer = {
             return 'var(--sched-color-base)';
         }
         if (type === 'list') {
-            return 'var(--sched-color-checklist)';
+            return 'var(--sched-color-list)';
         }
 
         return null;
@@ -585,7 +585,7 @@ const ChartRenderer = {
                     } else if (isThisWeekEvent) {
                         rect.style('stroke', 'var(--sched-color-week-border)')
                             .attr('stroke-width', 2);
-                    } else if (pillColor === 'var(--sched-color-list)' || pillColor === 'var(--sched-color-checklist)') {
+                    } else if (pillColor === 'var(--sched-color-list)') {
                         rect.style('stroke', pillColor)
                             .attr('stroke-width', 2);
                     } else {
@@ -1654,7 +1654,7 @@ const ChartRenderer = {
                                     rect.style('stroke', 'var(--sched-color-tomorrow-border)').attr('stroke-width', 1.5);
                                 } else if (isThisWeekEvent) {
                                     rect.style('stroke', 'var(--sched-color-week-border)').attr('stroke-width', 1.5);
-                                } else if (pillColor === 'var(--sched-color-list)' || pillColor === 'var(--sched-color-checklist)') {
+                                } else if (pillColor === 'var(--sched-color-list)') {
                                     rect.style('stroke', pillColor).attr('stroke-width', 1.5);
                                 } else {
                                     rect.style('stroke', 'var(--sched-color-default-border)').attr('stroke-width', 1.5);

@@ -2679,8 +2679,11 @@ const UI = {
         const panel = document.getElementById('theme-panel');
         if (!panel) return;
         const activeTheme = (DataModel.pieMeta && DataModel.pieMeta.theme) || ACTIVE_THEME;
-        let saved = { calm: '#4CAF50', urgent: '#f05252', checklist: '#2196F3' };
-        try { const s = JSON.parse(localStorage.getItem('brainpie-user-theme') || 'null'); if (s) saved = { ...saved, ...s }; } catch (_) {}
+        let saved = { calm: '#4CAF50', urgent: '#f05252', list: '#2196F3' };
+        try {
+            const s = JSON.parse(localStorage.getItem('brainpie-user-theme') || 'null');
+            if (s) saved = { ...saved, list: s.checklist || s.list || '#2196F3', ...s };
+        } catch (_) {}
         const buttons = Object.keys(Themes).map(name => {
             const isActive = name === activeTheme;
             return `<button class="theme-btn${isActive ? ' is-active' : ''}" onclick="UI.setTheme('${name}'); event.stopPropagation();">${name}</button>`;
@@ -2688,7 +2691,7 @@ const UI = {
         const pickers = `<div class="user-theme-pickers${activeTheme === 'user' ? ' active' : ''}">
             <label class="user-theme-label"><span>Calm</span><input type="color" id="ut-calm" value="${saved.calm}" oninput="UI._onUserColorInput()"></label>
             <label class="user-theme-label"><span>Urgent</span><input type="color" id="ut-urgent" value="${saved.urgent}" oninput="UI._onUserColorInput()"></label>
-            <label class="user-theme-label"><span>Checklist</span><input type="color" id="ut-checklist" value="${saved.checklist}" oninput="UI._onUserColorInput()"></label>
+            <label class="user-theme-label"><span>Checklist</span><input type="color" id="ut-list" value="${saved.list}" oninput="UI._onUserColorInput()"></label>
         </div>`;
         panel.innerHTML = buttons + pickers;
     },
@@ -2696,13 +2699,13 @@ const UI = {
     _onUserColorInput() {
         const calm = document.getElementById('ut-calm');
         const urgent = document.getElementById('ut-urgent');
-        const checklist = document.getElementById('ut-checklist');
-        if (calm && urgent) this.updateUserTheme(calm.value, urgent.value, checklist ? checklist.value : '#2196F3');
+        const list = document.getElementById('ut-list');
+        if (calm && urgent) this.updateUserTheme(calm.value, urgent.value, list ? list.value : '#2196F3');
     },
 
-    updateUserTheme(calm, urgent, checklist = '#2196F3') {
-        localStorage.setItem('brainpie-user-theme', JSON.stringify({ calm, urgent, checklist }));
-        Themes.user = generateUserTheme(calm, urgent, checklist);
+    updateUserTheme(calm, urgent, list = '#2196F3') {
+        localStorage.setItem('brainpie-user-theme', JSON.stringify({ calm, urgent, list }));
+        Themes.user = generateUserTheme(calm, urgent, list);
         applyTheme('user');
         if (!DataModel.pieMeta) return;
         DataModel.pieMeta.theme = 'user';

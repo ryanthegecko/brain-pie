@@ -16,8 +16,7 @@
     --sched-color-base:           #4CAF50;
     --sched-color-base-text:      #ffffff;  /* text inside base (far-future) pill */
     --sched-color-default-border: #fff;
-    --sched-color-list:           #2196F3;  /* unscheduled / indicator pill */
-    --sched-color-checklist:      #2196F3;  /* checklist-type spoke pill */
+    --sched-color-list:           #2196F3;  /* indicator / checklist pill */
 }
 
 /* ─ Semantic colour tokens ──────────────────────────────────── */
@@ -1198,7 +1197,7 @@ textarea {
     color: white;
     border-radius: 50%;
     font-size: 16px;
-    line-height: 24px;
+    line-height: 25px;
     text-align: center;
     cursor: pointer;
     margin-left: 10px;
