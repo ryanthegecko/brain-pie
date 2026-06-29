@@ -160,7 +160,8 @@ Object.assign(UI, {
                             const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
                             const timeStr = sched.time ? ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                             const borderStyle = UI.getScheduleBorderStyle(sched.date, sched.time);
-                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${borderStyle}cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Reschedule">${dateStr}${timeStr}</button>`;
+                            const opacity = UI.getSchedulePillOpacityForDate(sched.date, sched.time);
+                            actionBtn = `<button class="small" style="padding:2px 6px;font-size:10px;border-radius:10px;opacity:${opacity};${borderStyle}cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Reschedule">${dateStr}${timeStr}</button>`;
                         } else {
                             actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Schedule">📅</button>`;
                         }
@@ -168,8 +169,10 @@ Object.assign(UI, {
                         const recurrence = typeof spoke === 'object' && spoke.metadata ? spoke.metadata.recurrence : null;
                         if (recurrence) {
                             const recText = UI.formatRecurrenceDescriptionCompact(recurrence);
-                            const recBorder = UI.getScheduleBorderStyle(ChartRenderer.getNextOccurrence(recurrence) || recurrence.startDate, recurrence.time);
-                            actionBtn = `<button class="small" style="background:#4CAF50;padding:2px 6px;font-size:10px;color:#fff;border-radius:10px;${recBorder}cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Edit recurrence">${recText}</button>`;
+                            const recDate = ChartRenderer.getNextOccurrence(recurrence) || recurrence.startDate;
+                            const recBorder = UI.getScheduleBorderStyle(recDate, recurrence.time);
+                            const recOpacity = UI.getSchedulePillOpacityForDate(recDate, recurrence.time);
+                            actionBtn = `<button class="small" style="padding:2px 6px;font-size:10px;border-radius:10px;opacity:${recOpacity};${recBorder}cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Edit recurrence">${recText}</button>`;
                         } else {
                             actionBtn = `<button class="small" style="background:#4285F4;padding:2px 6px;font-size:12px;color:#fff;border-radius:10px;border:none;cursor:pointer;" onclick="event.stopPropagation(); UI.showSpokeEditor('${ref.categoryId}','${ref.itemId}',${ref.spokeIndex})" title="Set recurrence">🔁</button>`;
                         }
