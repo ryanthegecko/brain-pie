@@ -1080,7 +1080,7 @@ const ChartRenderer = {
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
                 let midAngle = (d.startAngle + d.endAngle) / 1.995;
-                const labelRadius = this.innerRadius / 1.7;
+                const labelRadius = this.innerRadius / 1.35;
 
                 // Show labels for items with enough space
                 if ((d.endAngle - d.startAngle) > 0.06) {
