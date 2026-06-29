@@ -659,7 +659,7 @@ const UI = {
         return 'background: var(--sched-color-base); border: 1.5px solid var(--sched-color-default-border); color: var(--sched-color-base-text);';
     },
 
-    getSchedulePillOpacityForDate(dateStr, timeStr) {
+    getSchedulePillOpacityForDate(dateStr, timeStr, isPriority = false) {
         if (!dateStr) return 1;
         const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
         const pillColor = ChartRenderer.isPast(date)     ? 'var(--sched-color-past)'
@@ -667,7 +667,7 @@ const UI = {
                         : ChartRenderer.isTomorrow(date) ? 'var(--sched-color-tomorrow)'
                         : ChartRenderer.isThisWeek(date) ? 'var(--sched-color-week)'
                         :                                   'var(--sched-color-base)';
-        return ChartRenderer.getSchedulePillOpacity(pillColor);
+        return ChartRenderer.getSchedulePillOpacity(pillColor, isPriority);
     },
 
     // Get the relevant date string for a spoke's schedule (single or repeating)
