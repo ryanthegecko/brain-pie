@@ -585,6 +585,9 @@ const ChartRenderer = {
                     } else if (isThisWeekEvent) {
                         rect.style('stroke', 'var(--sched-color-week-border)')
                             .attr('stroke-width', 2);
+                    } else if (pillColor === 'var(--sched-color-list)') {
+                        rect.style('stroke', 'var(--sched-color-list)')
+                            .attr('stroke-width', 2);
                     } else {
                         rect.style('stroke', 'var(--sched-color-default-border)')
                             .attr('stroke-width', 2);
@@ -1651,6 +1654,8 @@ const ChartRenderer = {
                                     rect.style('stroke', 'var(--sched-color-tomorrow-border)').attr('stroke-width', 1.5);
                                 } else if (isThisWeekEvent) {
                                     rect.style('stroke', 'var(--sched-color-week-border)').attr('stroke-width', 1.5);
+                                } else if (pillColor === 'var(--sched-color-list)') {
+                                    rect.style('stroke', 'var(--sched-color-list)').attr('stroke-width', 1.5);
                                 } else {
                                     rect.style('stroke', 'var(--sched-color-default-border)').attr('stroke-width', 1.5);
                                 }
