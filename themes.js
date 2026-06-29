@@ -171,7 +171,6 @@ const Themes = {
         defaultBorder: '#000000',  // black — same as fill; no extra signal on base pills
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
     },
-};
 
     // Dusk: indigo (calm) → purple → pink → orange → crimson (overdue).
     // Border convention: each fill uses the next-more-urgent fill as its ring.
@@ -213,6 +212,7 @@ const Themes = {
         defaultBorder:  '#B71C1C',  // same as fill
         list:           '#2196F3',  // blue — list type
     },
+};
 
 // ── Default theme — used for first paint before persisted meta is loaded ─────
 const ACTIVE_THEME = 'default';
