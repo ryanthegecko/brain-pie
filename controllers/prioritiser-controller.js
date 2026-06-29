@@ -20,6 +20,17 @@ Object.assign(UI, {
         this.renderPriorityList();
         this.initPrioritiserDrag();
         localStorage.setItem('brainPiePrioritiserOpen', 'true');
+        // If the window is off-screen (e.g. saved position from a different viewport),
+        // reset it to the default top-right position.
+        requestAnimationFrame(() => {
+            const rect = win.getBoundingClientRect();
+            if (rect.right < 0 || rect.left > window.innerWidth || rect.bottom < 0 || rect.top > window.innerHeight) {
+                win.style.left = '';
+                win.style.top = '';
+                win.style.right = '20px';
+                localStorage.removeItem('brainPiePrioritiserPos');
+            }
+        });
     },
 
     closePrioritiser() {
@@ -74,6 +85,18 @@ Object.assign(UI, {
         }
         this.openPrioritiser();
         App.render();
+    },
+
+    togglePriority(ref) {
+        const idx = this.getPriorityIndex(ref);
+        if (idx >= 0) {
+            DataModel.removePriority(idx);
+            Storage.showStatus('Removed from priorities');
+            this.renderPriorityList();
+            App.render();
+        } else {
+            this.addToPriorities(ref);
+        }
     },
 
     // Scheduler star support
