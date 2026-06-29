@@ -4321,9 +4321,9 @@ select:focus {
 .schedule-key.show-tooltip .schedule-key-tooltip { display: block; }
 
 .schedule-key-dismiss {
-    background: rgba(240, 82, 82, 0.18);
+    background: #f05252;
     border: none;
-    color: #f05252;
+    color: #fff;
     font-size: 13px;
     line-height: 1;
     cursor: pointer;
@@ -4358,7 +4358,7 @@ select:focus {
 
 /* Gear icon button */
 .schedule-key-theme-btn {
-    background: rgba(33, 150, 243, 0.18);
+    background: #2196F3;
     border: none;
     cursor: pointer;
     padding: 5px 7px;
