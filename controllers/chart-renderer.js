@@ -313,13 +313,13 @@ const ChartRenderer = {
     getSchedulePillOpacity(pillColor, isPriority = false) {
         if (localStorage.getItem('brainpie-pill-fade') === '0') return 1.0;
         let opacity;
-        if      (pillColor === 'var(--sched-color-past)')     opacity = 0.2;
+        if      (pillColor === 'var(--sched-color-past)')     opacity = 1;
         else if (pillColor === 'var(--sched-color-today)')    opacity = 1.0;
         else if (pillColor === 'var(--sched-color-tomorrow)') opacity = 0.85;
         else if (pillColor === 'var(--sched-color-week)')     opacity = 0.75;
-        else if (pillColor === 'var(--sched-color-base)')     opacity = 0.3;
+        else if (pillColor === 'var(--sched-color-base)')     opacity = 0.2;
         else                                                   opacity = 1.0;
-        return isPriority ? Math.max(0.6, opacity) : opacity;
+        return isPriority ? Math.max(0.8, opacity) : opacity;
     },
 
     // Get the icon to render outside the pill (always shown for non-static types)
@@ -583,26 +583,23 @@ const ChartRenderer = {
                         .attr('ry', 10)
                         .style('fill', pillColor);
 
-                    // Borders follow the urgency gradient: each state uses the next-more-urgent colour.
-                    // .style('stroke') is used (not .attr) so CSS custom properties resolve correctly.
-                    if (isPastEvent) {
-                        rect.style('stroke', 'var(--sched-color-past-border)')
-                            .attr('stroke-width', 2);
+                    // Borders: when fade is on, stroke matches fill (opacity carries the signal).
+                    // When fade is off, use the urgency gradient (each state → next-more-urgent border).
+                    const fade = localStorage.getItem('brainpie-pill-fade') !== '0';
+                    if (fade) {
+                        rect.style('stroke', pillColor).attr('stroke-width', 2);
+                    } else if (isPastEvent) {
+                        rect.style('stroke', 'var(--sched-color-past-border)').attr('stroke-width', 2);
                     } else if (isTodayEvent) {
-                        rect.style('stroke', 'var(--sched-color-today-border)')
-                            .attr('stroke-width', 2);
+                        rect.style('stroke', 'var(--sched-color-today-border)').attr('stroke-width', 2);
                     } else if (isTomorrowEvent) {
-                        rect.style('stroke', 'var(--sched-color-tomorrow-border)')
-                            .attr('stroke-width', 2);
+                        rect.style('stroke', 'var(--sched-color-tomorrow-border)').attr('stroke-width', 2);
                     } else if (isThisWeekEvent) {
-                        rect.style('stroke', 'var(--sched-color-week-border)')
-                            .attr('stroke-width', 2);
+                        rect.style('stroke', 'var(--sched-color-week-border)').attr('stroke-width', 2);
                     } else if (pillColor === 'var(--sched-color-list)') {
-                        rect.style('stroke', pillColor)
-                            .attr('stroke-width', 2);
+                        rect.style('stroke', pillColor).attr('stroke-width', 2);
                     } else {
-                        rect.style('stroke', 'var(--sched-color-default-border)')
-                            .attr('stroke-width', 2);
+                        rect.style('stroke', 'var(--sched-color-default-border)').attr('stroke-width', 2);
                     }
                 }
 
@@ -1659,7 +1656,10 @@ const ChartRenderer = {
                                 // captures lexical 'this' which is ChartRenderer — use this directly.
                                 const isPastEvent = scheduledDate && this.isPast(scheduledDate);
                                 const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
-                                if (isPastEvent) {
+                                const fadeTree = localStorage.getItem('brainpie-pill-fade') !== '0';
+                                if (fadeTree) {
+                                    rect.style('stroke', pillColor).attr('stroke-width', 1.5);
+                                } else if (isPastEvent) {
                                     rect.style('stroke', 'var(--sched-color-past-border)').attr('stroke-width', 1.5);
                                 } else if (isTodayEvent) {
                                     rect.style('stroke', 'var(--sched-color-today-border)').attr('stroke-width', 1.5);

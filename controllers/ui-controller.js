@@ -652,11 +652,12 @@ const UI = {
     getScheduleBorderStyle(dateStr, timeStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
+        const fade = localStorage.getItem('brainpie-pill-fade') !== '0';
         if (ChartRenderer.isPast(date))     return 'background: var(--sched-color-past); border: 2px solid var(--sched-color-past); color: var(--sched-color-past-text);';
-        if (ChartRenderer.isToday(date))    return 'background: var(--sched-color-today); border: 2px solid var(--sched-color-today-border); color: var(--sched-color-today-text); font-weight: 600;';
-        if (ChartRenderer.isTomorrow(date)) return 'background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-tomorrow-border); color: var(--sched-color-tomorrow-text); font-weight: 600;';
-        if (ChartRenderer.isThisWeek(date)) return 'background: var(--sched-color-week); border: 2px solid var(--sched-color-week-border); color: var(--sched-color-week-text);';
-        return 'background: var(--sched-color-base); border: 1.5px solid var(--sched-color-default-border); color: var(--sched-color-base-text);';
+        if (ChartRenderer.isToday(date))    return `background: var(--sched-color-today); border: 2px solid var(--sched-color-today${fade ? '' : '-border'}); color: var(--sched-color-today-text); font-weight: 600;`;
+        if (ChartRenderer.isTomorrow(date)) return `background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-tomorrow${fade ? '' : '-border'}); color: var(--sched-color-tomorrow-text); font-weight: 600;`;
+        if (ChartRenderer.isThisWeek(date)) return `background: var(--sched-color-week); border: 2px solid var(--sched-color-week${fade ? '' : '-border'}); color: var(--sched-color-week-text);`;
+        return `background: var(--sched-color-base); border: 1.5px solid var(--sched-color-${fade ? 'base' : 'default-border'}); color: var(--sched-color-base-text);`;
     },
 
     getSchedulePillOpacityForDate(dateStr, timeStr, isPriority = false) {
