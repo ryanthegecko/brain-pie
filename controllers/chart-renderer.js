@@ -587,7 +587,7 @@ const ChartRenderer = {
                             .attr('stroke-width', 2);
                     } else {
                         rect.style('stroke', 'var(--sched-color-default-border)')
-                            .attr('stroke-width', 1.5);
+                            .attr('stroke-width', 2);
                     }
                 }
 
