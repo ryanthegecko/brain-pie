@@ -2717,10 +2717,21 @@ const UI = {
         applyTheme(activeTheme);
     },
 
+    updateKeyFade() {
+        const fade = localStorage.getItem('brainpie-pill-fade') !== '0';
+        const opacities = fade
+            ? { base: 0.3, week: 0.75, tomorrow: 0.85, today: 1.0, past: 0.2 }
+            : { base: 1,   week: 1,    tomorrow: 1,    today: 1,   past: 1   };
+        document.querySelectorAll('.key-pill[data-sched]').forEach(el => {
+            el.style.opacity = opacities[el.dataset.sched] ?? 1;
+        });
+    },
+
     _onFadeToggle() {
         const el = document.getElementById('ut-fade');
         if (!el) return;
         localStorage.setItem('brainpie-pill-fade', el.checked ? '1' : '0');
+        this.updateKeyFade();
         App.render();
     },
 

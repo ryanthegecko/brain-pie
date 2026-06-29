@@ -363,6 +363,7 @@ const App = {
         UI.restorePrioritiserState();
         UI.initScheduleKey();
         UI.initColorScheme();
+        UI.updateKeyFade();
 
         if (typeof TutorialManager !== 'undefined' && TutorialManager.shouldStartTutorial()) {
             setTimeout(() => TutorialManager.start(), 500);
