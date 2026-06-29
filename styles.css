@@ -4453,6 +4453,8 @@ select:focus {
     background: none;
 }
 
+.user-list-picker { border-top-style: dashed; opacity: 0.7; }
+
 [data-theme="light"] .user-theme-pickers { border-top-color: rgba(0, 0, 0, 0.12); }
 [data-theme="light"] .user-theme-label   { color: #666; }
 [data-theme="light"] .user-theme-label input[type="color"] { border-color: rgba(0, 0, 0, 0.2); }

@@ -232,7 +232,7 @@ function _contrastText(hex) {
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#000000' : '#ffffff';
 }
 
-function generateUserTheme(calm, urgent, list) {
+function generateUserTheme(calm, urgent) {
     const [base, week, tomorrow, today, past] = [0, 0.25, 0.5, 0.75, 1].map(t => _lerpHex(calm, urgent, t));
     return {
         past,          pastBorder: past,        pastText: _contrastText(past),
@@ -241,18 +241,18 @@ function generateUserTheme(calm, urgent, list) {
         week,          weekBorder: tomorrow,     weekText: _contrastText(week),
         base,          baseText: _contrastText(base),
         defaultBorder: base,
-        list:          list || '#2196F3',
+        list:          '#2196F3',
     };
 }
 
 // Seed user theme from localStorage on load
 {
-    let calm = '#4CAF50', urgent = '#f05252', list = '#2196F3';
+    let calm = '#4CAF50', urgent = '#f05252';
     try {
         const s = JSON.parse(localStorage.getItem('brainpie-user-theme') || 'null');
-        if (s && s.calm && s.urgent) { calm = s.calm; urgent = s.urgent; list = s.checklist || s.list || '#2196F3'; }
+        if (s && s.calm && s.urgent) { calm = s.calm; urgent = s.urgent; }
     } catch (_) {}
-    Themes.user = generateUserTheme(calm, urgent, list);
+    Themes.user = generateUserTheme(calm, urgent);
 }
 
 // ── Default theme — used for first paint before persisted meta is loaded ─────
@@ -282,6 +282,11 @@ function applyTheme(themeName) {
     root.style.setProperty('--sched-color-base-text',      theme.baseText);
     root.style.setProperty('--sched-color-default-border', theme.defaultBorder);
     root.style.setProperty('--sched-color-list',           theme.list);
+    // User list-colour override — applies across all themes
+    try {
+        const override = localStorage.getItem('brainpie-list-color');
+        if (override) root.style.setProperty('--sched-color-list', override);
+    } catch (_) {}
 }
 
 applyTheme(ACTIVE_THEME);
