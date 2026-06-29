@@ -2678,14 +2678,33 @@ const UI = {
     renderThemePanel() {
         const panel = document.getElementById('theme-panel');
         if (!panel) return;
-        // Fall back to ACTIVE_THEME (from themes.js) if no theme has been persisted yet
         const activeTheme = (DataModel.pieMeta && DataModel.pieMeta.theme) || ACTIVE_THEME;
-        panel.innerHTML = Object.keys(Themes).map(name => {
+        let saved = { calm: '#4CAF50', urgent: '#f05252' };
+        try { const s = JSON.parse(localStorage.getItem('brainpie-user-theme') || 'null'); if (s) saved = s; } catch (_) {}
+        const buttons = Object.keys(Themes).map(name => {
             const isActive = name === activeTheme;
-            // stopPropagation on each button prevents the outside-click handler from
-            // firing immediately after a theme is selected and closing the panel.
             return `<button class="theme-btn${isActive ? ' is-active' : ''}" onclick="UI.setTheme('${name}'); event.stopPropagation();">${name}</button>`;
         }).join('');
+        const pickers = `<div class="user-theme-pickers${activeTheme === 'user' ? ' active' : ''}">
+            <label class="user-theme-label"><span>Calm</span><input type="color" id="ut-calm" value="${saved.calm}" oninput="UI._onUserColorInput()"></label>
+            <label class="user-theme-label"><span>Urgent</span><input type="color" id="ut-urgent" value="${saved.urgent}" oninput="UI._onUserColorInput()"></label>
+        </div>`;
+        panel.innerHTML = buttons + pickers;
+    },
+
+    _onUserColorInput() {
+        const calm = document.getElementById('ut-calm');
+        const urgent = document.getElementById('ut-urgent');
+        if (calm && urgent) this.updateUserTheme(calm.value, urgent.value);
+    },
+
+    updateUserTheme(calm, urgent) {
+        localStorage.setItem('brainpie-user-theme', JSON.stringify({ calm, urgent }));
+        Themes.user = generateUserTheme(calm, urgent);
+        applyTheme('user');
+        if (!DataModel.pieMeta) return;
+        DataModel.pieMeta.theme = 'user';
+        DataModel.saveMeta();
     },
 
     // ==========================================

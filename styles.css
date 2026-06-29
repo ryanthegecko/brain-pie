@@ -4423,6 +4423,40 @@ select:focus {
     color: #fff;
 }
 
+/* ── User theme colour pickers ──────────────────────────────── */
+.user-theme-pickers {
+    display: none;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+.user-theme-pickers.active { display: flex; }
+
+.user-theme-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+    color: #aaa;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.user-theme-label input[type="color"] {
+    width: 48px;
+    height: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px;
+    background: none;
+}
+
+[data-theme="light"] .user-theme-pickers { border-top-color: rgba(0, 0, 0, 0.12); }
+[data-theme="light"] .user-theme-label   { color: #666; }
+[data-theme="light"] .user-theme-label input[type="color"] { border-color: rgba(0, 0, 0, 0.2); }
+
 /* ── Schedule key: light mode overrides ────────────────────── */
 [data-theme="light"] .schedule-key-legend {
     background: rgba(255, 255, 255, 0.92);

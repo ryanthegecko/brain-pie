@@ -33,11 +33,11 @@ const Themes = {
         today:          '#F57C00',  // coral red — was #F57C00 orange; widened contrast vs tomorrow
         todayBorder:    '#f05252',  // deeper red — was #f05252; contrast ring on coral red pill
         todayText:      '#FFFFFF',  // white — readable on coral red
-        tomorrow:       '#FFEB3B',  // warm amber — was #FFEB3B yellow; more distinct from today
+        tomorrow:       '#ffd500',  // warm amber — was #ffd500 yellow; more distinct from today
         tomorrowBorder: '#F57C00',  // today colour as border — urgency gradient
         tomorrowText:   '#000000',  // black — readable on amber
         week:          '#4CAF50',  // green — same as base; no visual change in this theme
-        weekBorder:    '#FFEB3B',  // yellow — original tomorrow colour as border
+        weekBorder:    '#ffd500',  // yellow — original tomorrow colour as border
         weekText:      '#ffffff',  // white — readable on green
         base:          '#4CAF50',  // green
         baseText:      '#ffffff',  // white — readable on green
@@ -61,9 +61,9 @@ const Themes = {
         pastBorder:    '#4CAF50',  // green — same as fill; no alarm on past
         pastText:      '#000000',  // black — readable on green (matches todayText; same fill)
         today:          '#4CAF50',  // green — "it's today, green means go"
-        todayBorder:    '#FFEB3B',  // yellow — warm signal on an otherwise calm green pill
+        todayBorder:    '#ffd500',  // yellow — warm signal on an otherwise calm green pill
         todayText:      '#000000',  // black — readable on green
-        tomorrow:       '#FFEB3B',  // yellow — coming tomorrow; same as default
+        tomorrow:       '#ffd500',  // yellow — coming tomorrow; same as default
         tomorrowBorder: '#4CAF50',  // today colour as border
         tomorrowText:   '#000000',  // black — readable contrast on yellow
         week:          '#F57C00',  // orange — this week; approaching
@@ -79,11 +79,11 @@ const Themes = {
         past:          '#4CAF50',  // green — it happened / it's here; relax
         pastBorder:    '#4CAF50',  // green — same as fill; no alarm on past
         pastText:      '#FFFFFF',  // white — readable on green
-        today:          '#FFEB3B',  // yellow — it's today; calmer than approaching urgency
+        today:          '#ffd500',  // yellow — it's today; calmer than approaching urgency
         todayBorder:    '#4CAF50',  // green — past colour as border; today shares the calm signal
         todayText:      '#000000',  // black — readable on yellow
         tomorrow:       '#F57C00',  // orange — coming tomorrow; urgency building
-        tomorrowBorder: '#FFEB3B',  // today colour as border
+        tomorrowBorder: '#ffd500',  // today colour as border
         tomorrowText:   '#ffffff',  // white — readable on orange
         week:          '#f05252',  // red — this week; approaching maximum urgency
         weekBorder:    '#F57C00',  // orange — tomorrow colour as border
@@ -213,6 +213,47 @@ const Themes = {
         list:           '#2196F3',  // blue — list type
     },
 };
+
+// ── User theme generator ──────────────────────────────────────────────────────
+
+function _lerpHex(a, b, t) {
+    const h = c => parseInt(c, 16);
+    return '#' + ['1,3', '3,5', '5,7'].map(s => {
+        const [i, j] = s.split(',').map(Number);
+        return Math.round(h(a.slice(i, j)) + (h(b.slice(i, j)) - h(a.slice(i, j))) * t)
+            .toString(16).padStart(2, '0');
+    }).join('');
+}
+
+function _contrastText(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#000000' : '#ffffff';
+}
+
+function generateUserTheme(calm, urgent) {
+    const [base, week, tomorrow, today, past] = [0, 0.25, 0.5, 0.75, 1].map(t => _lerpHex(calm, urgent, t));
+    return {
+        past,          pastBorder: past,        pastText: _contrastText(past),
+        today,         todayBorder: past,        todayText: _contrastText(today),
+        tomorrow,      tomorrowBorder: today,    tomorrowText: _contrastText(tomorrow),
+        week,          weekBorder: tomorrow,     weekText: _contrastText(week),
+        base,          baseText: _contrastText(base),
+        defaultBorder: base,
+        list:          '#2196F3',
+    };
+}
+
+// Seed user theme from localStorage on load
+{
+    let calm = '#4CAF50', urgent = '#f05252';
+    try {
+        const s = JSON.parse(localStorage.getItem('brainpie-user-theme') || 'null');
+        if (s && s.calm && s.urgent) { calm = s.calm; urgent = s.urgent; }
+    } catch (_) {}
+    Themes.user = generateUserTheme(calm, urgent);
+}
 
 // ── Default theme — used for first paint before persisted meta is loaded ─────
 const ACTIVE_THEME = 'default';
