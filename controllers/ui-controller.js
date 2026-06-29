@@ -2698,6 +2698,7 @@ const UI = {
         <div class="user-theme-pickers active user-list-picker">
             <label class="user-theme-label"><input type="color" id="ut-list" value="${listColor}" oninput="UI._onListColorInput()"><span>Checklist</span></label>
             <button class="user-list-reset warn" onclick="UI._resetListColor(); event.stopPropagation();" title="Reset to default">↺</button>
+            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-fade" ${localStorage.getItem('brainpie-pill-fade') !== '0' ? 'checked' : ''} onchange="UI._onFadeToggle()"><span>Fade</span></label>
         </div>`;
         panel.innerHTML = buttons + pickers;
     },
@@ -2714,6 +2715,13 @@ const UI = {
         if (el) el.value = '#2196F3';
         const activeTheme = (DataModel.pieMeta && DataModel.pieMeta.theme) || ACTIVE_THEME;
         applyTheme(activeTheme);
+    },
+
+    _onFadeToggle() {
+        const el = document.getElementById('ut-fade');
+        if (!el) return;
+        localStorage.setItem('brainpie-pill-fade', el.checked ? '1' : '0');
+        App.render();
     },
 
     _onListColorInput() {

@@ -4427,7 +4427,7 @@ select:focus {
 .user-theme-pickers {
     display: none;
     flex-direction: row;
-    gap: 10px;
+    gap: 5px;
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.15);
@@ -4454,9 +4454,11 @@ select:focus {
     background: none;
 }
 
-.user-list-picker { border-top-style: dashed; opacity: 0.7; align-items: center; }
-.user-list-reset { background: none; border: none; color: inherit; font-size: 14px; cursor: pointer; opacity: 0.5; padding: 0 2px; line-height: 1; }
+.user-list-picker { opacity: 0.7; align-items: center; }
+.user-list-reset { background: none; border: none; color: inherit; font-size: 17px; cursor: pointer; opacity: 0.5; padding: 1px 4px; line-height: 1; }
 .user-list-reset:hover { opacity: 1; }
+.fade-toggle { flex-direction: row; align-items: center; gap: 5px; margin-left: 6px; cursor: pointer; }
+.fade-toggle input[type="checkbox"] { width: 13px; height: 13px; cursor: pointer; accent-color: var(--color-accent, #2196F3); }
 
 [data-theme="light"] .user-theme-pickers { border-top-color: rgba(0, 0, 0, 0.12); }
 [data-theme="light"] .user-theme-label   { color: #666; }

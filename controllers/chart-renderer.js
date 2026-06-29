@@ -311,10 +311,11 @@ const ChartRenderer = {
     },
 
     getSchedulePillOpacity(pillColor) {
+        if (localStorage.getItem('brainpie-pill-fade') === '0') return 1.0;
         if (pillColor === 'var(--sched-color-past)')     return 0.2;
         if (pillColor === 'var(--sched-color-today)')    return 1.0;
-        if (pillColor === 'var(--sched-color-tomorrow)') return 0.75;
-        if (pillColor === 'var(--sched-color-week)')     return 0.5;
+        if (pillColor === 'var(--sched-color-tomorrow)') return 0.85;
+        if (pillColor === 'var(--sched-color-week)')     return 0.75;
         if (pillColor === 'var(--sched-color-base)')     return 0.3;
         return 1.0;
     },
