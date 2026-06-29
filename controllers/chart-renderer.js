@@ -310,14 +310,16 @@ const ChartRenderer = {
         return null;
     },
 
-    getSchedulePillOpacity(pillColor) {
+    getSchedulePillOpacity(pillColor, isPriority = false) {
         if (localStorage.getItem('brainpie-pill-fade') === '0') return 1.0;
-        if (pillColor === 'var(--sched-color-past)')     return 0.2;
-        if (pillColor === 'var(--sched-color-today)')    return 1.0;
-        if (pillColor === 'var(--sched-color-tomorrow)') return 0.85;
-        if (pillColor === 'var(--sched-color-week)')     return 0.75;
-        if (pillColor === 'var(--sched-color-base)')     return 0.3;
-        return 1.0;
+        let opacity;
+        if      (pillColor === 'var(--sched-color-past)')     opacity = 0.2;
+        else if (pillColor === 'var(--sched-color-today)')    opacity = 1.0;
+        else if (pillColor === 'var(--sched-color-tomorrow)') opacity = 0.85;
+        else if (pillColor === 'var(--sched-color-week)')     opacity = 0.75;
+        else if (pillColor === 'var(--sched-color-base)')     opacity = 0.3;
+        else                                                   opacity = 1.0;
+        return isPriority ? Math.max(0.6, opacity) : opacity;
     },
 
     // Get the icon to render outside the pill (always shown for non-static types)
@@ -499,7 +501,7 @@ const ChartRenderer = {
     },
 
     // Add schedule icon and pill after spoke name text element
-    addSchedulePill(group, nameTextElement, spoke, isRightSide, fontSize = 13) {
+    addSchedulePill(group, nameTextElement, spoke, isRightSide, fontSize = 13, isPriority = false) {
         const icon = this.getScheduleIcon(spoke);
         const pillText = this.getSchedulePillText(spoke);
         if (!icon && !pillText) return;
@@ -522,7 +524,7 @@ const ChartRenderer = {
                 const padding = { x: 6, y: 3 };
                 const gap = icon ? 6 : 8;  // tighter gap when icon follows text
 
-                const pillGroup = group.append('g').attr('class', 'schedule-pill').attr('opacity', this.getSchedulePillOpacity(pillColor));
+                const pillGroup = group.append('g').attr('class', 'schedule-pill').attr('opacity', this.getSchedulePillOpacity(pillColor, isPriority));
                 let cursorX;
 
                 if (isRightSide) {
@@ -1232,7 +1234,7 @@ const ChartRenderer = {
                     }
 
                     // Add green pill for scheduled spokes (just the date/time portion)
-                    ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, isExpanded ? 16 : 13);
+                    ChartRenderer.addSchedulePill(labelGroup, spokeLabel, subItem, isRightSide, isExpanded ? 16 : 13, isPriority);
 
                 });
             });
@@ -1634,7 +1636,7 @@ const ChartRenderer = {
                                                          : isTodayEvent     ? 'var(--sched-color-today-text)'
                                                          : isThisWeekEvent  ? 'var(--sched-color-week-text)'
                                                          : '#ffffff';
-                                const pillGroup = spokeGroup.append('g').attr('opacity', this.getSchedulePillOpacity(pillColor));
+                                const pillGroup = spokeGroup.append('g').attr('opacity', this.getSchedulePillOpacity(pillColor, isTreePriority));
                                 const pillTextEl = pillGroup.append('text')
                                     .attr('x', pillX + pillPadX)
                                     .attr('y', lastLineY)
