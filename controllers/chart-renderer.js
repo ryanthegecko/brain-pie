@@ -310,11 +310,6 @@ const ChartRenderer = {
         return null;
     },
 
-    getSpokeOpacity(isPriority) {
-        if (localStorage.getItem('brainpie-star-dim') !== '1') return 1.0;
-        return isPriority ? 1.0 : 0.35;
-    },
-
     getSchedulePillOpacity(pillColor) {
         if (localStorage.getItem('brainpie-pill-fade') === '0') return 1.0;
         if (pillColor === 'var(--sched-color-past)')     return 0.2;
@@ -1204,7 +1199,6 @@ const ChartRenderer = {
                     const labelGroup = group.append('g')
                         .attr('class', 'spoke-label-group')
                         .attr('transform', `translate(${labelX}, ${labelY}) rotate(${textRotation})`)
-                        .attr('opacity', this.getSpokeOpacity(isPriority))
                         .style('cursor', 'pointer')
                         .on('click', function(event) {
                             ChartRenderer.handleSpokeClick(
@@ -1556,7 +1550,6 @@ const ChartRenderer = {
                     // Clickable spoke group
                     const spokeGroup = sliceGroup.append('g')
                         .attr('class', 'treemap-spoke-group')
-                        .attr('opacity', this.getSpokeOpacity(isTreePriority))
                         .style('cursor', 'pointer')
                         .on('click', (event) => {
                             event.stopPropagation();

@@ -2691,20 +2691,15 @@ const UI = {
             const isActive = name === activeTheme;
             return `<button class="theme-btn${isActive ? ' is-active' : ''}" onclick="UI.setTheme('${name}'); event.stopPropagation();">${name}</button>`;
         }).join('');
-        const pickers = `
-        <div class="display-toggles">
-            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-fade" ${localStorage.getItem('brainpie-pill-fade') !== '0' ? 'checked' : ''} onchange="UI._onFadeToggle()"><span>Fade</span></label>
-            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-star-dim" ${localStorage.getItem('brainpie-star-dim') === '1' ? 'checked' : ''} onchange="UI._onStarDimToggle()"><span>Stars</span></label>
-        </div>
-        <div class="user-theme-pickers${activeTheme === 'user' ? ' active' : ''}">
+        const pickers = `<div class="user-theme-pickers${activeTheme === 'user' ? ' active' : ''}">
             <label class="user-theme-label"><span>Calm</span><input type="color" id="ut-calm" value="${saved.calm}" oninput="UI._onUserColorInput()"></label>
             <label class="user-theme-label"><span>Urgent</span><input type="color" id="ut-urgent" value="${saved.urgent}" oninput="UI._onUserColorInput()"></label>
         </div>
         <div class="user-theme-pickers active user-list-picker">
             <label class="user-theme-label"><input type="color" id="ut-list" value="${listColor}" oninput="UI._onListColorInput()"><span>Checklist</span></label>
             <button class="user-list-reset warn" onclick="UI._resetListColor(); event.stopPropagation();" title="Reset to default">↺</button>
-        </div>
-        `;
+            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-fade" ${localStorage.getItem('brainpie-pill-fade') !== '0' ? 'checked' : ''} onchange="UI._onFadeToggle()"><span>Fade</span></label>
+        </div>`;
         panel.innerHTML = buttons + pickers;
     },
 
@@ -2726,13 +2721,6 @@ const UI = {
         const el = document.getElementById('ut-fade');
         if (!el) return;
         localStorage.setItem('brainpie-pill-fade', el.checked ? '1' : '0');
-        App.render();
-    },
-
-    _onStarDimToggle() {
-        const el = document.getElementById('ut-star-dim');
-        if (!el) return;
-        localStorage.setItem('brainpie-star-dim', el.checked ? '1' : '0');
         App.render();
     },
 
