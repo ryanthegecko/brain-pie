@@ -1079,7 +1079,8 @@ const ChartRenderer = {
             // Item labels - RADIAL TEXT along the wedge angle
             itemSlices.each((d, i, nodes) => {
                 const group = d3.select(nodes[i]);
-                let midAngle = (d.startAngle + d.endAngle) / 1.995;
+                const t = 0.3; // 0 = start edge, 1 = end edge, 0.5 = centre
+                let midAngle = d.startAngle + t * (d.endAngle - d.startAngle);
                 const labelRadius = this.innerRadius / 1.35;
 
                 // Show labels for items with enough space
