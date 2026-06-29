@@ -656,7 +656,7 @@ const UI = {
         if (ChartRenderer.isToday(date))    return 'background: var(--sched-color-today); border: 2px solid var(--sched-color-today-border); color: var(--sched-color-today-text); font-weight: 600;';
         if (ChartRenderer.isTomorrow(date)) return 'background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-tomorrow-border); color: var(--sched-color-tomorrow-text); font-weight: 600;';
         if (ChartRenderer.isThisWeek(date)) return 'background: var(--sched-color-week); border: 2px solid var(--sched-color-week-border); color: var(--sched-color-week-text);';
-        return 'border: 1.5px solid var(--sched-color-default-border);';
+        return 'background: var(--sched-color-base); border: 1.5px solid var(--sched-color-default-border); color: var(--sched-color-base-text);';
     },
 
     // Get the relevant date string for a spoke's schedule (single or repeating)
@@ -2720,7 +2720,7 @@ const UI = {
     updateKeyFade() {
         const fade = localStorage.getItem('brainpie-pill-fade') !== '0';
         const opacities = fade
-            ? { base: 0.3, week: 0.75, tomorrow: 0.85, today: 1.0, past: 0.2 }
+            ? { base: 0.2, week: 0.75, tomorrow: 0.85, today: 1.0, past: 1 }
             : { base: 1,   week: 1,    tomorrow: 1,    today: 1,   past: 1   };
         document.querySelectorAll('.key-pill[data-sched]').forEach(el => {
             el.style.opacity = opacities[el.dataset.sched] ?? 1;
