@@ -310,6 +310,15 @@ const ChartRenderer = {
         return null;
     },
 
+    getSchedulePillOpacity(pillColor) {
+        if (pillColor === 'var(--sched-color-past)')     return 0.2;
+        if (pillColor === 'var(--sched-color-today)')    return 1.0;
+        if (pillColor === 'var(--sched-color-tomorrow)') return 0.75;
+        if (pillColor === 'var(--sched-color-week)')     return 0.5;
+        if (pillColor === 'var(--sched-color-base)')     return 0.3;
+        return 1.0;
+    },
+
     // Get the icon to render outside the pill (always shown for non-static types)
     getScheduleIcon(spoke) {
         if (typeof spoke === 'string') return null;
@@ -512,7 +521,7 @@ const ChartRenderer = {
                 const padding = { x: 6, y: 3 };
                 const gap = icon ? 6 : 8;  // tighter gap when icon follows text
 
-                const pillGroup = group.append('g').attr('class', 'schedule-pill');
+                const pillGroup = group.append('g').attr('class', 'schedule-pill').attr('opacity', this.getSchedulePillOpacity(pillColor));
                 let cursorX;
 
                 if (isRightSide) {
@@ -1624,7 +1633,8 @@ const ChartRenderer = {
                                                          : isTodayEvent     ? 'var(--sched-color-today-text)'
                                                          : isThisWeekEvent  ? 'var(--sched-color-week-text)'
                                                          : '#ffffff';
-                                const pillTextEl = spokeGroup.append('text')
+                                const pillGroup = spokeGroup.append('g').attr('opacity', this.getSchedulePillOpacity(pillColor));
+                                const pillTextEl = pillGroup.append('text')
                                     .attr('x', pillX + pillPadX)
                                     .attr('y', lastLineY)
                                     .attr('font-size', '8px')
@@ -1634,7 +1644,7 @@ const ChartRenderer = {
 
                                 const pillBbox = pillTextEl.node().getBBox();
                                 // Use .style() so CSS custom properties resolve on SVG elements.
-                                const rect = spokeGroup.insert('rect', 'text:last-of-type')
+                                const rect = pillGroup.insert('rect', 'text:last-of-type')
                                     .attr('x', pillBbox.x - pillPadX)
                                     .attr('y', pillBbox.y - pillPadY)
                                     .attr('width', Math.min(pillBbox.width + pillPadX * 2, sliceW - pillX - 4))
