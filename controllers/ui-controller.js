@@ -2707,11 +2707,13 @@ const UI = {
             <label class="user-theme-label"><span>Calm</span><input type="color" id="ut-calm" value="${saved.calm}" oninput="UI._onUserColorInput()"></label>
             <label class="user-theme-label"><span>Urgent</span><input type="color" id="ut-urgent" value="${saved.urgent}" oninput="UI._onUserColorInput()"></label>
         </div>
+        <div class="user-theme-pickers active">
+            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-fade" ${localStorage.getItem('brainpie-pill-fade') !== '0' ? 'checked' : ''} onchange="UI._onFadeToggle()"><span>Fade</span></label>
+            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-borders" ${localStorage.getItem('brainpie-pill-borders') !== '0' ? 'checked' : ''} onchange="UI._onBordersToggle()"><span>Borders</span></label>
+        </div>
         <div class="user-theme-pickers active user-list-picker">
             <label class="user-theme-label"><input type="color" id="ut-list" value="${listColor}" oninput="UI._onListColorInput()"><span>Checklist</span></label>
             <button class="user-list-reset warn" onclick="UI._resetListColor(); event.stopPropagation();" title="Reset to default">↺</button>
-            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-fade" ${localStorage.getItem('brainpie-pill-fade') !== '0' ? 'checked' : ''} onchange="UI._onFadeToggle()"><span>Fade</span></label>
-            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-borders" ${localStorage.getItem('brainpie-pill-borders') !== '0' ? 'checked' : ''} onchange="UI._onBordersToggle()"><span>Borders</span></label>
         </div>`;
         panel.innerHTML = buttons + pickers;
     },
