@@ -2684,8 +2684,9 @@ const UI = {
             const s = JSON.parse(localStorage.getItem('brainpie-user-theme') || 'null');
             if (s) saved = { ...saved, ...s };
         } catch (_) {}
-        let listColor = '#2196F3';
-        try { listColor = localStorage.getItem('brainpie-list-color') || '#2196F3'; } catch (_) {}
+        const themeDefault = (Themes[activeTheme] || Themes.default).list || '#2196F3';
+        let listColor = themeDefault;
+        try { listColor = localStorage.getItem('brainpie-list-color') || themeDefault; } catch (_) {}
         const buttons = Object.keys(Themes).map(name => {
             const isActive = name === activeTheme;
             return `<button class="theme-btn${isActive ? ' is-active' : ''}" onclick="UI.setTheme('${name}'); event.stopPropagation();">${name}</button>`;
@@ -2696,7 +2697,7 @@ const UI = {
         </div>
         <div class="user-theme-pickers active user-list-picker">
             <label class="user-theme-label"><input type="color" id="ut-list" value="${listColor}" oninput="UI._onListColorInput()"><span>Checklist</span></label>
-            <button class="user-list-reset" onclick="UI._resetListColor(); event.stopPropagation();" title="Reset to default">↺</button>
+            <button class="user-list-reset warn" onclick="UI._resetListColor(); event.stopPropagation();" title="Reset to default">↺</button>
         </div>`;
         panel.innerHTML = buttons + pickers;
     },
