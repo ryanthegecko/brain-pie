@@ -173,6 +173,47 @@ const Themes = {
     },
 };
 
+    // Dusk: indigo (calm) → purple → pink → orange → crimson (overdue).
+    // Border convention: each fill uses the next-more-urgent fill as its ring.
+    dusk: {
+        past:           '#B71C1C',  // deep crimson — overdue
+        pastBorder:     '#B71C1C',  // same as fill
+        pastText:       '#FFFFFF',  // white
+        today:           '#E65100',  // burnt orange — pressing
+        todayBorder:     '#B71C1C',  // past colour as border
+        todayText:       '#FFFFFF',  // white
+        tomorrow:        '#D81B60',  // deep pink — approaching
+        tomorrowBorder:  '#E65100',  // today colour as border
+        tomorrowText:    '#FFFFFF',  // white
+        week:           '#7B1FA2',  // purple — this week; cooling
+        weekBorder:     '#D81B60',  // tomorrow colour as border
+        weekText:       '#FFFFFF',  // white
+        base:           '#5C6BC0',  // indigo — far future, calm
+        baseText:       '#FFFFFF',  // white
+        defaultBorder:  '#5C6BC0',  // same as fill
+        list:           '#2196F3',  // blue — list type
+    },
+
+    // Dusk inverse: crimson (needs planning) → orange → pink → purple → indigo (done).
+    'dusk-inverse': {
+        past:           '#5C6BC0',  // indigo — done, at rest
+        pastBorder:     '#5C6BC0',  // same as fill
+        pastText:       '#FFFFFF',  // white
+        today:           '#7B1FA2',  // purple — today; calming down
+        todayBorder:     '#5C6BC0',  // past colour as border
+        todayText:       '#FFFFFF',  // white
+        tomorrow:        '#D81B60',  // deep pink — urgency building
+        tomorrowBorder:  '#7B1FA2',  // today colour as border
+        tomorrowText:    '#FFFFFF',  // white
+        week:           '#E65100',  // burnt orange — this week; serious
+        weekBorder:     '#D81B60',  // tomorrow colour as border
+        weekText:       '#FFFFFF',  // white
+        base:           '#B71C1C',  // deep crimson — far future; needs attention
+        baseText:       '#FFFFFF',  // white
+        defaultBorder:  '#B71C1C',  // same as fill
+        list:           '#2196F3',  // blue — list type
+    },
+
 // ── Default theme — used for first paint before persisted meta is loaded ─────
 const ACTIVE_THEME = 'default';
 // ─────────────────────────────────────────────────────────────────────────────
