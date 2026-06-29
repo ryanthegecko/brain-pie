@@ -583,10 +583,9 @@ const ChartRenderer = {
                         .attr('ry', 10)
                         .style('fill', pillColor);
 
-                    // Borders: when fade is on, stroke matches fill (opacity carries the signal).
-                    // When fade is off, use the urgency gradient (each state → next-more-urgent border).
-                    const fade = localStorage.getItem('brainpie-pill-fade') !== '0';
-                    if (fade) {
+                    // Borders: when borders off, stroke matches fill. When on, use urgency gradient.
+                    const showBorders = localStorage.getItem('brainpie-pill-borders') !== '0';
+                    if (!showBorders) {
                         rect.style('stroke', pillColor).attr('stroke-width', 2);
                     } else if (isPastEvent) {
                         rect.style('stroke', 'var(--sched-color-past-border)').attr('stroke-width', 2);
@@ -1656,8 +1655,8 @@ const ChartRenderer = {
                                 // captures lexical 'this' which is ChartRenderer — use this directly.
                                 const isPastEvent = scheduledDate && this.isPast(scheduledDate);
                                 const isThisWeekEvent = scheduledDate && this.isThisWeek(scheduledDate);
-                                const fadeTree = localStorage.getItem('brainpie-pill-fade') !== '0';
-                                if (fadeTree) {
+                                const showBordersTree = localStorage.getItem('brainpie-pill-borders') !== '0';
+                                if (!showBordersTree) {
                                     rect.style('stroke', pillColor).attr('stroke-width', 1.5);
                                 } else if (isPastEvent) {
                                     rect.style('stroke', 'var(--sched-color-past-border)').attr('stroke-width', 1.5);

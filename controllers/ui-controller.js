@@ -652,12 +652,12 @@ const UI = {
     getScheduleBorderStyle(dateStr, timeStr) {
         if (!dateStr) return '';
         const date = new Date(dateStr + 'T' + (timeStr || '00:00'));
-        const fade = localStorage.getItem('brainpie-pill-fade') !== '0';
+        const b = localStorage.getItem('brainpie-pill-borders') !== '0';
         if (ChartRenderer.isPast(date))     return 'background: var(--sched-color-past); border: 2px solid var(--sched-color-past); color: var(--sched-color-past-text);';
-        if (ChartRenderer.isToday(date))    return `background: var(--sched-color-today); border: 2px solid var(--sched-color-today${fade ? '' : '-border'}); color: var(--sched-color-today-text); font-weight: 600;`;
-        if (ChartRenderer.isTomorrow(date)) return `background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-tomorrow${fade ? '' : '-border'}); color: var(--sched-color-tomorrow-text); font-weight: 600;`;
-        if (ChartRenderer.isThisWeek(date)) return `background: var(--sched-color-week); border: 2px solid var(--sched-color-week${fade ? '' : '-border'}); color: var(--sched-color-week-text);`;
-        return `background: var(--sched-color-base); border: 1.5px solid var(--sched-color-${fade ? 'base' : 'default-border'}); color: var(--sched-color-base-text);`;
+        if (ChartRenderer.isToday(date))    return `background: var(--sched-color-today); border: 2px solid var(--sched-color-today${b ? '-border' : ''}); color: var(--sched-color-today-text); font-weight: 600;`;
+        if (ChartRenderer.isTomorrow(date)) return `background: var(--sched-color-tomorrow); border: 2px solid var(--sched-color-tomorrow${b ? '-border' : ''}); color: var(--sched-color-tomorrow-text); font-weight: 600;`;
+        if (ChartRenderer.isThisWeek(date)) return `background: var(--sched-color-week); border: 2px solid var(--sched-color-week${b ? '-border' : ''}); color: var(--sched-color-week-text);`;
+        return `background: var(--sched-color-base); border: 1.5px solid var(--sched-color-${b ? 'default-border' : 'base'}); color: var(--sched-color-base-text);`;
     },
 
     getSchedulePillOpacityForDate(dateStr, timeStr, isPriority = false) {
@@ -2711,6 +2711,7 @@ const UI = {
             <label class="user-theme-label"><input type="color" id="ut-list" value="${listColor}" oninput="UI._onListColorInput()"><span>Checklist</span></label>
             <button class="user-list-reset warn" onclick="UI._resetListColor(); event.stopPropagation();" title="Reset to default">↺</button>
             <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-fade" ${localStorage.getItem('brainpie-pill-fade') !== '0' ? 'checked' : ''} onchange="UI._onFadeToggle()"><span>Fade</span></label>
+            <label class="user-theme-label fade-toggle" onclick="event.stopPropagation()"><input type="checkbox" id="ut-borders" ${localStorage.getItem('brainpie-pill-borders') !== '0' ? 'checked' : ''} onchange="UI._onBordersToggle()"><span>Borders</span></label>
         </div>`;
         panel.innerHTML = buttons + pickers;
     },
@@ -2731,12 +2732,13 @@ const UI = {
 
     updateKeyFade() {
         const fade = localStorage.getItem('brainpie-pill-fade') !== '0';
+        const showBorders = localStorage.getItem('brainpie-pill-borders') !== '0';
         const opacities = fade
             ? { base: 0.2, week: 0.75, tomorrow: 0.85, today: 1.0, past: 1 }
-            : { base: 1,   week: 1,    tomorrow: 1,    today: 1,   past: 1   };
-        const borders = fade
-            ? { base: 'var(--sched-color-base)',     week: 'var(--sched-color-week)',     tomorrow: 'var(--sched-color-tomorrow)',     today: 'var(--sched-color-today)',     past: 'var(--sched-color-past)' }
-            : { base: 'var(--sched-color-default-border)', week: 'var(--sched-color-week-border)', tomorrow: 'var(--sched-color-tomorrow-border)', today: 'var(--sched-color-today-border)', past: 'var(--sched-color-past-border)' };
+            : { base: 1,   week: 1,    tomorrow: 1,    today: 1,   past: 1  };
+        const gradientBorders = { base: 'var(--sched-color-default-border)', week: 'var(--sched-color-week-border)', tomorrow: 'var(--sched-color-tomorrow-border)', today: 'var(--sched-color-today-border)', past: 'var(--sched-color-past-border)' };
+        const fillBorders    = { base: 'var(--sched-color-base)',            week: 'var(--sched-color-week)',         tomorrow: 'var(--sched-color-tomorrow)',         today: 'var(--sched-color-today)',         past: 'var(--sched-color-past)'         };
+        const borders = showBorders ? gradientBorders : fillBorders;
         document.querySelectorAll('.key-pill[data-sched]').forEach(el => {
             const state = el.dataset.sched;
             el.style.opacity = opacities[state] ?? 1;
@@ -2748,6 +2750,14 @@ const UI = {
         const el = document.getElementById('ut-fade');
         if (!el) return;
         localStorage.setItem('brainpie-pill-fade', el.checked ? '1' : '0');
+        this.updateKeyFade();
+        App.render();
+    },
+
+    _onBordersToggle() {
+        const el = document.getElementById('ut-borders');
+        if (!el) return;
+        localStorage.setItem('brainpie-pill-borders', el.checked ? '1' : '0');
         this.updateKeyFade();
         App.render();
     },
