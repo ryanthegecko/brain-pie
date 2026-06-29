@@ -2695,7 +2695,8 @@ const UI = {
             <label class="user-theme-label"><span>Urgent</span><input type="color" id="ut-urgent" value="${saved.urgent}" oninput="UI._onUserColorInput()"></label>
         </div>
         <div class="user-theme-pickers active user-list-picker">
-            <label class="user-theme-label"><span>Checklist</span><input type="color" id="ut-list" value="${listColor}" oninput="UI._onListColorInput()"></label>
+            <label class="user-theme-label"><input type="color" id="ut-list" value="${listColor}" oninput="UI._onListColorInput()"><span>Checklist</span></label>
+            <button class="user-list-reset" onclick="UI._resetListColor(); event.stopPropagation();" title="Reset to default">↺</button>
         </div>`;
         panel.innerHTML = buttons + pickers;
     },
@@ -2704,6 +2705,14 @@ const UI = {
         const calm = document.getElementById('ut-calm');
         const urgent = document.getElementById('ut-urgent');
         if (calm && urgent) this.updateUserTheme(calm.value, urgent.value);
+    },
+
+    _resetListColor() {
+        localStorage.removeItem('brainpie-list-color');
+        const el = document.getElementById('ut-list');
+        if (el) el.value = '#2196F3';
+        const activeTheme = (DataModel.pieMeta && DataModel.pieMeta.theme) || ACTIVE_THEME;
+        applyTheme(activeTheme);
     },
 
     _onListColorInput() {
