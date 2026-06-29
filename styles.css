@@ -4321,17 +4321,22 @@ select:focus {
 .schedule-key.show-tooltip .schedule-key-tooltip { display: block; }
 
 .schedule-key-dismiss {
-    background: none;
+    background: rgba(240, 82, 82, 0.18);
     border: none;
-    color: #aaa;
+    color: #f05252;
     font-size: 13px;
     line-height: 1;
     cursor: pointer;
     padding: 5px 7px;
     margin: -5px -7px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
 }
 
-.schedule-key-dismiss:hover { color: #fff; }
+.schedule-key-dismiss:hover {
+    background: rgba(240, 82, 82, 0.38);
+    color: #fff;
+}
 
 /* ── Theme picker ──────────────────────────────────────────── */
 
@@ -4353,17 +4358,21 @@ select:focus {
 
 /* Gear icon button */
 .schedule-key-theme-btn {
-    background: none;
+    background: rgba(33, 150, 243, 0.18);
     border: none;
     cursor: pointer;
     padding: 5px 7px;
     margin: -5px -7px;
     display: flex;
     align-items: center;
-    opacity: 0.6;
+    border-radius: 4px;
+    opacity: 1;
+    transition: background 0.15s;
 }
 
-.schedule-key-theme-btn:hover { opacity: 1; }
+.schedule-key-theme-btn:hover {
+    background: rgba(33, 150, 243, 0.38);
+}
 
 /* Theme panel — hidden by default, shown via .theme-panel-open on #schedule-key.
    Positioned to the right of the legend using the fixed #schedule-key as
