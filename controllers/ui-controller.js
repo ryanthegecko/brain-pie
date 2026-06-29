@@ -2734,8 +2734,13 @@ const UI = {
         const opacities = fade
             ? { base: 0.2, week: 0.75, tomorrow: 0.85, today: 1.0, past: 1 }
             : { base: 1,   week: 1,    tomorrow: 1,    today: 1,   past: 1   };
+        const borders = fade
+            ? { base: 'var(--sched-color-base)',     week: 'var(--sched-color-week)',     tomorrow: 'var(--sched-color-tomorrow)',     today: 'var(--sched-color-today)',     past: 'var(--sched-color-past)' }
+            : { base: 'var(--sched-color-default-border)', week: 'var(--sched-color-week-border)', tomorrow: 'var(--sched-color-tomorrow-border)', today: 'var(--sched-color-today-border)', past: 'var(--sched-color-past-border)' };
         document.querySelectorAll('.key-pill[data-sched]').forEach(el => {
-            el.style.opacity = opacities[el.dataset.sched] ?? 1;
+            const state = el.dataset.sched;
+            el.style.opacity = opacities[state] ?? 1;
+            el.style.outline = `2px solid ${borders[state] ?? 'var(--sched-color-default-border)'}`;
         });
     },
 
