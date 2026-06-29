@@ -42,7 +42,8 @@ const Themes = {
         base:          '#4CAF50',  // green
         baseText:      '#ffffff',  // white — readable on green
         defaultBorder: '#4CAF50',
-        list:          '#2196F3',  // blue — list type / unscheduled spoke
+        list:          '#2196F3',  // blue — unscheduled / indicator pill
+        checklist:     '#2196F3',  // blue — checklist-type spoke pill
     },
 
     // Inverse urgency palette: red = scheduled / coming (attention), green = here / done (relax).
@@ -72,7 +73,8 @@ const Themes = {
         base:          '#f05252',  // red — far-future scheduled; attention required
         baseText:      '#ffffff',  // white — readable on red
         defaultBorder: '#aaa',     // neutral ring on far-future base pills
-        list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
+        list:          '#2196F3',  // blue — unscheduled / indicator pill
+        checklist:     '#2196F3',  // blue — checklist-type spoke pill (unchanged)
     }, */
 
     inverse: {
@@ -91,7 +93,8 @@ const Themes = {
         base:          '#f05252',  // red — far-future scheduled; attention required
         baseText:      '#ffffff',  // white — readable on red
         defaultBorder: '#f05252',  // red — same as fill; base pills have no extra signal
-        list:          '#2196F3',  // blue — list type / unscheduled spoke (unchanged)
+        list:          '#2196F3',  // blue — unscheduled / indicator pill
+        checklist:     '#2196F3',  // blue — checklist-type spoke pill (unchanged)
     },
 
     // Colourblind-friendly palette (safe for deuteranopia / protanopia).
@@ -113,6 +116,7 @@ const Themes = {
         baseText:      '#ffffff',  // white — readable on blue
         defaultBorder: '#aaa',
         list:          '#2196F3',  // blue — safe for CVD; distinct from urgency spectrum
+        checklist:     '#2196F3',  // blue — checklist-type spoke pill
     },
     // Monochrome palette: urgency ramps from white (far future) through greys to black (past).
     monochrome: {
@@ -132,6 +136,7 @@ const Themes = {
         baseText:      '#000000',  // black — readable on white
         defaultBorder: '#FFFFFF',  // white — same as fill; base pills blend in
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
+        checklist:     '#666666',  // neutral grey — checklist-type spoke pill
     },
 
     // Monochrome inverse: ramp flipped — black for past, white for today, light → dark for future.
@@ -152,6 +157,7 @@ const Themes = {
         baseText:      '#FFFFFF',  // white — readable on dark grey
         defaultBorder: '#FFFFFF',  // mid grey — ring on dark grey base pill
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
+        checklist:     '#666666',  // neutral grey — checklist-type spoke pill
     }, */
     'monochrome-inverse': {
         past:          '#FFFFFF',  // white — happened, gone, no weight
@@ -170,6 +176,7 @@ const Themes = {
         baseText:      '#FFFFFF',  // white — readable on black
         defaultBorder: '#000000',  // black — same as fill; no extra signal on base pills
         list:          '#666666',  // neutral grey — list type / unscheduled spoke
+        checklist:     '#666666',  // neutral grey — checklist-type spoke pill
     },
 
     // Dusk: indigo (calm) → purple → pink → orange → crimson (overdue).
@@ -191,6 +198,7 @@ const Themes = {
         baseText:       '#FFFFFF',  // white
         defaultBorder:  '#5C6BC0',  // same as fill
         list:           '#2196F3',  // blue — list type
+        checklist:      '#2196F3',  // blue — checklist-type spoke pill
     },
 
     // Dusk inverse: crimson (needs planning) → orange → pink → purple → indigo (done).
@@ -211,6 +219,7 @@ const Themes = {
         baseText:       '#FFFFFF',  // white
         defaultBorder:  '#B71C1C',  // same as fill
         list:           '#2196F3',  // blue — list type
+        checklist:      '#2196F3',  // blue — checklist-type spoke pill
     },
 };
 
@@ -232,7 +241,7 @@ function _contrastText(hex) {
     return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#000000' : '#ffffff';
 }
 
-function generateUserTheme(calm, urgent) {
+function generateUserTheme(calm, urgent, checklist) {
     const [base, week, tomorrow, today, past] = [0, 0.25, 0.5, 0.75, 1].map(t => _lerpHex(calm, urgent, t));
     return {
         past,          pastBorder: past,        pastText: _contrastText(past),
@@ -242,17 +251,18 @@ function generateUserTheme(calm, urgent) {
         base,          baseText: _contrastText(base),
         defaultBorder: base,
         list:          '#2196F3',
+        checklist:     checklist || '#2196F3',
     };
 }
 
 // Seed user theme from localStorage on load
 {
-    let calm = '#4CAF50', urgent = '#f05252';
+    let calm = '#4CAF50', urgent = '#f05252', checklist = '#2196F3';
     try {
         const s = JSON.parse(localStorage.getItem('brainpie-user-theme') || 'null');
-        if (s && s.calm && s.urgent) { calm = s.calm; urgent = s.urgent; }
+        if (s && s.calm && s.urgent) { calm = s.calm; urgent = s.urgent; checklist = s.checklist || '#2196F3'; }
     } catch (_) {}
-    Themes.user = generateUserTheme(calm, urgent);
+    Themes.user = generateUserTheme(calm, urgent, checklist);
 }
 
 // ── Default theme — used for first paint before persisted meta is loaded ─────
@@ -282,6 +292,7 @@ function applyTheme(themeName) {
     root.style.setProperty('--sched-color-base-text',      theme.baseText);
     root.style.setProperty('--sched-color-default-border', theme.defaultBorder);
     root.style.setProperty('--sched-color-list',           theme.list);
+    root.style.setProperty('--sched-color-checklist',      theme.checklist || theme.list);
 }
 
 applyTheme(ACTIVE_THEME);
