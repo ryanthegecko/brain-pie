@@ -27,7 +27,7 @@ for (const file of jsFiles) {
         outfile: outFile,
         minify: true,
         bundle: false,
-        target: ['es2017'],
+        target: ['esnext'],
     });
 }
 
