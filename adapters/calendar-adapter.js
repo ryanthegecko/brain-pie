@@ -312,10 +312,23 @@ const CalendarAdapter = {
     async ensureAccessToken() {
         if (this.isAvailable()) return true;
 
-        // Try FirebaseAdapter refresh
+        // Try FirebaseAdapter refresh (legacy calendar-scoped sessions)
         if (typeof FirebaseAdapter !== 'undefined' && FirebaseAdapter.user) {
             const token = await FirebaseAdapter.getAccessToken();
             if (token) return true;
+        }
+
+        // Calendar/Tasks access is granted via GoogleAuthAdapter (GIS) —
+        // pop the Google sign-in panel so the user can re-consent instead
+        // of hitting a dead-end alert.
+        if (typeof GoogleAuthAdapter !== 'undefined') {
+            try {
+                await GoogleAuthAdapter.signIn();
+                return this.isAvailable();
+            } catch (e) {
+                Debug.log('CalendarAdapter: GoogleAuthAdapter re-auth failed:', e.message);
+                return false;
+            }
         }
 
         return false;
