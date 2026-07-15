@@ -1083,7 +1083,7 @@ const ChartRenderer = {
                 const sliceOnRight = Math.cos(centreAngle - Math.PI / 2) >= 0;
                 const t = sliceOnRight ? 0.6 : 0.4; // mirror: right pushes toward trailing edge
                 let midAngle = d.startAngle + t * (d.endAngle - d.startAngle);
-                const labelRadius = this.innerRadius / 1.35;
+                const labelRadius = this.innerRadius / 1.6;
 
                 // Show labels for items with enough space
                 if ((d.endAngle - d.startAngle) > 0.06) {
