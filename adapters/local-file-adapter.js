@@ -24,11 +24,27 @@ const LocalFileAdapter = {
     // The active FileSystemFileHandle, or null if none is selected
     _handle: null,
 
+    // A handle we know about but don't currently have permission for (set when
+    // restoreHandle() fails) — kept so reconnect() can retry it without re-showing
+    // the file picker. null once connected or once local file mode is disabled.
+    _pendingHandle: null,
+
     // IndexedDB database name and store where we persist the file handle
     _DB_NAME: 'BrainPieLocalFile',
     _DB_VERSION: 1,
     _STORE_NAME: 'handles',
     _HANDLE_KEY: 'activeHandle',
+
+    // Set by StorageAdapter/UI so this adapter can surface a lost connection the
+    // moment it actually happens (a failed write, a focus-time health check) rather
+    // than only at the next full page reload. Both are plain callbacks, not an event
+    // bus — this adapter has exactly one consumer. See _notifyDisconnected/_notifyReconnected.
+    onDisconnect: null,
+    onReconnect: null,
+    // Tracks whether we've already told the UI we're disconnected, so a run of
+    // several failed writes in a row (e.g. three saves before the user notices)
+    // only fires the callback once instead of spamming it.
+    _disconnected: false,
 
     // -----------------------------------------------------------------------
     // IndexedDB helpers
@@ -138,6 +154,65 @@ const LocalFileAdapter = {
         }
     },
 
+    /**
+     * Query-only permission check — never calls requestPermission(), so it's safe
+     * to call at any time (e.g. on tab focus) without a user gesture, unlike
+     * _ensurePermission(). Used for the periodic health check, not for the initial
+     * connect flow.
+     * @returns {Promise<'granted'|'denied'|'prompt'|null>} null if there's no handle to check
+     */
+    async checkPermissionSilent() {
+        if (!this._handle) return null;
+        try {
+            return await this._handle.queryPermission({ mode: 'readwrite' });
+        } catch (e) {
+            console.warn('LocalFileAdapter: silent permission check failed:', e.message);
+            return 'denied';
+        }
+    },
+
+    /**
+     * Re-check permission for the active handle and fire onDisconnect/onReconnect
+     * as appropriate. Called on tab focus/visibility change (the "opened my laptop"
+     * moment) rather than only ever being discovered at the next full page reload.
+     * A no-op if local file mode isn't active.
+     */
+    async runHealthCheck() {
+        if (!this._handle) return;
+        const perm = await this.checkPermissionSilent();
+        if (perm === 'granted') {
+            this._notifyReconnected();
+        } else {
+            this._notifyDisconnected('Permission was revoked — reconnect to resume file sync.');
+        }
+    },
+
+    /**
+     * Fire the onDisconnect callback, but only on the transition into the
+     * disconnected state — repeated failed writes shouldn't re-trigger the UI
+     * (e.g. re-show a dismissed banner) on every single one.
+     * @param {string} reason - Human-readable reason, passed through to the UI
+     */
+    _notifyDisconnected(reason) {
+        if (this._disconnected) return;
+        this._disconnected = true;
+        if (typeof this.onDisconnect === 'function') {
+            this.onDisconnect(this.getFileName(), reason);
+        }
+    },
+
+    /**
+     * Fire the onReconnect callback, but only on the transition out of the
+     * disconnected state.
+     */
+    _notifyReconnected() {
+        if (!this._disconnected) return;
+        this._disconnected = false;
+        if (typeof this.onReconnect === 'function') {
+            this.onReconnect(this.getFileName());
+        }
+    },
+
     // -----------------------------------------------------------------------
     // File read / write
     // -----------------------------------------------------------------------
@@ -151,7 +226,18 @@ const LocalFileAdapter = {
     async _readFile() {
         if (!this._handle) throw new Error('No file handle — call openFile() or createFile() first');
 
-        const file = await this._handle.getFile();
+        let file;
+        try {
+            file = await this._handle.getFile();
+        } catch (e) {
+            // NotAllowedError = permission was revoked since we last successfully
+            // touched the file (OS/browser sleep-wake, security-scope reset, the
+            // file moved, etc). Surface it instead of letting the caller's generic
+            // catch swallow it into a console.error nobody sees.
+            if (e.name === 'NotAllowedError') this._notifyDisconnected('Lost access to the file — reconnect to resume sync.');
+            throw e;
+        }
+        this._notifyReconnected(); // getFile() succeeded, so whatever was wrong before isn't anymore
         const text = await file.text();
 
         let parsed = {};
@@ -190,9 +276,15 @@ const LocalFileAdapter = {
         // Always stamp lastModified on the meta so consumers can detect staleness
         if (updated.meta) updated.meta.lastModified = Date.now();
 
-        const writable = await this._handle.createWritable();
-        await writable.write(JSON.stringify(updated, null, 2));
-        await writable.close();
+        try {
+            const writable = await this._handle.createWritable();
+            await writable.write(JSON.stringify(updated, null, 2));
+            await writable.close();
+        } catch (e) {
+            if (e.name === 'NotAllowedError') this._notifyDisconnected('Lost access to the file — reconnect to resume sync.');
+            throw e;
+        }
+        this._notifyReconnected(); // write succeeded, so we're definitely still connected
     },
 
     // -----------------------------------------------------------------------
@@ -211,13 +303,45 @@ const LocalFileAdapter = {
         const handle = await this._loadHandleFromDB();
         if (!handle) return false;
 
+        // Note: this runs on page load, outside any click, so requestPermission()
+        // (inside _ensurePermission) very often can't actually succeed even for a
+        // handle the user would happily re-grant — browsers generally require a
+        // user gesture for that prompt. That's expected here, not a bug; reconnect()
+        // below is the gesture-backed retry path for exactly this case.
         const granted = await this._ensurePermission(handle);
         if (!granted) {
-            console.warn('LocalFileAdapter: permission not granted on restore — handle discarded');
+            // Keep the handle around (in memory and in IndexedDB) rather than
+            // discarding it — the file hasn't gone anywhere, we just don't have
+            // permission *yet*. reconnect() re-tries this from inside a click.
+            this._pendingHandle = handle;
+            this._notifyDisconnected('Local file sync needs to be reconnected.');
             return false;
         }
 
         this._handle = handle;
+        this._pendingHandle = null;
+        this._notifyReconnected();
+        return true;
+    },
+
+    /**
+     * Re-attempt permission for a handle we already know about (either from a
+     * failed restoreHandle() this session, or from IndexedDB directly if the page
+     * hasn't tried restoring yet). Must be called from inside a user gesture (e.g.
+     * a click handler on the "Reconnect" banner) — unlike restoreHandle(), this is
+     * expected to actually succeed, since requestPermission() has the click it needs.
+     * @returns {Promise<boolean>}
+     */
+    async reconnect() {
+        const handle = this._pendingHandle || await this._loadHandleFromDB();
+        if (!handle) return false;
+
+        const granted = await this._ensurePermission(handle);
+        if (!granted) return false;
+
+        this._handle = handle;
+        this._pendingHandle = null;
+        this._notifyReconnected();
         return true;
     },
 
@@ -614,6 +738,8 @@ const LocalFileAdapter = {
      */
     async clearHandle() {
         this._handle = null;
+        this._pendingHandle = null;
+        this._disconnected = false; // user chose to stop syncing, not an error state
         await this._clearHandleFromDB();
     }
 };

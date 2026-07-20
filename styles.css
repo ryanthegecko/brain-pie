@@ -2491,6 +2491,22 @@ select:focus {
     color: #9e9e9e;
 }
 
+/* Local file sync lost permission — needs a click (user gesture) to reconnect,
+   so this deliberately looks actionable, not just "off" like .offline does. */
+.cloud-sync-badge.disconnected {
+    cursor: pointer;
+    color: #d4665a;
+    border: 1px solid #d4665a;
+}
+
+.cloud-sync-badge.disconnected .sync-icon {
+    animation: none;
+}
+
+.cloud-sync-badge.disconnected:hover {
+    background: rgba(212, 102, 90, 0.12);
+}
+
 .cloud-sync-badge .sync-project {
     max-width: 150px;
     overflow: hidden;

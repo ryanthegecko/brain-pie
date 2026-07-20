@@ -88,6 +88,16 @@ Firebase credentials live in `context/about.md` → `## Brain Pie`. See §10 for
 | `activePieId` | The pie currently shown in the app |
 | `tombstonedPieIds` | Pies marked as deleted but not yet purged |
 
+> **⚠️ Creating a new pie: `pieIds` and `pieNames` must be updated together, always.**
+> An agent has previously created a multi-pie by adding a `pieNames[newId] = "..."` entry
+> but forgetting to also push `newId` into `pieIds`. The pie then silently doesn't exist
+> anywhere the app actually looks — `pieIds` is the authoritative list of which pies exist
+> (pie switcher, iteration, counts); `pieNames` is just a display-name lookup keyed by an ID
+> that's assumed to already be in `pieIds`. A name-only entry is orphaned data, not a pie.
+> When adding a pie by hand (rather than through the app's own `createPie()`-equivalent
+> flow), write both fields in the same edit and double-check `pieIds` actually contains the
+> new ID before considering the pie created — don't just verify `pieNames` looks right.
+
 ### Pie object
 
 ```json

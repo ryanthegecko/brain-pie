@@ -10,6 +10,85 @@
 Object.assign(UI, {
 
     // =========================================================================
+    // Local file disconnect banner
+    // =========================================================================
+    // Wired to LocalFileAdapter.onDisconnect/onReconnect in StorageAdapter.init().
+    // Reuses the existing #storage-status badge (see updateMainSyncIndicator in
+    // cloud-sync-controller.js) rather than a separate banner component — same
+    // spot the user already checks, one fewer new UI pattern to maintain.
+
+    /**
+     * Show the "local file sync disconnected" state in the main sync badge.
+     * Clickable — retrying from here runs inside the click's user gesture, which
+     * is what actually lets requestPermission() succeed (see reconnect() in
+     * local-file-adapter.js and the comment in StorageAdapter.init()).
+     * @param {string|null} fileName
+     * @param {string} reason
+     */
+    showLocalFileDisconnected(fileName, reason) {
+        const statusEl = document.getElementById('storage-status');
+        if (!statusEl) return;
+
+        let badge = statusEl.querySelector('.cloud-sync-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'cloud-sync-badge';
+            statusEl.innerHTML = '';
+            statusEl.appendChild(badge);
+        }
+
+        badge.className = 'cloud-sync-badge disconnected';
+        badge.title = reason || 'Local file sync disconnected';
+        badge.innerHTML = `
+            <span class="sync-icon">⚠️</span>
+            <span class="sync-project">${fileName ? 'Reconnect ' + fileName : 'Reconnect file sync'}</span>
+        `;
+        badge.onclick = () => this._reconnectLocalFile();
+    },
+
+    /**
+     * Clear the disconnected state — either the reconnect succeeded, or a write
+     * just went through fine so whatever was wrong isn't anymore.
+     * @param {string|null} fileName
+     */
+    clearLocalFileDisconnected(fileName) {
+        const statusEl = document.getElementById('storage-status');
+        if (!statusEl) return;
+        const badge = statusEl.querySelector('.cloud-sync-badge');
+        if (badge && badge.classList.contains('disconnected')) {
+            badge.remove();
+        }
+        if (typeof Storage !== 'undefined' && fileName) {
+            Storage.showStatus('Reconnected to ' + fileName, 'success');
+        }
+    },
+
+    /**
+     * Click handler for the disconnected badge. Runs inside the click's gesture,
+     * so requestPermission() (via LocalFileAdapter.reconnect()) can actually
+     * prompt and succeed, unlike the automatic restore attempt on page load.
+     */
+    async _reconnectLocalFile() {
+        const badge = document.querySelector('#storage-status .cloud-sync-badge.disconnected');
+        if (badge) {
+            badge.innerHTML = '<span class="sync-icon">🔄</span><span class="sync-project">Reconnecting…</span>';
+        }
+
+        const ok = await LocalFileAdapter.reconnect();
+        if (ok) {
+            StorageAdapter.currentMode = 'file';
+            StorageAdapter.adapter = LocalFileAdapter;
+            localStorage.setItem('localFileSyncEnabled', 'true');
+            this._updateLocalFileStatus();
+            // clearLocalFileDisconnected() already fires via onReconnect, but the
+            // click itself should give instant feedback rather than waiting on
+            // whatever the next background write happens to be.
+        } else {
+            alert('Could not reconnect. If your browser is asking for permission in a popup, grant it and click Reconnect again.');
+        }
+    },
+
+    // =========================================================================
     // Section 1 — Working mode (local file)
     // =========================================================================
 

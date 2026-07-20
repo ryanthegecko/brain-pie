@@ -81,6 +81,20 @@ const StorageAdapter = {
         const localFileSyncEnabled = localStorage.getItem('localFileSyncEnabled') === 'true';
         const supportsFileAPI = typeof window.showOpenFilePicker === 'function';
 
+        // Wired once, before restoreHandle() runs, so a disconnect discovered during
+        // restore (not just later, during a write or a focus health-check) also
+        // shows the banner immediately rather than only being visible in Settings.
+        LocalFileAdapter.onDisconnect = (fileName, reason) => {
+            if (typeof UI !== 'undefined' && UI.showLocalFileDisconnected) {
+                UI.showLocalFileDisconnected(fileName, reason);
+            }
+        };
+        LocalFileAdapter.onReconnect = (fileName) => {
+            if (typeof UI !== 'undefined' && UI.clearLocalFileDisconnected) {
+                UI.clearLocalFileDisconnected(fileName);
+            }
+        };
+
         if (localFileSyncEnabled && supportsFileAPI) {
             try {
                 const ready = await LocalFileAdapter.restoreHandle();
@@ -89,9 +103,16 @@ const StorageAdapter = {
                     this.adapter = LocalFileAdapter;
                     Debug.log('StorageAdapter: restored local file handle, using file mode');
                 } else {
-                    // Handle gone or permission revoked — fall back to local
-                    localStorage.removeItem('localFileSyncEnabled');
-                    Debug.log('StorageAdapter: local file handle could not be restored, reverting to local');
+                    // Permission wasn't grantable without a user gesture (expected on a
+                    // background page-load restore — see restoreHandle()'s own comment).
+                    // Deliberately do NOT clear localFileSyncEnabled or fall back silently:
+                    // that was the actual bug — the user would see the app working fine
+                    // against stale localStorage with zero indication the file stopped
+                    // updating. Stay on 'local' functionally (the app still works) but
+                    // leave the setting in place and let the onDisconnect banner (fired
+                    // by restoreHandle() above) prompt an explicit reconnect, which will
+                    // have the click it needs to actually succeed.
+                    Debug.log('StorageAdapter: local file handle needs reconnect (see banner), using local for now');
                 }
             } catch (e) {
                 Debug.log('StorageAdapter: local file restore failed, using local:', e.message);

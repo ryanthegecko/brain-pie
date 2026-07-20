@@ -680,3 +680,15 @@ const App = {
 document.addEventListener('DOMContentLoaded', async () => {
     await App.init();
 });
+
+// Local file sync can be silently revoked mid-session (OS/browser sleep-wake,
+// security-scope resets, the file being moved) — a page reload isn't the only
+// moment that matters. Re-check permission whenever the tab regains focus,
+// which is also exactly the "opened my laptop" moment this was written for.
+// Cheap: a single queryPermission() call, no-ops entirely if file mode isn't on.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (typeof StorageAdapter === 'undefined' || StorageAdapter.currentMode !== 'file') return;
+    if (typeof LocalFileAdapter === 'undefined') return;
+    LocalFileAdapter.runHealthCheck();
+});
